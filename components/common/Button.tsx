@@ -151,8 +151,7 @@ const createStyles = (theme: any) => StyleSheet.create({
 		backgroundColor: '#EDE8FF',
 	},
 	buttonDisabled: {
-		backgroundColor: theme.colors.textLight,
-		opacity: 0.6,
+		backgroundColor: theme.colors.gray100,
 	},
 	buttonRounded: {
 		borderRadius: 9999,
@@ -194,7 +193,7 @@ const createStyles = (theme: any) => StyleSheet.create({
 		color: theme.colors.primary,
 	},
 	buttonTextDisabled: {
-		color: '#ffffff',
+		color: theme.colors.gray300,
 	},
 });
 

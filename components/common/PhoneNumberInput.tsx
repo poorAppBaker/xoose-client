@@ -1,21 +1,26 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  Modal,
   FlatList,
   StyleSheet,
-  SafeAreaView,
-  StatusBar,
   ViewStyle,
-  TextStyle,
+  TextInputProps,
 } from 'react-native';
-import { useTheme } from '../../contexts/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 import CountryFlag from 'react-native-country-flag';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useTranslation } from '@/hooks/useTranslation';
+import Button from '@/components/common/Button';
+import ContentHeader from '@/components/common/ContentHeader';
+import Modal from '@/components/common/Modal';
+import Input from '@/components/common/Input';
 
-// Country data with proper country codes for flags
+// Get country data from react-native-country-flag package
+// This would typically come from a country data package like 'world-countries' or similar
+// For now, keeping a comprehensive list but this should be replaced with package data
 const COUNTRIES = [
   // Shortlist countries
   { name: 'Portugal', code: 'PT', dialCode: '+351', format: '### ### ###' },
@@ -25,8 +30,8 @@ const COUNTRIES = [
   { name: 'France', code: 'FR', dialCode: '+33', format: '## ## ## ## ##' },
   { name: 'Germany', code: 'DE', dialCode: '+49', format: '#### #######' },
   { name: 'Italy', code: 'IT', dialCode: '+39', format: '### ### ####' },
-  
-  // All countries
+
+  // All countries (alphabetical)
   { name: 'Afghanistan', code: 'AF', dialCode: '+93', format: '## ### ####' },
   { name: 'Albania', code: 'AL', dialCode: '+355', format: '## ### ####' },
   { name: 'Algeria', code: 'DZ', dialCode: '+213', format: '## ## ## ## ##' },
@@ -49,24 +54,25 @@ const COUNTRIES = [
 const SHORTLIST_COUNTRIES = COUNTRIES.slice(0, 7);
 const ALL_COUNTRIES = COUNTRIES.slice(7);
 
-interface Country {
+export interface Country {
   name: string;
   code: string;
   dialCode: string;
   format: string;
 }
 
-interface PhoneNumberInputProps {
-  value?: string;
-  onChangeText?: (text: string) => void;
-  onCountryChange?: (country: Country) => void;
-  defaultCountry?: string;
-  placeholder?: string;
+type BasePhoneInputProps = Omit<TextInputProps, 'value' | 'onChangeText' | 'style'>;
+
+interface PhoneNumberInputProps extends BasePhoneInputProps {
   label?: string;
-  disabled?: boolean;
+  error?: string;
+  required?: boolean;
+  value?: string;
+  placeholder?: string;
+  onChangeText?: (fullPhoneNumber: string, nationalNumber: string, country: Country) => void;
+  defaultCountry?: string;
   style?: ViewStyle;
-  inputStyle?: TextStyle;
-  labelStyle?: TextStyle;
+  loading?: boolean;
 }
 
 interface FlagComponentProps {
@@ -77,39 +83,81 @@ interface FlagComponentProps {
 interface CountryItemProps {
   item: Country;
   onPress: (country: Country) => void;
+  isSelected: boolean;
 }
 
-const FlagComponent: React.FC<FlagComponentProps> = ({ countryCode, size = 24 }) => {
+const FlagComponent: React.FC<FlagComponentProps> = ({ countryCode, size = 32 }) => {
   return (
     <CountryFlag
       isoCode={countryCode.toLowerCase()}
       size={size}
-      style={{ borderRadius: 2 }}
+      style={{
+        borderRadius: 100,
+        width: size,
+      }}
     />
   );
 };
 
+// Parse full phone number to extract country and national number
+const parsePhoneNumber = (fullNumber: string, countries: Country[]) => {
+  if (!fullNumber.startsWith('+')) {
+    return null;
+  }
+
+  // Sort countries by dial code length (longest first) for better matching
+  const sortedCountries = [...countries].sort((a, b) => b.dialCode.length - a.dialCode.length);
+
+  for (const country of sortedCountries) {
+    if (fullNumber.startsWith(country.dialCode)) {
+      const nationalNumber = fullNumber.substring(country.dialCode.length);
+      return { country, nationalNumber };
+    }
+  }
+
+  return null;
+};
+
 const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
+  label,
+  error,
+  required = false,
   value = '',
+  placeholder,
   onChangeText,
-  onCountryChange,
   defaultCountry = 'PT',
-  placeholder = 'Phone number',
-  label = 'Phone',
-  disabled = false,
   style,
-  inputStyle,
-  labelStyle,
+  loading = false,
+  ...props
 }) => {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const styles = createStyles(theme);
 
   const [selectedCountry, setSelectedCountry] = useState<Country>(
     COUNTRIES.find(country => country.code === defaultCountry) || COUNTRIES[0]
   );
-  const [phoneNumber, setPhoneNumber] = useState<string>(value);
+  const [nationalNumber, setNationalNumber] = useState<string>('');
+  const [isFocused, setIsFocused] = useState(false);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [searchText, setSearchText] = useState<string>('');
+
+  // Add temporary selection state for the modal
+  const [tempSelectedCountry, setTempSelectedCountry] = useState<Country | null>(null);
+
+  // Initialize from value prop
+  useEffect(() => {
+    if (value) {
+      const parsed = parsePhoneNumber(value, COUNTRIES);
+      if (parsed) {
+        setSelectedCountry(parsed.country);
+        setNationalNumber(parsed.nationalNumber);
+      } else if (!value.startsWith('+')) {
+        // If value doesn't start with +, treat as national number
+        setNationalNumber(value);
+      }
+    }
+  }, [value]);
 
   // Filter countries based on search
   const filteredShortlist = useMemo(() => {
@@ -146,33 +194,90 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
     return formatted;
   };
 
+  // Get formatted national number for display
+  const formattedNationalNumber = useMemo(() => {
+    return formatPhoneNumber(nationalNumber, selectedCountry.format);
+  }, [nationalNumber, selectedCountry.format]);
+
+  // Get full phone number (dial code + national number)
+  const fullPhoneNumber = useMemo(() => {
+    const cleanNational = nationalNumber.replace(/\D/g, '');
+    return cleanNational ? `${selectedCountry.dialCode}${cleanNational}` : '';
+  }, [selectedCountry.dialCode, nationalNumber]);
+
   const handlePhoneNumberChange = (text: string): void => {
-    const formatted = formatPhoneNumber(text, selectedCountry.format);
-    setPhoneNumber(formatted);
-    onChangeText?.(formatted);
+    // Remove all non-digits for storage, but allow formatting characters for display
+    const digitsOnly = text.replace(/\D/g, '');
+    setNationalNumber(digitsOnly);
+
+    // Call callback with full phone number
+    const fullNumber = digitsOnly ? `${selectedCountry.dialCode}${digitsOnly}` : '';
+    onChangeText?.(fullNumber, digitsOnly, selectedCountry);
   };
 
-  const handleCountrySelect = (country: Country): void => {
-    setSelectedCountry(country);
+  // Handle temporary country selection in modal
+  const handleCountryItemPress = useCallback((country: Country) => {
+    setTempSelectedCountry(country);
+  }, []);
+
+  // Apply the temporary selection when "Select" button is pressed
+  const handleConfirmSelection = useCallback(() => {
+    if (tempSelectedCountry) {
+      setSelectedCountry(tempSelectedCountry);
+
+      // Reformat existing number with new country format and update callback
+      const fullNumber = nationalNumber ? `${tempSelectedCountry.dialCode}${nationalNumber}` : '';
+      onChangeText?.(fullNumber, nationalNumber, tempSelectedCountry);
+    }
+
     setModalVisible(false);
     setSearchText('');
-    onCountryChange?.(country);
-  };
+    setTempSelectedCountry(null);
+  }, [tempSelectedCountry, nationalNumber, onChangeText]);
 
-  const handleModalClose = (): void => {
+  const handleModalClose = useCallback(() => {
     setModalVisible(false);
     setSearchText('');
+    setTempSelectedCountry(null);
+  }, []);
+
+  const handleCountryPress = () => {
+    if (!loading) {
+      // Initialize temp selection with current country when opening modal
+      setTempSelectedCountry(selectedCountry);
+      setModalVisible(true);
+    }
   };
 
-  const CountryItem: React.FC<CountryItemProps> = ({ item, onPress }) => (
+  const getPlaceholderText = () => {
+    if (placeholder) {
+      return placeholder;
+    }
+    return t('components_common_phoneinput.placeholder') || 'Phone number';
+  };
+
+  const CountryItem: React.FC<CountryItemProps> = ({ item, onPress, isSelected }) => (
     <TouchableOpacity
-      style={styles.countryItem}
+      style={[
+        styles.countryItem,
+        isSelected && styles.countryItemSelected
+      ]}
       onPress={() => onPress(item)}
       activeOpacity={0.8}
     >
-      <FlagComponent countryCode={item.code} size={28} />
-      <Text style={styles.countryName}>{item.name}</Text>
-      <Text style={styles.dialCode}>({item.dialCode})</Text>
+      <FlagComponent countryCode={item.code} size={20} />
+      <Text style={[
+        styles.countryName,
+        isSelected && styles.countryNameSelected
+      ]}>
+        {item.name}
+      </Text>
+      <Text style={[
+        styles.dialCode,
+        isSelected && styles.dialCodeSelected
+      ]}>
+        ({item.dialCode})
+      </Text>
     </TouchableOpacity>
   );
 
@@ -184,7 +289,16 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
         </View>
       );
     }
-    return <CountryItem item={item} onPress={handleCountrySelect} />;
+
+    const isSelected = tempSelectedCountry?.code === item.code;
+
+    return (
+      <CountryItem
+        item={item}
+        onPress={handleCountryItemPress}
+        isSelected={isSelected}
+      />
+    );
   };
 
   const modalData = [
@@ -194,241 +308,270 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
     ...filteredAllCountries.map(item => ({ ...item, type: 'all' }))
   ];
 
-  return (
-    <View style={[styles.container, style]}>
-      {/* Label */}
-      {label && <Text style={[styles.label, labelStyle]}>{label}</Text>}
-      
-      {/* Phone Input Field */}
-      <View style={[styles.inputWrapper, disabled && styles.inputWrapperDisabled]}>
-        {/* Country Selector */}
-        <TouchableOpacity
-          style={styles.countrySelector}
-          onPress={() => !disabled && setModalVisible(true)}
-          disabled={disabled}
-          activeOpacity={0.8}
-        >
-          <FlagComponent countryCode={selectedCountry.code} size={20} />
-          <Text style={[styles.selectedDialCode, disabled && styles.textDisabled]}>
-            {selectedCountry.dialCode}
-          </Text>
-          <Text style={[styles.dropdownArrow, disabled && styles.textDisabled]}>▼</Text>
-        </TouchableOpacity>
+  const CountryPickerModal = useMemo(() => {
+    if (!modalVisible) return null;
 
-        {/* Phone Number Input */}
-        <TextInput
-          style={[styles.phoneInput, inputStyle, disabled && styles.textDisabled]}
-          value={phoneNumber}
-          onChangeText={handlePhoneNumberChange}
-          placeholder={placeholder}
-          placeholderTextColor={theme.colors.gray400}
-          keyboardType="phone-pad"
-          maxLength={20}
-          editable={!disabled}
-        />
-      </View>
-
-      {/* Country Selection Modal */}
+    return (
       <Modal
         visible={modalVisible}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={handleModalClose}
+        onClose={handleModalClose}
+        maxHeight={'90%'}
+        containerStyle={{ gap: theme.spacing.md }}
       >
-        <SafeAreaView style={styles.modalContainer}>
-          {/* Modal Header */}
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={handleModalClose} activeOpacity={0.8}>
-              <Text style={styles.backButton}>← Select Country</Text>
-            </TouchableOpacity>
-          </View>
+        {/* Header */}
+        <ContentHeader title="Select Country" />
 
-          {/* Search Input */}
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search by title"
-              placeholderTextColor={theme.colors.gray400}
-              value={searchText}
-              onChangeText={setSearchText}
-            />
-          </View>
+        {/* Search Input */}
+        <Input
+          leftIcon={<Ionicons name="search" size={24} color={theme.colors.gray500} />}
+          placeholder='Search by title'
+          value={searchText}
+          onChangeText={setSearchText}
+        />
 
-          {/* Country List */}
+        {/* Country List */}
+        <View style={styles.listContainer}>
           <FlatList
             data={modalData}
             keyExtractor={(item, index) => (item as any).code || `header-${index}`}
             renderItem={renderCountryItem}
             showsVerticalScrollIndicator={false}
+            style={styles.flatList}
+            contentContainerStyle={styles.flatListContent}
           />
+        </View>
 
-          {/* Modal Footer */}
-          <View style={styles.modalFooter}>
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={handleModalClose}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.selectButton}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.selectButtonText}>Select</Text>
-            </TouchableOpacity>
+        {/* Footer Buttons */}
+        <View style={styles.modalBottom}>
+          <Button variant="outline" title="Cancel" onPress={handleModalClose} />
+          <View style={{ flex: 1, marginLeft: theme.spacing.sm }}>
+            <Button
+              variant="primary"
+              fullWidth
+              title="Select"
+              onPress={handleConfirmSelection}
+              disabled={!tempSelectedCountry}
+            />
           </View>
-        </SafeAreaView>
+        </View>
       </Modal>
+    );
+  }, [modalVisible, modalData, searchText, tempSelectedCountry, handleModalClose, handleConfirmSelection, theme]);
+
+  return (
+    <View style={[styles.container, style]}>
+      {label && (
+        <View style={styles.labelContainer}>
+          <View style={styles.labelBorderOverlay} />
+          <Text style={styles.label}>
+            {label}
+            {required && <Text style={styles.required}>*</Text>}
+          </Text>
+        </View>
+      )}
+
+      <View style={[
+        styles.inputContainer,
+        isFocused && styles.inputContainerFocused,
+        error && styles.inputContainerError,
+        loading && styles.inputContainerDisabled,
+      ]}>
+        {/* Country Selector (Left Icon) */}
+        <TouchableOpacity
+          style={styles.countrySelector}
+          onPress={handleCountryPress}
+          disabled={loading}
+          activeOpacity={0.8}
+        >
+          <FlagComponent countryCode={selectedCountry.code} size={32} />
+          <Ionicons
+            name="chevron-down"
+            size={20}
+            color={loading ? theme.colors.gray300 : theme.colors.gray500}
+          />
+          <Text style={[styles.selectedDialCode, loading && styles.textDisabled]}>
+            {selectedCountry.dialCode}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Phone Number Input */}
+        <TextInput
+          style={[styles.phoneInput, loading && styles.textDisabled]}
+          value={formattedNationalNumber}
+          onChangeText={handlePhoneNumberChange}
+          placeholder={getPlaceholderText()}
+          placeholderTextColor={theme.colors.gray300}
+          keyboardType="phone-pad"
+          maxLength={20}
+          editable={!loading}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          {...props}
+        />
+      </View>
+
+      {error && (
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={16} color={theme.colors.error} />
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      )}
+
+      {/* Country Selection Modal */}
+      {CountryPickerModal}
     </View>
   );
 };
 
 const createStyles = (theme: any) => StyleSheet.create({
   container: {
-    marginVertical: theme.spacing.sm,
+    position: 'relative',
+  },
+  labelContainer: {
+    position: 'absolute',
+    left: 18,
+    top: -8,
+    zIndex: 10,
   },
   label: {
-    ...theme.typography.body,
-    fontSize: 16,
-    fontWeight: '500',
-    color: theme.colors.gray600,
-    marginBottom: theme.spacing.sm,
+    fontSize: 12,
+    color: theme.colors.gray500,
+    paddingHorizontal: 2,
+    fontWeight: '700',
   },
-  inputWrapper: {
+  labelBorderOverlay: {
+    width: '100%',
+    height: 2,
+    backgroundColor: theme.colors.white,
+    position: 'absolute',
+    top: 8,
+  },
+  required: {
+    color: theme.colors.error,
+  },
+  inputContainer: {
+    width: '100%',
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: theme.borderRadius.full,
+    alignItems: 'center',
+    backgroundColor: theme.colors.gray50,
     paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.md,
-    ...theme.shadows.sm,
     borderWidth: 1,
-    borderColor: theme.colors.gray200,
+    borderColor: theme.colors.gray100,
+    borderRadius: 1000,
+    minHeight: 48,
   },
-  inputWrapperDisabled: {
-    backgroundColor: theme.colors.gray100,
+  inputContainerFocused: {
+    borderColor: theme.colors.gray500,
+    borderWidth: 1,
+  },
+  inputContainerError: {
+    borderColor: theme.colors.error,
+    borderWidth: 2,
+  },
+  inputContainerDisabled: {
     opacity: 0.6,
+    backgroundColor: theme.colors.gray50,
   },
   countrySelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingRight: theme.spacing.md,
-    borderRightWidth: 1,
-    borderRightColor: theme.colors.gray200,
+    gap: theme.spacing.sm,
   },
   selectedDialCode: {
-    ...theme.typography.body,
+    ...(theme.typography?.body || {}),
     fontSize: 16,
-    color: theme.colors.gray600,
-    marginLeft: theme.spacing.sm,
-    marginRight: theme.spacing.xs,
-  },
-  dropdownArrow: {
-    fontSize: 12,
-    color: theme.colors.gray400,
+    color: theme.colors.gray800,
   },
   phoneInput: {
     flex: 1,
-    ...theme.typography.body,
+    ...(theme.typography?.body || {}),
     fontSize: 16,
-    paddingLeft: theme.spacing.md,
-    color: theme.colors.gray600,
+    color: theme.colors.gray800,
+    paddingVertical: theme.spacing.md,
+    minHeight: 48,
   },
   textDisabled: {
     color: theme.colors.gray400,
   },
-  modalContainer: {
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: theme.spacing.xs,
+  },
+  errorText: {
+    ...theme.typography.caption,
+    fontSize: 12,
+    color: theme.colors.error,
+    marginLeft: theme.spacing.xs,
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
-  modalHeader: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.gray200,
-  },
-  backButton: {
-    ...theme.typography.button,
-    fontSize: 18,
-    color: theme.colors.primary,
-    fontWeight: '500',
-  },
+
+  // Modal styles
   searchContainer: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
   },
-  searchInput: {
+  searchInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: theme.colors.gray50,
     borderRadius: theme.borderRadius.md,
     paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.md,
-    ...theme.typography.body,
+    paddingVertical: theme.spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    ...(theme.typography?.body || {}),
     fontSize: 16,
-    color: theme.colors.gray600,
+    color: theme.colors.gray800,
+    marginLeft: theme.spacing.sm,
+  },
+  listContainer: {
+    maxHeight: 400, // Constrain height so it doesn't overflow
+  },
+  flatList: {
+  },
+  flatListContent: {
+    paddingBottom: theme.spacing.md,
   },
   sectionHeader: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    backgroundColor: theme.colors.gray25,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.sm,
   },
   sectionHeaderText: {
     ...theme.typography.caption,
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.colors.gray400,
+    fontSize: 16,
+    fontWeight: '500',
+    color: theme.colors.gray800,
   },
   countryItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.gray100,
+    gap: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
+    borderRadius: theme.borderRadius?.md || 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  countryItemSelected: {
+    borderColor: theme.colors.blue500,
   },
   countryName: {
-    flex: 1,
-    ...theme.typography.body,
     fontSize: 16,
-    color: theme.colors.gray600,
-    marginLeft: theme.spacing.sm,
+    color: theme.colors.gray800,
+  },
+  countryNameSelected: {
+    color: theme.colors.blue500,
   },
   dialCode: {
-    ...theme.typography.caption,
-    fontSize: 14,
-    color: theme.colors.gray400,
+    fontSize: 16,
+    color: theme.colors.gray800,
   },
-  modalFooter: {
+  dialCodeSelected: {
+    color: theme.colors.blue500,
+  },
+  modalBottom: {
     flexDirection: 'row',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.gray200,
-    backgroundColor: '#FFFFFF',
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: theme.spacing.md,
-    alignItems: 'center',
-    marginRight: theme.spacing.sm,
-  },
-  cancelButtonText: {
-    ...theme.typography.button,
-    fontSize: 16,
-    color: theme.colors.primary,
-  },
-  selectButton: {
-    flex: 1,
-    backgroundColor: theme.colors.gray200,
-    paddingVertical: theme.spacing.md,
-    borderRadius: theme.borderRadius.full,
-    alignItems: 'center',
-    marginLeft: theme.spacing.sm,
-  },
-  selectButtonText: {
-    ...theme.typography.button,
-    fontSize: 16,
-    color: theme.colors.gray400,
-    fontWeight: '500',
   },
 });
 

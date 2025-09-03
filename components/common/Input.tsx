@@ -1,11 +1,13 @@
 // components/common/Input.tsx
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, TextInputProps, Platform, ViewStyle, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, TextInputProps, Platform, ViewStyle, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { DatePicker } from 'react-native-wheel-pick';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import Button from '@/components/common/Button';
+import ContentHeader from '@/components/common/ContentHeader';
+import Modal from '@/components/common/Modal';
 
 type BaseInputProps = Omit<TextInputProps, 'value' | 'onChangeText' | 'style'>;
 
@@ -16,7 +18,7 @@ interface InputProps extends BaseInputProps {
   rightIcon?: React.ReactNode;
   required?: boolean;
   type?: 'text' | 'password' | 'date' | 'time' | 'datetime';
-  value?: string | Date;
+  value?: string | Date | null;
   placeholder?: string;
   onChangeText?: (text: string) => void;
   onDateTimeChange?: (date: Date) => void;
@@ -175,54 +177,35 @@ const Input: React.FC<InputProps> = ({
 
     return (
       <Modal
-        transparent={true}
-        animationType="slide"
         visible={showDatePicker}
-        onRequestClose={handlePickerCancel}
+        onClose={handlePickerCancel}
       >
-        <View style={styles.datePickerModalOverlay}>
-          <TouchableOpacity
-            style={styles.datePickerModalBackdrop}
-            activeOpacity={1}
-            onPress={handlePickerCancel}
+        {/* Header */}
+        <ContentHeader title={placeholder} />
+
+        {/* DatePicker Container */}
+        <View style={styles.datePickerContainer}>
+          <DatePicker
+            order={type === 'time' ? 'H-m' : type === 'datetime' ? 'M-D-Y-H-m' : 'M-D-Y'}
+            date={tempDate}
+            onDateChange={setTempDate}
+            minimumDate={minimumDate}
+            maximumDate={maximumDate}
+            style={styles.wheelDatePicker}
+            textColor={theme.colors.gray600}
+            textSize={18}
           />
-          <View style={styles.datePickerModal}>
-            <View style={styles.modalTopBar}>
-              <View style={styles.modalTopBarLine} />
-            </View>
-            {/* Header */}
-            <View style={styles.datePickerModalHeader}>
-              <TouchableOpacity>
-                <Ionicons size={24} name="arrow-back" color={theme.colors.blue500} />
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>{placeholder || "Select the option"}</Text>
-            </View>
+        </View>
 
-            {/* DatePicker Container */}
-            <View style={styles.datePickerContainer}>
-              <DatePicker
-                order={type === 'time' ? 'H-m' : type === 'datetime' ? 'M-D-Y-H-m' : 'M-D-Y'}
-                date={tempDate}
-                onDateChange={setTempDate}
-                minimumDate={minimumDate}
-                maximumDate={maximumDate}
-                style={styles.wheelDatePicker}
-                textColor={theme.colors.gray600}
-                textSize={18}
-              />
-            </View>
-
-            <View style={styles.modalBottom}>
-              <Button variant="outline" title="Cancel" onPress={handlePickerCancel} />
-              <View style={{ flex: 1, marginLeft: theme.spacing.sm }}>
-                <Button variant="primary" fullWidth title="Select" onPress={handlePickerConfirm} />
-              </View>
-            </View>
+        <View style={styles.modalBottom}>
+          <Button variant="outline" title="Cancel" onPress={handlePickerCancel} />
+          <View style={{ flex: 1, marginLeft: theme.spacing.sm }}>
+            <Button variant="primary" fullWidth title="Select" onPress={handlePickerConfirm} />
           </View>
         </View>
       </Modal>
     );
-  }, [showDatePicker, tempDate, handlePickerCancel, handlePickerConfirm, getDatePickerTitle, minimumDate, maximumDate, type, theme.colors.gray800, styles]);
+  }, [showDatePicker, tempDate, handlePickerCancel, handlePickerConfirm, minimumDate, maximumDate, type, styles]);
 
   const renderInput = () => {
     if (type === 'date' || type === 'time' || type === 'datetime') {
@@ -232,8 +215,7 @@ const Input: React.FC<InputProps> = ({
             styles.inputContainer,
             isFocused && styles.inputContainerFocused,
             error && styles.inputContainerError,
-            loading && styles.inputContainerDisabled,
-            style
+            loading && styles.inputContainerDisabled
           ]}
           onPress={handleDateTimePress}
           disabled={loading}
@@ -270,8 +252,7 @@ const Input: React.FC<InputProps> = ({
         props.multiline && styles.inputContainerMultiline,
         isFocused && styles.inputContainerFocused,
         error && styles.inputContainerError,
-        loading && styles.inputContainerDisabled,
-        style
+        loading && styles.inputContainerDisabled
       ]}>
         {leftIcon && !props.multiline && (
           <View style={styles.leftIconContainer}>
@@ -311,9 +292,10 @@ const Input: React.FC<InputProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]}>
       {label && (
         <View style={styles.labelContainer}>
+          <View style={styles.labelBorderOverlay} />
           <Text style={styles.label}>
             {label}
             {required && <Text style={styles.required}>*</Text>}
@@ -339,6 +321,7 @@ const Input: React.FC<InputProps> = ({
 const createStyles = (theme: any) => StyleSheet.create({
   container: {
     position: 'relative',
+    marginBottom: theme.spacing.md,
   },
   labelContainer: {
     position: 'absolute',
@@ -349,7 +332,15 @@ const createStyles = (theme: any) => StyleSheet.create({
   label: {
     fontSize: 12,
     color: theme.colors.gray500,
+    paddingHorizontal: 2,
     fontWeight: '700',
+  },
+  labelBorderOverlay: {
+    width: '100%',
+    height: 2,
+    backgroundColor: theme.colors.white,
+    position: 'absolute',
+    top: 8,
   },
   required: {
     color: theme.colors.error,
@@ -359,7 +350,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: theme.colors.gray50,
-    paddingHorizontal: theme.spacing.md,
+    paddingHorizontal: 20,
     borderWidth: 1,
     borderColor: theme.colors.gray100,
     borderRadius: 1000,
@@ -398,8 +389,10 @@ const createStyles = (theme: any) => StyleSheet.create({
     minHeight: 80,
   },
   inputWithLeftIcon: {
+    paddingLeft: theme.spacing.sm,
   },
   inputWithRightIcon: {
+    paddingRight: theme.spacing.sm,
   },
   leftIconContainer: {
     justifyContent: 'center',
@@ -442,55 +435,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.error,
     marginLeft: theme.spacing.xs,
     flex: 1,
-  },
-
-  // Custom DatePicker Modal styles
-  datePickerModalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  datePickerModalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  datePickerModal: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: theme.borderRadius.xl,
-    borderTopRightRadius: theme.borderRadius.xl,
-    paddingBottom: 34, // Safe area bottom padding
-    maxHeight: '70%',
-    paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.md,
-  },
-  modalTopBar: {
-    alignItems: 'center',
-    marginBottom: theme.spacing.lg,
-  },
-  modalTopBarLine: {
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.gray200,
-    width: 100,
-    height: 5,
-  },
-  datePickerModalHeader: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-  },
-  modalTitle: {
-    ...(theme.typography?.h3 || {}),
-    fontSize: 20,
-    fontWeight: '800',
-    color: theme.colors.gray800,
-  },
-  datePickerModalButton: {
-    ...(theme.typography?.body || {}),
-    color: theme.colors.blue500,
-    fontSize: 16,
-  },
-  datePickerModalConfirm: {
-    fontWeight: '600',
   },
 
   // DatePicker container styles

@@ -1,10 +1,12 @@
 // components/common/Select.tsx
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, ViewStyle } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import Button from '@/components/common/Button';
+import Modal from '@/components/common/Modal'; // Import the new Modal component
+import ContentHeader from '@/components/common/ContentHeader';
 
 export interface SelectOption {
   label: string;
@@ -142,61 +144,49 @@ const Select: React.FC<SelectProps> = ({
         </Text>
       </TouchableOpacity>
     );
-  }, [tempSelection, handleOptionPress, styles, theme.colors.primary]);
+  }, [tempSelection, handleOptionPress, styles]);
 
   const SelectModal = useMemo(() => {
     if (!showModal) return null;
 
     return (
       <Modal
-        transparent={true}
-        animationType="slide"
         visible={showModal}
-        onRequestClose={handleCancel}
+        onClose={handleCancel}
       >
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity
-            style={styles.modalBackdrop}
-            activeOpacity={1}
-            onPress={handleCancel}
-          />
-          <View style={styles.modal}>
-            <View style={styles.modalTopBar}>
-              <View style={styles.modalTopBarLine} />
-            </View>
-            {/* Header */}
-            <View style={styles.modalHeader}>
-              <TouchableOpacity>
-                <Ionicons size={24} name="arrow-back" color={theme.colors.blue500} />
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>{placeholder || "Select the option"}</Text>
-            </View>
+        {/* Header */}
+        <ContentHeader title={placeholder || ""} onBackPress={handleCancel} />
 
-            {/* Options List */}
-            <FlatList
-              data={options}
-              renderItem={renderOptionItem}
-              keyExtractor={(item) => item.value.toString()}
-              style={styles.optionsList}
-              showsVerticalScrollIndicator={false}
+        {/* Options List */}
+        <FlatList
+          data={options}
+          renderItem={renderOptionItem}
+          keyExtractor={(item) => item.value.toString()}
+          style={styles.optionsList}
+          showsVerticalScrollIndicator={false}
+        />
+
+        <View style={styles.modalBottom}>
+          <Button variant="outline" title="Cancel" onPress={handleCancel} />
+          <View style={{ flex: 1, marginLeft: theme.spacing.sm }}>
+            <Button
+              variant="primary"
+              fullWidth
+              title="Select"
+              onPress={handleConfirm}
+              disabled={tempSelection.length === 0}
             />
-
-            <View style={styles.modalBottom}>
-              <Button variant="outline" title="Cancel" onPress={handleCancel} />
-              <View style={{ flex: 1, marginLeft: theme.spacing.sm }}>
-                <Button variant="primary" fullWidth title="Select" onPress={handleConfirm} disabled={tempSelection.length === 0} />
-              </View>
-            </View>
           </View>
         </View>
       </Modal>
     );
-  }, [showModal, options, tempSelection, handleCancel, handleConfirm, renderOptionItem, multiple, styles]);
+  }, [showModal, options, tempSelection, handleCancel, handleConfirm, renderOptionItem, placeholder, theme.colors.blue500, theme.spacing.sm, styles]);
 
   return (
     <View style={styles.container}>
       {label && (
         <View style={styles.labelContainer}>
+          <View style={styles.labelBorderOverlay} />
           <Text style={styles.label}>
             {label}
             {required && <Text style={styles.required}>*</Text>}
@@ -265,7 +255,15 @@ const createStyles = (theme: any) => StyleSheet.create({
   label: {
     fontSize: 12,
     color: theme.colors.gray500,
+    paddingHorizontal: 2,
     fontWeight: '700',
+  },
+  labelBorderOverlay: {
+    width: '100%',
+    height: 2,
+    backgroundColor: theme.colors.white,
+    position: 'absolute',
+    top: 8,
   },
   required: {
     color: theme.colors.error,
@@ -275,7 +273,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: theme.colors.gray50,
-    paddingHorizontal: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md + theme.spacing.xs,
     borderWidth: 1,
     borderColor: theme.colors.gray100,
     borderRadius: 1000,
@@ -326,34 +324,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     flex: 1,
   },
 
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modal: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: theme.borderRadius.xl,
-    borderTopRightRadius: theme.borderRadius.xl,
-    paddingBottom: 34, // Safe area bottom padding
-    maxHeight: '70%',
-    paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.md,
-  },
-  modalTopBar: {
-    alignItems: 'center',
-    marginBottom: theme.spacing.lg,
-  },
-  modalTopBarLine: {
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.gray200,
-    width: 100,
-    height: 5,
-  },
+  // Modal content styles (no longer need overlay, backdrop, modal container, topBar styles)
   modalHeader: {
     width: '100%',
     flexDirection: 'row',
@@ -368,14 +339,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   modalBottom: {
     flexDirection: 'row',
-  },
-  modalButton: {
-    ...(theme.typography?.body || {}),
-    color: theme.colors.blue500,
-    fontSize: 16,
-  },
-  modalConfirm: {
-    fontWeight: '600',
   },
 
   // Options list styles
