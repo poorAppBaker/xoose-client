@@ -9,7 +9,9 @@ interface ButtonProps {
 	disabled?: boolean;
 	loading?: boolean;
 	variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+	rounded?: boolean;
 	size?: 'small' | 'medium' | 'large';
+	fullWidth?: boolean;
 	style?: ViewStyle;
 	textStyle?: TextStyle;
 }
@@ -20,7 +22,9 @@ const Button: React.FC<ButtonProps> = ({
 	disabled = false,
 	loading = false,
 	variant = 'primary',
+	rounded = true,
 	size = 'medium',
+	fullWidth = false,
 	style,
 	textStyle,
 }) => {
@@ -42,6 +46,14 @@ const Button: React.FC<ButtonProps> = ({
 			case 'ghost':
 				baseStyle.push(styles.buttonGhost);
 				break;
+		}
+
+		if (rounded) {
+			baseStyle.push(styles.buttonRounded);
+		}
+
+		if (fullWidth) {
+			baseStyle.push(styles.buttonFullWidth);
 		}
 
 		if (disabled || loading) {
@@ -85,7 +97,7 @@ const Button: React.FC<ButtonProps> = ({
 			{loading ? (
 				<ActivityIndicator
 					size="small"
-					color={variant === 'primary' ? '#ffffff' : theme.colors.secondary}
+					color={variant === 'primary' ? '#ffffff' : theme.colors.gray100}
 				/>
 			) : (
 				<Text style={[...getTextStyle(), textStyle]}>
@@ -133,7 +145,7 @@ const createStyles = (theme: any) => StyleSheet.create({
 	buttonOutline: {
 		backgroundColor: 'transparent',
 		borderWidth: 1,
-		borderColor: theme.colors.secondary,
+		borderColor: theme.colors.primary,
 	},
 	buttonGhost: {
 		backgroundColor: '#EDE8FF',
@@ -142,21 +154,30 @@ const createStyles = (theme: any) => StyleSheet.create({
 		backgroundColor: theme.colors.textLight,
 		opacity: 0.6,
 	},
+	buttonRounded: {
+		borderRadius: 9999,
+	},
+	buttonFullWidth: {
+		width: '100%',
+	},
 
 	// Text styles
 	buttonText: {
 		...theme.typography.button,
 		textAlign: 'center',
+		fontWeight: '700',
 	},
 	buttonTextSmall: {
 		fontSize: 14,
+		fontWeight: '700',
 	},
 	buttonTextMedium: {
 		fontSize: 16,
+		fontWeight: '700',
 	},
 	buttonTextLarge: {
-		fontSize: 16,
-		fontWeight: '600',
+		fontSize: 18,
+		fontWeight: '700',
 	},
 
 	// Text color variants
@@ -167,10 +188,10 @@ const createStyles = (theme: any) => StyleSheet.create({
 		color: '#ffffff',
 	},
 	buttonTextOutline: {
-		color: theme.colors.secondary,
+		color: theme.colors.primary,
 	},
 	buttonTextGhost: {
-		color: theme.colors.secondary,
+		color: theme.colors.primary,
 	},
 	buttonTextDisabled: {
 		color: '#ffffff',

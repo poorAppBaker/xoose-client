@@ -1,12 +1,30 @@
 import React from 'react';
-import { View, StyleSheet, Image, Text } from 'react-native';
-import { useTheme } from '../../../contexts/ThemeContext';
-import DefaultLayout from '@/components/layout/defaultLayout';
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Svg, Path } from 'react-native-svg';
+import CountryFlag from 'react-native-country-flag';
 
-export default function OnboardingScreen() {
+import { useTheme } from '../../../contexts/ThemeContext';
+import DefaultLayout from '@/components/layout/DefaultLayout';
+
+const LANGUAGE_COUNTRIES = [
+  { name: 'Portugal', code: 'PT' },
+  { name: 'United States', code: 'US' },
+  { name: 'Spain', code: 'ES' },
+  { name: 'France', code: 'FR' },
+  { name: 'Germany', code: 'DE' },
+]
+
+export default function LanguageScreen() {
   const { theme } = useTheme();
+  const router = useRouter();
 
   const styles = createStyles(theme);
+
+  const handleSelectLanguage = (_country: any) => {
+
+    router.replace('/(auth)/login/PhoneNumber');
+  }
 
   return (
     <DefaultLayout scrollable>
@@ -16,14 +34,30 @@ export default function OnboardingScreen() {
           <Text style={styles.chooseText}>Please select your language.</Text>
         </View>
 
-        <View style={styles.logoContainer}>
-          <Image
-            source={require('../../assets/images/xoose-logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+        <View style={styles.languageImage}>
+          <Svg width="61" height="60" viewBox="0 0 61 60" fill="none">
+            <Path d="M30.5 55L28 47.5H10.5C9.125 47.5 7.94792 47.0104 6.96875 46.0312C5.98958 45.0521 5.5 43.875 5.5 42.5V10C5.5 8.625 5.98958 7.44792 6.96875 6.46875C7.94792 5.48958 9.125 5 10.5 5H25.5L27.6875 12.5H50.5C51.9583 12.5 53.1562 12.9687 54.0937 13.9062C55.0312 14.8437 55.5 16.0417 55.5 17.5V50C55.5 51.375 55.0312 52.5521 54.0937 53.5312C53.1562 54.5104 51.9583 55 50.5 55H30.5ZM35.125 37.75L36.5 36.4375C35.9167 35.7292 35.3854 35.0417 34.9062 34.375C34.4271 33.7083 33.9583 33 33.5 32.25L35.125 37.75ZM38.25 34.5625C39.4167 33.1875 40.3021 31.875 40.9062 30.625C41.5104 29.375 41.9167 28.3958 42.125 27.6875H32.1875L32.9375 30.3125H35.4375C35.7708 30.9375 36.1667 31.6146 36.625 32.3437C37.0833 33.0729 37.625 33.8125 38.25 34.5625ZM33 52.5H50.5C51.25 52.5 51.8542 52.2604 52.3125 51.7812C52.7708 51.3021 53 50.7083 53 50V17.5C53 16.75 52.7708 16.1458 52.3125 15.6875C51.8542 15.2292 51.25 15 50.5 15H28.4375L31.375 25.125H36.3125V22.5H38.875V25.125H48V27.6875H44.8125C44.3958 29.2708 43.7708 30.8125 42.9375 32.3125C42.1042 33.8125 41.125 35.2083 40 36.5L46.8125 43.1875L45 45L38.25 38.25L36 40.5625L38 47.5L33 52.5Z" fill="#75D2FC" />
+            <Path d="M9.32373 37.9412L17.2098 18.5294H20.8495L28.7355 37.9412H25.0958L23.2326 33.0074H14.8266L12.9634 37.9412H9.32373ZM15.9099 30.1765H22.1494L19.0296 21.9265L15.9099 30.1765Z" fill="white" />
+          </Svg>
         </View>
 
+        <View style={styles.languageList}>
+          {
+            LANGUAGE_COUNTRIES.map((country) => (
+              <TouchableOpacity key={country.code} style={styles.languageItem} onPress={() => handleSelectLanguage(country)}>
+                <CountryFlag
+                  isoCode={country.code}
+                  size={24}
+                  style={{
+                    borderRadius: 100,
+                    width: 24,
+                  }}
+                />
+                <Text style={styles.languageItemText}>{country.name}</Text>
+              </TouchableOpacity>
+            ))
+          }
+        </View>
       </View>
     </DefaultLayout>
   );
@@ -32,41 +66,40 @@ export default function OnboardingScreen() {
 const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
-    justifyContent: 'space-between',
+    backgroundColor: theme.colors.white,
+    paddingHorizontal: theme.spacing.md,
   },
-  spacer: {
-  },
-  logoContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  logo: {
-    height: 80,
-    width: '100%',
-  },
+
   textContainer: {
-    alignItems: 'center',
-    marginVertical: 30,
+    marginTop: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
   },
   taglineText: {
-    fontSize: 18,
-    color: '#ffffff',
-    textAlign: 'center',
-    marginBottom: 8,
-    fontWeight: '400',
+    fontWeight: '800',
+    fontSize: 20,
+    color: theme.colors.gray800,
+    marginBottom: theme.spacing.md,
   },
   chooseText: {
-    fontSize: 32,
-    color: '#ffffff',
-    textAlign: 'center',
-    fontWeight: 'bold',
+    ...theme.typography.body,
+    marginBottom: theme.spacing.lg,
   },
-  formWrapper: {
-    flex: 1,
+  languageImage: {
     justifyContent: 'center',
-    minHeight: 200,
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
   },
+  languageList: {
+    gap: theme.spacing.sm,
+  },
+  languageItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+    padding: theme.spacing.sm
+  },
+  languageItemText: {
+    ...theme.typography.body,
+    color: theme.colors.gray800,
+  }
 });

@@ -22,7 +22,7 @@ const TabIcon = ({
   const { theme } = useTheme();
 
   const renderIcon = () => {
-    const iconColor = focused ? theme.colors.textWhite : theme.colors.textSecondary;
+    const iconColor = focused ? theme.colors.gray500 : theme.colors.gray300;
     const iconSize = 24;
 
     switch (library) {
@@ -58,12 +58,12 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textLight,
+        tabBarInactiveTintColor: theme.colors.gray300,
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: theme.colors.backgroundCard,
+          backgroundColor: theme.colors.gray400,
           borderTopWidth: 1,
-          borderTopColor: theme.colors.border,
+          borderTopColor: theme.colors.gray300,
           display: 'flex',
           alignItems: 'center',
           paddingTop: 20,
@@ -76,16 +76,16 @@ export default function TabLayout() {
           display: 'none',
         },
         headerStyle: {
-          backgroundColor: theme.colors.backgroundCard,
+          backgroundColor: theme.colors.gray400,
           borderBottomWidth: 1,
-          borderBottomColor: theme.colors.border,
+          borderBottomColor: theme.colors.gray300,
           ...theme.shadows.sm,
         },
         headerTitleStyle: {
           ...theme.typography.h3,
-          color: theme.colors.text,
+          color: theme.colors.gray300,
         },
-        headerTintColor: theme.colors.text,
+        headerTintColor: theme.colors.gray300,
       }}
     >
       <Tabs.Screen

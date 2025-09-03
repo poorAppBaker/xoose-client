@@ -4,6 +4,7 @@ import { ThemeProvider } from '../contexts/ThemeContext';
 import { useEffect } from 'react';
 import { Slot, Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Notifications from 'expo-notifications';
 import useAuthStore from '@/store/authStore';
 import Loading from '@/components/common/Loading';
@@ -34,7 +35,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/(auth)/onboarding');
+    router.replace('/(auth)/login/Language');
   }, [])
 
   // // Initialize auth store on first load
@@ -95,13 +96,15 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout() {
   return (
-    <SplashProvider>
-      <ThemeProvider>
-        <StatusBar style="auto" />
-        <AuthGuard>
-          <Slot />
-        </AuthGuard>
-      </ThemeProvider>
-    </SplashProvider>
+    <GestureHandlerRootView>
+      <SplashProvider>
+        <ThemeProvider>
+          <StatusBar style="auto" />
+          <AuthGuard>
+            <Slot />
+          </AuthGuard>
+        </ThemeProvider>
+      </SplashProvider>
+    </GestureHandlerRootView>
   );
 }

@@ -2,42 +2,31 @@
 export const theme = {
   colors: {
     // Primary brand colors
-    primary: '#f48b1c',
-    primaryLight: '#fb923c',
-    primaryDark: '#ea580c',
+    primary: '#08AFFA',
+    
+    white: '#FFFFFF',
+    black: '#000000',
 
-    // Secondary colors
-    secondary: '#112d74',
-    secondaryLight: '#3b82f6',
-    secondaryDark: '#0D1B34',
+    blue25: 'E2F6FF',
+    blue50: '#CDEFFF',
+    blue100: '#ABE5FF',
+    blue300: '#75D2FC',
+    blue500: '#08AFFA',
+    blue600: '#019DF5',
 
-    // Background colors
-    background: '#D4E0F1',
-    backgroundSurface: '#D4E0F1',
-    backgroundCard: '#FFFFFF',
+    gray25: '#FAFAFC',
+    gray50: '#F8F8FA',
+    gray100: '#F3F4F6',
+    gray200: '#E5E7EB',
+    gray300: '#D1D5DB',
+    gray400: '#9CA3AF',
+    gray500: '#6B7280',
+    gray600: '#121212',
+    gray800: '#121212',
 
-    // Text colors
-    text: '#1f2937',
-    textSecondary: '#6b7280',
-    textLight: '#9ca3af',
-    textWhite: '#ffffff',
+    green500: '#9FD456',
 
-    // Status colors
-    error: '#ef4444',
-    errorLight: '#fee2e2',
-    success: '#10b981',
-    warning: '#f59e0b',
-
-    // Border and divider colors
-    border: '#e5e7eb',
-    divider: '#D4E0F1',
-
-    // Input colors
-    inputBackground: '#F5F2FF',
-    inputBorder: '#e5e7eb',
-    inputReadOnly: '#EBE7F6',
-    inputPlaceholder: '#5B5B5B',
-    inputFocusBorder: '#FDC078',
+    error: '#FF4D4F',
   },
 
   spacing: {

@@ -1,23 +1,10 @@
 import React from 'react';
 import { View, StyleSheet, Image, Text } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
-import useAuthStore from '../../store/authStore';
-import DefaultLayout from '@/components/layout/defaultLayout';
+import DefaultLayout from '@/components/layout/DefaultLayout';
 
 export default function OnboardingScreen() {
   const { theme } = useTheme();
-  const login = useAuthStore(state => state.login);
-  const isLoading = useAuthStore(state => state.isLoading);
-  const error = useAuthStore(state => state.error);
-
-  const handleLogin = async (email: string, password: string) => {
-    try {
-      await login(email, password);
-      // Navigation will happen via AuthGuard in _layout.js
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   const styles = createStyles(theme);
 
@@ -49,7 +36,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     justifyContent: 'space-between',
-    backgroundColor: '#08AFFA',
+    backgroundColor: theme.colors.primary,
   },
   spacer: {
   },

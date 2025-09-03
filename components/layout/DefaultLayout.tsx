@@ -41,7 +41,7 @@ export default function DefaultLayout({
       style={styles.keyboardAvoidingView}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 50 : 0}
     >
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.secondary} />
+      <StatusBar barStyle="light-content" />
       {content}
     </KeyboardAvoidingView>
   );
