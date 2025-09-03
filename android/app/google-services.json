@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1071866663241",
+    "project_id": "xoose-c868b",
+    "storage_bucket": "xoose-c868b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1071866663241:android:802e5154f17547ce278a98",
+        "android_client_info": {
+          "package_name": "com.xoose.client"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBR8mOKR6O4R7NxE7x3LLYrt2q436nXk4s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
