@@ -50,6 +50,7 @@ export default function DefaultLayout({
 const createStyles = (theme: any) => StyleSheet.create({
   keyboardAvoidingView: {
     flex: 1,
+    // paddingTop: StatusBar.currentHeight || 0,
   },
   container: {
     flex: 1,
@@ -57,6 +58,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   scrollContainer: {
     // flex: 1,
     flexGrow: 1,
+    paddingTop: StatusBar.currentHeight || 0,
   },
   scrollContentContainer: {
     flexGrow: 1,

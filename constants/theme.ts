@@ -59,7 +59,7 @@ export const theme = {
     },
     h3: {
       fontSize: 20,
-      fontWeight: '600' as const,
+      fontWeight: '800' as const,
       lineHeight: 24,
     },
     body: {
