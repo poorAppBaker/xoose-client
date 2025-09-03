@@ -1,68 +1,59 @@
 import React from 'react';
-import { View, StyleSheet, Image, Text } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useTheme } from '../../../contexts/ThemeContext';
 import DefaultLayout from '@/components/layout/DefaultLayout';
 import Button from '@/components/common/Button';
-import Input from '@/components/common/Input';
-import PhoneNumberInput from '@/components/common/PhoneNumberInput';
-import { Ionicons } from '@expo/vector-icons';
-import Select from '@/components/common/Select';
-
-const LANGUAGE_COUNTRIES = [
-  { name: 'Portugal', code: 'PT' },
-  { name: 'United States', code: 'US' },
-  { name: 'Spain', code: 'ES' },
-  { name: 'France', code: 'FR' },
-  { name: 'Germany', code: 'DE' },
-]
+import PhoneNumberInput, { Country } from '@/components/common/PhoneNumberInput';
+import ContentHeader from '@/components/common/ContentHeader';
 
 export default function PhoneNumberScreen() {
   const { theme } = useTheme();
   const [phone, setPhone] = React.useState('');
-  const [selectedCountry, setSelectedCountry] = React.useState<string>('');
-  const [name, setName] = React.useState('');
-  const [dob, setDob] = React.useState(new Date());
-  const [password, setPassword] = React.useState('');
+  const [selectedCountry, setSelectedCountry] = React.useState<Country | null>(null);
+  const router = useRouter();
 
   const styles = createStyles(theme);
+
+  const handleBack = () => {
+    router.back();
+  }
+
+  const handleContinue = () => {
+    router.push('/(auth)/login/SMSCode');
+  }
 
   return (
     <DefaultLayout scrollable>
       <View style={styles.container}>
-        <View style={styles.textContainer}>
-          <Text style={styles.taglineText}>Welcome!</Text>
-          <Text style={styles.chooseText}>Please select your language.</Text>
+        <ContentHeader title='Enter Your Phone Number' />
+
+        <PhoneNumberInput
+          label="Phone"
+          placeholder="Enter your phone"
+          defaultCountry="US"
+          onChangeText={(countryfullPhoneNumber: string, nationalNumber: string, country: Country) => {
+            setPhone(countryfullPhoneNumber);
+            setSelectedCountry(country);
+          }}
+          style={{ marginTop: theme.spacing.lg + theme.spacing.xs }}
+        />
+
+        <View style={styles.spacer} />
+
+        {/* Footer Buttons */}
+        <View style={styles.bottomContainer}>
+          <Button variant="outline" title="Cancel" onPress={handleBack} />
+          <View style={{ flex: 1, marginLeft: theme.spacing.sm }}>
+            <Button
+              variant="primary"
+              fullWidth
+              title="Continue"
+              onPress={handleContinue}
+              disabled={phone.length === 0 || !selectedCountry}
+            />
+          </View>
         </View>
-
-        <View style={styles.logoContainer}>
-          <Button title='Continue' fullWidth onPress={() => { }} />
-          <Button variant='outline' title='test' onPress={() => { }} />
-
-          <Select
-            label="Country"
-            options={[
-              { label: "United States", value: "us" },
-              { label: "Canada", value: "ca" },
-              { label: "Mexico", value: "mx" }
-            ]}
-            value={selectedCountry}
-            onSelectionChange={(value) => setSelectedCountry(value as string)}
-            placeholder="Select a country"
-          />
-
-          <Input label='Name' value={name} onChangeText={setName} placeholder='Enter your name' />
-          <Input type='date' label='Date of Birth' value={dob} onDateTimeChange={setDob} placeholder='Select date of birth' />
-          <Input type='password' label='Password' placeholder='Please enter the password' />
-
-          <PhoneNumberInput
-            label="Phone Number"
-            placeholder="Enter your phone"
-            defaultCountry="US"
-            onChangeText={(phone) => setPhone(phone)}
-          // onCountryChange={(country) => setSelectedCountry(country)}
-          />
-        </View>
-
       </View>
     </DefaultLayout>
   );
@@ -71,42 +62,13 @@ export default function PhoneNumberScreen() {
 const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors?.background || '#ffffff',
-    paddingHorizontal: 20,
-    justifyContent: 'space-between',
+    backgroundColor: theme.colors.white,
+    padding: theme.spacing.md,
   },
   spacer: {
-  },
-  logoContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 20,
   },
-  logo: {
-    height: 80,
-    width: '100%',
-  },
-  textContainer: {
-    alignItems: 'center',
-    marginVertical: 30,
-  },
-  taglineText: {
-    fontSize: 18,
-    color: '#ffffff',
-    textAlign: 'center',
-    marginBottom: 8,
-    fontWeight: '400',
-  },
-  chooseText: {
-    fontSize: 32,
-    color: '#ffffff',
-    textAlign: 'center',
-    fontWeight: 'bold',
-  },
-  formWrapper: {
-    flex: 1,
-    justifyContent: 'center',
-    minHeight: 200,
-  },
+  bottomContainer: {
+    flexDirection: 'row',
+  }
 });

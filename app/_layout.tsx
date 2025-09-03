@@ -35,7 +35,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/(auth)/login/Language');
+    router.push('/(auth)/login/PersonalInfo');
   }, [])
 
   // // Initialize auth store on first load

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Svg, Path } from 'react-native-svg';
@@ -6,24 +6,30 @@ import CountryFlag from 'react-native-country-flag';
 
 import { useTheme } from '../../../contexts/ThemeContext';
 import DefaultLayout from '@/components/layout/DefaultLayout';
+import Button from '@/components/common/Button';
+import { Country } from '@/components/common/PhoneNumberInput';
 
 const LANGUAGE_COUNTRIES = [
-  { name: 'Portugal', code: 'PT' },
-  { name: 'United States', code: 'US' },
-  { name: 'Spain', code: 'ES' },
-  { name: 'France', code: 'FR' },
-  { name: 'Germany', code: 'DE' },
+  { name: 'Portugal', code: 'PT', dialCode: '+351', format: '### ### ###' },
+  { name: 'Spain', code: 'ES', dialCode: '+34', format: '### ### ###' },
+  { name: 'United States', code: 'US', dialCode: '+1', format: '(###) ###-####' },
+  { name: 'France', code: 'FR', dialCode: '+33', format: '## ## ## ## ##' },
+  { name: 'Germany', code: 'DE', dialCode: '+49', format: '#### #######' },
 ]
 
 export default function LanguageScreen() {
   const { theme } = useTheme();
   const router = useRouter();
+  const [selectedLanguage, setSelectedLanguage] = useState<Country | null>(null);
 
   const styles = createStyles(theme);
 
-  const handleSelectLanguage = (_country: any) => {
+  const handleSelectLanguage = (_country: Country) => {
+    setSelectedLanguage(selectedLanguage === _country ? null : _country);
+  }
 
-    router.replace('/(auth)/login/PhoneNumber');
+  const handleContinue = () => {
+    router.push('/(auth)/login/PhoneNumber');
   }
 
   return (
@@ -44,7 +50,14 @@ export default function LanguageScreen() {
         <View style={styles.languageList}>
           {
             LANGUAGE_COUNTRIES.map((country) => (
-              <TouchableOpacity key={country.code} style={styles.languageItem} onPress={() => handleSelectLanguage(country)}>
+              <TouchableOpacity
+                key={country.code}
+                style={[
+                  styles.languageItem,
+                  selectedLanguage?.code === country.code && styles.languageItemSelected
+                ]}
+                onPress={() => handleSelectLanguage(country)}
+              >
                 <CountryFlag
                   isoCode={country.code}
                   size={24}
@@ -53,10 +66,28 @@ export default function LanguageScreen() {
                     width: 24,
                   }}
                 />
-                <Text style={styles.languageItemText}>{country.name}</Text>
+                <Text style={[
+                  styles.languageItemText,
+                  selectedLanguage?.code === country.code && styles.languageItemTextSelected
+                ]}>
+                  {country.name}
+                </Text>
               </TouchableOpacity>
             ))
           }
+        </View>
+
+        <View style={styles.spacer} />
+
+        {/* Footer Buttons */}
+        <View style={styles.bottomContainer}>
+          <Button
+            variant="primary"
+            fullWidth
+            title="Continue"
+            onPress={handleContinue}
+            disabled={!selectedLanguage}
+          />
         </View>
       </View>
     </DefaultLayout>
@@ -67,11 +98,10 @@ const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.white,
-    paddingHorizontal: theme.spacing.md,
+    padding: theme.spacing.md,
   },
 
   textContainer: {
-    marginTop: theme.spacing.lg,
     marginBottom: theme.spacing.md,
   },
   taglineText: {
@@ -96,10 +126,26 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing.md,
-    padding: theme.spacing.sm
+    padding: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    borderRadius: theme.borderRadius.full,
+  },
+  languageItemSelected: {
+    borderColor: theme.colors.blue500,
   },
   languageItemText: {
     ...theme.typography.body,
     color: theme.colors.gray800,
-  }
+    flex: 1,
+  },
+  languageItemTextSelected: {
+    color: theme.colors.blue500,
+  },
+  spacer: {
+    flex: 1,
+  },
+  bottomContainer: {
+    flexDirection: 'row',
+  },
 });
