@@ -8,12 +8,12 @@ import {
   Platform,
   ActionSheetIOS,
   ActivityIndicator,
-  ViewStyle
+  ViewStyle,
+  Image
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ImagePicker from 'react-native-image-crop-picker';
 import { useTheme } from '../../contexts/ThemeContext';
-import LazyImage from '@/components/common/LazyImage';
 import Button from '@/components/common/Button';
 import ContentHeader from '@/components/common/ContentHeader';
 import Modal from '@/components/common/Modal';
@@ -256,8 +256,10 @@ const UserProfileUploader: React.FC<UserProfileUploaderProps> = ({
       return (
         <View style={styles.imageWrapper}>
           <View style={styles.imageContainer}>
-            <LazyImage
-              uri={value}
+            <Image
+              source={{
+                uri: value
+              }}
               style={styles.profileImage}
               resizeMode="cover"
             />

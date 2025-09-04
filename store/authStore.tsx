@@ -1,150 +1,133 @@
 // store/authStore.ts
 import { create } from 'zustand';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as authService from '../services/auth';
-import { AuthState, User } from '../types/auth';
+import { User } from 'firebase/auth';
+import authService, { UserData } from '../services/authService';
 
-const useAuthStore = create<AuthState>((set, get) => ({
-	user: null,
-	isLoading: true,
-	error: null,
+interface AuthState {
+  user: UserData | null;
+  firebaseUser: User | null;
+  isLoading: boolean;
+  isInitialized: boolean;
+  
+  // Actions
+  initialize: () => void;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, userData: Partial<UserData>) => Promise<void>;
+  signInWithPhone: (phoneNumber: string) => Promise<string>; // Returns verification ID
+  verifyPhoneCode: (verificationId: string, code: string, userData?: Partial<UserData>) => Promise<void>;
+  signOut: () => Promise<void>;
+  updateUserData: (updates: Partial<UserData>) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  setLoading: (loading: boolean) => void;
+}
 
-	// Initialize the store by checking for existing auth
-	initialize: async (locale: string) => {
-		try {
-			const token = await AsyncStorage.getItem('userToken');
-			if (token) {
-				const userData = await authService.getUserData(locale);
-				set({ user: userData.data, isLoading: false });
-			} else {
-				set({ isLoading: false });
-			}
-		} catch (error) {
-			console.error('Failed to load user:', error);
-			await AsyncStorage.removeItem('userToken');
-			set({ isLoading: false, error: error instanceof Error ? error.message : 'Failed to load user' });
-		}
-	},
+const useAuthStore = create<AuthState>((set, get) => {
+  let unsubscribeAuth: (() => void) | null = null;
 
-	// Login method
-	login: async (email: string, password: string) => {
-		try {
-			set({ isLoading: true, error: null });
-			const { token, userData } = await authService.login(email, password);
-			await AsyncStorage.setItem('userToken', token);
-			set({ user: userData, isLoading: false });
-			return userData;
-		} catch (error: any) {
-			const errMsg = error?.response?.data?.message || 'Login failed';
-			set({ isLoading: false, error: errMsg });
-			throw error;
-		}
-	},
+  return {
+    user: null,
+    firebaseUser: null,
+    isLoading: true,
+    isInitialized: false,
 
-	// Signup method
-	signup: async (email: string, password: string, firstName: string, lastName: string, role: 'manager' | 'team_member', additionalInfo?: {
-		companyName?: string;
-		vatNumber?: string;
-		address?: string;
-		phoneNumber?: string;
-	}
-	) => {
-		try {
-			set({ isLoading: true, error: null });
-			const { token, userData } = await authService.signup(email, password, firstName, lastName, role, additionalInfo);
-			await AsyncStorage.setItem('userToken', token);
-			set({ user: userData, isLoading: false });
-			return userData;
-		} catch (error: any) {
-			const errMsg = error?.response?.data?.message || 'Signup failed';
-			set({ isLoading: false, error: errMsg });
-			throw error;
-		}
-	},
+    initialize: () => {
+      if (unsubscribeAuth) {
+        unsubscribeAuth(); // Clean up existing listener
+      }
 
-	// Logout method
-	logout: async () => {
-		try {
-			await AsyncStorage.removeItem('userToken');
-			set({ user: null });
-			return Promise.resolve();
-		} catch (error: any) {
-			console.error('Failed to logout:', error);
-			const errMsg = error?.response?.data?.message || 'Failed to logout';
-			return Promise.reject(errMsg);
-		}
-	},
+      set({ isLoading: true });
 
-	// Reset password method
-	resetPasswordRequest: async (email: string) => {
-		try {
-			set({ isLoading: true, error: null });
-			const { status } = await authService.forgotPassword(email);
-			set({ isLoading: false });
-		} catch (error: any) {
-			const errMsg = error?.response?.data?.message || 'Password reset request failed';
-			set({ isLoading: false, error: errMsg });
-			throw error;
-		}
-	},
+      // Set up auth state listener
+      unsubscribeAuth = authService.onAuthStateChanged((firebaseUser, userData) => {
+        set({ 
+          firebaseUser, 
+          user: userData,
+          isLoading: false,
+          isInitialized: true
+        });
+      });
+    },
 
-	// Reset password method
-	resetPassword: async (code: string, email: string, password: string) => {
-		try {
-			set({ isLoading: true, error: null });
-			const { token, userData } = await authService.resetPassword(email, code, password);
-			await AsyncStorage.setItem('userToken', token);
-			set({ user: userData, isLoading: false });
-			return userData;
-		} catch (error: any) {
-			const errMsg = error?.response?.data?.message || 'Password reset failed';
-			set({ isLoading: false, error: errMsg });
-			throw error;
-		}
-	},
+    signIn: async (email: string, password: string) => {
+      try {
+        set({ isLoading: true });
+        const { user, userData } = await authService.signIn(email, password);
+        set({ firebaseUser: user, user: userData, isLoading: false });
+      } catch (error) {
+        set({ isLoading: false });
+        throw error;
+      }
+    },
 
-	updateProfile: async (firstName: string, lastName: string, email: string) => {
-		try {
-			set({ isLoading: true, error: null });
-			const { data } = await authService.updateProfile(firstName, lastName, email);
-			const { user } = data;
-			set({ user: user, isLoading: false });
-			return user;
-		} catch (error: any) {
-			const errMsg = error?.response?.data?.message || 'Profile update failed';
-			set({ isLoading: false, error: errMsg });
-			throw error;
-		}
-	},
+    signUp: async (email: string, password: string, userData: Partial<UserData>) => {
+      try {
+        set({ isLoading: true });
+        const { user, userData: newUserData } = await authService.signUp(email, password, userData);
+        set({ firebaseUser: user, user: newUserData, isLoading: false });
+      } catch (error) {
+        set({ isLoading: false });
+        throw error;
+      }
+    },
 
-	updatePassword: async (currentPassword: string, newPassword: string) => {
-		try {
-			set({ isLoading: true, error: null });
-			const { token, userData } = await authService.updatePassword(currentPassword, newPassword);
-			await AsyncStorage.setItem('userToken', token);
-			set({ user: userData, isLoading: false });
-			return userData;
-		} catch (error: any) {
-			const errMsg = error?.response?.data?.message || 'Password update failed';
-			set({ isLoading: false, error: errMsg });
-			throw error;
-		}
-	},
+    signInWithPhone: async (phoneNumber: string) => {
+      try {
+        set({ isLoading: true });
+        const verificationId = await authService.signInWithPhoneNumber(phoneNumber);
+        set({ isLoading: false });
+        return verificationId;
+      } catch (error) {
+        set({ isLoading: false });
+        throw error;
+      }
+    },
 
-	syncPushToken: async (token: string, platform?: 'ios' | 'android' | 'web', deviceId?: string) => {
-		try {
-			const { userData } = await authService.registerPushToken({
-				token,
-				platform,
-				deviceId,
-			});
-			return userData;
-		} catch (error: any) {
-			const errMsg = error?.response?.data?.message || 'Failed to sync token';
-			set({ error: errMsg });
-			throw error;
-		}
-	},
-}));
+    verifyPhoneCode: async (verificationId: string, code: string, userData?: Partial<UserData>) => {
+      try {
+        set({ isLoading: true });
+        const { user, userData: newUserData } = await authService.verifyPhoneCode(verificationId, code, userData);
+        set({ firebaseUser: user, user: newUserData, isLoading: false });
+      } catch (error) {
+        set({ isLoading: false });
+        throw error;
+      }
+    },
+
+    signOut: async () => {
+      try {
+        set({ isLoading: true });
+        await authService.signOut();
+        set({ user: null, firebaseUser: null, isLoading: false });
+      } catch (error) {
+        set({ isLoading: false });
+        throw error;
+      }
+    },
+
+    updateUserData: async (updates: Partial<UserData>) => {
+      try {
+        const { user } = get();
+        if (!user) throw new Error('No user logged in');
+
+        await authService.updateUserData(user._id, updates);
+        set({ user: { ...user, ...updates } });
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    resetPassword: async (email: string) => {
+      try {
+        await authService.resetPassword(email);
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    setLoading: (loading: boolean) => {
+      set({ isLoading: loading });
+    }
+  };
+});
 
 export default useAuthStore;

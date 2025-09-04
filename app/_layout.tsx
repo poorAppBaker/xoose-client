@@ -1,17 +1,15 @@
 // app/_layout.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ThemeProvider } from '../contexts/ThemeContext';
-import { useEffect } from 'react';
+import { SidebarProvider } from '../contexts/SidebarContext';
 import { Slot, Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import * as Notifications from 'expo-notifications';
 import useAuthStore from '@/store/authStore';
 import Loading from '@/components/common/Loading';
-import { usePushNotifications } from '@/hooks/usePushNotifications';
-import { useInvitationHandler } from '@/hooks/useInvitationHandler';
+// import { usePushNotifications } from '@/hooks/usePushNotifications';
 import SplashProvider from '@/contexts/SplashProvider';
-import { useTranslation } from '@/hooks/useTranslation';
+// import realtimeService from '@/services/realtimeService';
 
 // // Set globally
 // Notifications.setNotificationHandler({
@@ -26,11 +24,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 // Auth guard component
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  // const user = useAuthStore(state => state.user);
+  const { user, isLoading, isInitialized, initialize } = useAuthStore();
   // const { pushTokenInfo } = usePushNotifications();
-  // const { initialize, syncPushToken } = useAuthStore();
-  // const { locale } = useTranslation();
-  const [isLoading, setIsLoading] = useState(false);
   const segments = useSegments();
   const router = useRouter();
 
@@ -38,49 +33,38 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     router.push('/(auth)/login/PersonalInfo');
   }, [])
 
-  // // Initialize auth store on first load
+  // // Initialize Firebase auth on app start
   // useEffect(() => {
-  //   if (locale) {
-  //     (async () => {
-  //       await initialize(locale);
-  //       setIsLoading(false);
-  //     })()
-  //   }
-  // }, [initialize, locale]);
+  //   initialize();
+  // }, [initialize]);
 
+
+  // // Handle push token updates
   // useEffect(() => {
   //   if (user?._id && pushTokenInfo) {
-  //     syncPushToken(
-  //       pushTokenInfo.token,
-  //       pushTokenInfo.platform,
-  //       pushTokenInfo.deviceId
-  //     );
+  //     realtimeService.updateUserPushToken(user._id, {
+  //       token: pushTokenInfo.token,
+  //       platform: pushTokenInfo.platform,
+  //       deviceId: pushTokenInfo.deviceId,
+  //       updatedAt: new Date().toISOString()
+  //     });
   //   }
-  // }, [user?._id, pushTokenInfo])
+  // }, [user?._id, pushTokenInfo]);
 
-  // useEffect(() => {
-  //   console.log('segment', segments);
-  //   const inAuthGroup = segments[0] === '(auth)';
+  useEffect(() => {
+    if (!isInitialized) return; // Wait for auth to initialize
+    const inAuthGroup = segments[0] === '(auth)';
 
-  //   if (!isLoading) {
-  //     // If user is not signed in and not on auth screen, redirect to login
-  //     if (!user && !inAuthGroup) {
-  //       console.log('Dismissing all routes');
-  //       router.dismissAll();
-  //       router.replace('/(auth)/login');
-  //     } else if (user && (inAuthGroup || segments.length as number === 0)) {
-  //       // If user is signed in and on auth screen, redirect to home
-  //       console.log('User is authenticated but he/she is in auth page:', user)
-  //       if (user.role === 'manager') {
-  //         console.log('here: dashboard')
-  //         router.replace('/(tabs)/dashboard');
-  //       } else {
-  //         console.log('here: worksites')
-  //         router.replace('/(tabs)/worksites');
-  //       }
-  //     }
-  //   }
-  // }, [user?._id, segments, isLoading, router]);
+    if (!user && !inAuthGroup) {
+      // User is not signed in and not on auth screen, redirect to login
+      console.log('Redirecting to login - no user');
+      router.dismissAll();
+      router.replace('/(auth)/login/Language');
+    } else if (user && (inAuthGroup || segments.length as number === 0)) {
+      //       // If user is signed in and on auth screen, redirect to home
+      router.replace('/(auth)/login/Language');
+    }
+  }, [user, segments, isInitialized, router]);
 
   if (isLoading) {
     return <Loading />;
@@ -99,10 +83,15 @@ export default function RootLayout() {
     <GestureHandlerRootView>
       <SplashProvider>
         <ThemeProvider>
-          <StatusBar style="auto" />
-          <AuthGuard>
-            <Slot />
-          </AuthGuard>
+          <SidebarProvider
+            userName="Simon"
+            selectedCountry="PT"
+          >
+            <StatusBar style="auto" />
+            <AuthGuard>
+              <Slot />
+            </AuthGuard>
+          </SidebarProvider>
         </ThemeProvider>
       </SplashProvider>
     </GestureHandlerRootView>

@@ -1,11 +1,10 @@
+// config/firebase.ts (Updated with environment variables)
 import { initializeApp } from 'firebase/app';
-import { getAuth, initializeAuth, getReactNativePersistence } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
+import { getAuth } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
+import { getFirestore } from 'firebase/firestore';
 
+// Firebase configuration using environment variables
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -17,23 +16,33 @@ const firebaseConfig = {
   measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
+// Validate that all required config values are present
+const requiredConfigKeys = [
+  'apiKey',
+  'authDomain', 
+  'databaseURL',
+  'projectId',
+  'storageBucket',
+  'messagingSenderId',
+  'appId'
+];
+
+for (const key of requiredConfigKeys) {
+  if (!firebaseConfig[key as keyof typeof firebaseConfig]) {
+    throw new Error(`Missing required Firebase configuration: ${key}`);
+  }
+}
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Auth with persistence
-let auth;
-if (Platform.OS === 'web') {
-  auth = getAuth(app);
-} else {
-  auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage)
-  });
-}
+// Initialize Auth
+const auth = getAuth(app);
 
-// Initialize other services
-export const db = getFirestore(app);
-export const storage = getStorage(app);
-export const realtimeDB = getDatabase(app);
+// Initialize Realtime Database
+const database = getDatabase(app);
 
-export { auth };
-export default app;
+// Initialize Firestore (optional)
+const firestore = getFirestore(app);
+
+export { app, auth, database, firestore };
