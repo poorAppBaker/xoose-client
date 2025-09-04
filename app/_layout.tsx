@@ -29,14 +29,10 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   const segments = useSegments();
   const router = useRouter();
 
+  // Initialize Firebase auth on app start
   useEffect(() => {
-    router.push('/(auth)/login/PersonalInfo');
-  }, [])
-
-  // // Initialize Firebase auth on app start
-  // useEffect(() => {
-  //   initialize();
-  // }, [initialize]);
+    initialize();
+  }, [initialize]);
 
 
   // // Handle push token updates

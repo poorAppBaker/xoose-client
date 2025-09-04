@@ -1,4 +1,5 @@
-import React, { useRef, useState } from 'react';
+// app/(auth)/signup/PersonalInfo.tsx
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -9,22 +10,15 @@ import Input from '@/components/common/Input';
 import Select from '@/components/common/Select';
 import CheckBox from '@/components/common/CheckBox';
 import UserProfileUploader from '@/components/common/UserProfileUploader';
+import { useSignupStore } from '@/store/signupStore';
+import useAuthStore from '@/store/authStore';
+import authService from '@/services/authService';
 
 const GENDER_OPTIONS = [
   { label: 'Female', value: 'F' },
   { label: 'Male', value: 'M' },
   { label: 'Other', value: 'O' }
 ];
-
-interface FormData {
-  name: string;
-  surname: string;
-  dob: Date | null;
-  gender: string | null;
-  email: string;
-  confirmEmail: string;
-  profileImage: string | null;
-}
 
 interface FormErrors {
   name?: string;
@@ -40,27 +34,22 @@ interface FormErrors {
 export default function PersonalInfoScreen() {
   const { theme } = useTheme();
   const router = useRouter();
+  const signupStore = useSignupStore();
+  const authStore = useAuthStore();
   
-  // Form data
-  const [formData, setFormData] = useState<FormData>({
-    name: '',
-    surname: '',
-    dob: null,
-    gender: null,
-    email: '',
-    confirmEmail: '',
-    profileImage: null,
-  });
-
-  // CheckBox states
-  const [agreeTerms, setAgreeTerms] = useState(false);
-  const [agreePrivacy, setAgreePrivacy] = useState(false);
-  const [agreeMarketing, setAgreeMarketing] = useState(false);
-
   // Form states
   const [errors, setErrors] = useState<FormErrors>({});
   const [isUploading, setIsUploading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const styles = createStyles(theme);
+
+  // Check if user came from phone verification
+  useEffect(() => {
+    if (!signupStore.verificationId || !signupStore.fullPhoneNumber) {
+      Alert.alert('Error', 'Session expired. Please start the signup process again.');
+      router.replace('/(auth)/signup/Language');
+    }
+  }, []);
 
   const handleBack = () => {
     router.back();
@@ -76,20 +65,20 @@ export default function PersonalInfoScreen() {
     const newErrors: FormErrors = {};
 
     // Required field validations
-    if (!formData.name.trim()) {
+    if (!signupStore.name.trim()) {
       newErrors.name = 'Name is required';
     }
 
-    if (!formData.surname.trim()) {
+    if (!signupStore.surname.trim()) {
       newErrors.surname = 'Surname is required';
     }
 
-    if (!formData.dob) {
+    if (!signupStore.dob) {
       newErrors.dob = 'Date of birth is required';
     } else {
       // Check if user is at least 13 years old
       const today = new Date();
-      const birthDate = new Date(formData.dob);
+      const birthDate = new Date(signupStore.dob);
       const age = today.getFullYear() - birthDate.getFullYear();
       const monthDiff = today.getMonth() - birthDate.getMonth();
       
@@ -98,28 +87,28 @@ export default function PersonalInfoScreen() {
       }
     }
 
-    if (!formData.gender) {
+    if (!signupStore.gender) {
       newErrors.gender = 'Gender selection is required';
     }
 
-    if (!formData.email.trim()) {
+    if (!signupStore.email.trim()) {
       newErrors.email = 'Email is required';
-    } else if (!validateEmail(formData.email)) {
+    } else if (!validateEmail(signupStore.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
 
-    if (!formData.confirmEmail.trim()) {
+    if (!signupStore.confirmEmail.trim()) {
       newErrors.confirmEmail = 'Email confirmation is required';
-    } else if (formData.email !== formData.confirmEmail) {
+    } else if (signupStore.email !== signupStore.confirmEmail) {
       newErrors.confirmEmail = 'Emails do not match';
     }
 
-    if (!formData.profileImage) {
+    if (!signupStore.profileImage) {
       newErrors.profileImage = 'Profile photo is required';
     }
 
     // Agreement validations
-    if (!agreeTerms || !agreePrivacy) {
+    if (!signupStore.agreeTerms || !signupStore.agreePrivacy) {
       newErrors.agreements = 'You must agree to Terms & Conditions and Privacy Policy';
     }
 
@@ -137,7 +126,7 @@ export default function PersonalInfoScreen() {
         // For now, just simulate upload delay
         await new Promise(resolve => setTimeout(resolve, 1500));
         
-        setFormData(prev => ({ ...prev, profileImage: imageUri }));
+        signupStore.setPersonalInfo({ profileImage: imageUri });
         
         // Clear any existing error
         if (errors.profileImage) {
@@ -153,20 +142,29 @@ export default function PersonalInfoScreen() {
       }
     } else {
       // Image was removed
-      setFormData(prev => ({ ...prev, profileImage: null }));
+      signupStore.setPersonalInfo({ profileImage: null });
     }
   };
 
-  const updateFormData = (field: keyof FormData) => (value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const updateFormData = (field: keyof typeof signupStore) => (value: any) => {
+    signupStore.setPersonalInfo({ [field]: value });
     
     // Clear error when user starts typing/selecting
-    if (errors[field]) {
+    if (errors[field as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
   };
 
-  const handleContinue = async () => {
+  const updateAgreement = (field: 'agreeTerms' | 'agreePrivacy' | 'agreeMarketing') => (value: boolean) => {
+    signupStore.setAgreements({ [field]: value });
+    
+    // Clear agreement errors
+    if (errors.agreements && (field === 'agreeTerms' || field === 'agreePrivacy')) {
+      setErrors(prev => ({ ...prev, agreements: undefined }));
+    }
+  };
+
+  const handleCompleteSignup = async () => {
     if (!validateForm()) {
       // Show first error
       const firstError = Object.values(errors)[0];
@@ -176,27 +174,68 @@ export default function PersonalInfoScreen() {
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      // Here you would submit the form data to your backend
-      console.log('Submitting form data:', {
-        ...formData,
-        agreements: {
-          terms: agreeTerms,
-          privacy: agreePrivacy,
-          marketing: agreeMarketing
-        }
-      });
+    if (!signupStore.verificationId) {
+      Alert.alert('Error', 'Verification session expired. Please try again.');
+      router.replace('/(auth)/signup/PhoneNumber');
+      return;
+    }
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      signupStore.setSubmitting(true);
+      signupStore.setError(null);
+
+      // Complete the phone authentication and create user account
+      const userData = {
+        displayName: `${signupStore.name} ${signupStore.surname}`,
+        role: 'worker' as const,
+        name: signupStore.name,
+        surname: signupStore.surname,
+        dateOfBirth: signupStore.dob?.toISOString(),
+        gender: signupStore.gender,
+        email: signupStore.email,
+        profileImage: signupStore.profileImage,
+        agreements: {
+          terms: signupStore.agreeTerms,
+          privacy: signupStore.agreePrivacy,
+          marketing: signupStore.agreeMarketing,
+          agreedAt: new Date().toISOString(),
+        },
+        signupCompletedAt: new Date().toISOString(),
+      };
+
+      // This will complete the phone auth and create the user account
+      const result = await authService.verifyPhoneCode(
+        signupStore.verificationId, 
+        '', // We already verified the code in SMS step
+        userData
+      );
+
+      console.log('Signup completed successfully:', result);
       
-      router.push('/(auth)/login/PhoneNumber');
-    } catch (error) {
-      console.error('Form submission failed:', error);
-      Alert.alert('Error', 'Failed to save information. Please try again.');
+      // Clear signup data
+      signupStore.reset();
+
+      // The auth store will automatically update via the auth listener
+      // Navigate to main app or onboarding
+      router.replace('/(tabs)/dashboard');
+
+    } catch (error: any) {
+      console.error('Signup completion failed:', error);
+      
+      let errorMessage = 'Failed to complete signup. Please try again.';
+      
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already registered. Please use a different email.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password is too weak. Please choose a stronger password.';
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      }
+      
+      signupStore.setError(errorMessage);
+      Alert.alert('Signup Failed', errorMessage);
     } finally {
-      setIsSubmitting(false);
+      signupStore.setSubmitting(false);
     }
   };
 
@@ -210,8 +249,6 @@ export default function PersonalInfoScreen() {
     // router.push('/privacy-policy');
   };
 
-  const styles = createStyles(theme);
-
   return (
     <DefaultLayout scrollable>
       <View style={styles.container}>
@@ -223,7 +260,7 @@ export default function PersonalInfoScreen() {
         <UserProfileUploader
           label="Profile Photo"
           required
-          value={formData.profileImage}
+          value={signupStore.profileImage}
           onImageChange={handleImageChange}
           error={errors.profileImage}
           loading={isUploading}
@@ -235,7 +272,7 @@ export default function PersonalInfoScreen() {
         <Input
           label='Name'
           placeholder='Enter your name'
-          value={formData.name}
+          value={signupStore.name}
           onChangeText={updateFormData('name')}
           error={errors.name}
           required
@@ -245,7 +282,7 @@ export default function PersonalInfoScreen() {
         <Input
           label='Surname'
           placeholder='Enter your surname'
-          value={formData.surname}
+          value={signupStore.surname}
           onChangeText={updateFormData('surname')}
           error={errors.surname}
           required
@@ -256,12 +293,12 @@ export default function PersonalInfoScreen() {
           label='Date of Birth'
           placeholder='Select date of birth'
           type='date'
-          value={formData.dob}
+          value={signupStore.dob}
           onDateTimeChange={updateFormData('dob')}
           error={errors.dob}
           required
-          maximumDate={new Date()} // Can't select future dates
-          minimumDate={new Date('1900-01-01')} // Reasonable minimum date
+          maximumDate={new Date()}
+          minimumDate={new Date('1900-01-01')}
           style={styles.input}
         />
 
@@ -269,7 +306,7 @@ export default function PersonalInfoScreen() {
           label="Gender"
           placeholder='Select gender'
           options={GENDER_OPTIONS}
-          value={formData.gender as string}
+          value={signupStore.gender as string}
           onSelectionChange={updateFormData('gender')}
           error={errors.gender}
           required
@@ -279,7 +316,7 @@ export default function PersonalInfoScreen() {
         <Input
           label='Email'
           placeholder='Enter your email'
-          value={formData.email}
+          value={signupStore.email}
           onChangeText={updateFormData('email')}
           error={errors.email}
           required
@@ -291,7 +328,7 @@ export default function PersonalInfoScreen() {
         <Input
           label='Confirm Email'
           placeholder='Confirm your email'
-          value={formData.confirmEmail}
+          value={signupStore.confirmEmail}
           onChangeText={updateFormData('confirmEmail')}
           error={errors.confirmEmail}
           required
@@ -306,13 +343,8 @@ export default function PersonalInfoScreen() {
         <View style={styles.checkboxSection}>
           {/* Terms & Conditions CheckBox */}
           <CheckBox
-            checked={agreeTerms}
-            onPress={() => {
-              setAgreeTerms(!agreeTerms);
-              if (errors.agreements) {
-                setErrors(prev => ({ ...prev, agreements: undefined }));
-              }
-            }}
+            checked={signupStore.agreeTerms}
+            onPress={() => updateAgreement('agreeTerms')(!signupStore.agreeTerms)}
             theme={theme}
             style={styles.checkboxItem}
           >
@@ -329,13 +361,8 @@ export default function PersonalInfoScreen() {
 
           {/* Privacy Policy CheckBox */}
           <CheckBox
-            checked={agreePrivacy}
-            onPress={() => {
-              setAgreePrivacy(!agreePrivacy);
-              if (errors.agreements) {
-                setErrors(prev => ({ ...prev, agreements: undefined }));
-              }
-            }}
+            checked={signupStore.agreePrivacy}
+            onPress={() => updateAgreement('agreePrivacy')(!signupStore.agreePrivacy)}
             theme={theme}
             style={styles.checkboxItem}
           >
@@ -352,8 +379,8 @@ export default function PersonalInfoScreen() {
 
           {/* Marketing Communications CheckBox */}
           <CheckBox
-            checked={agreeMarketing}
-            onPress={() => setAgreeMarketing(!agreeMarketing)}
+            checked={signupStore.agreeMarketing}
+            onPress={() => updateAgreement('agreeMarketing')(!signupStore.agreeMarketing)}
             theme={theme}
             style={styles.checkboxItem}
           >
@@ -376,15 +403,15 @@ export default function PersonalInfoScreen() {
             variant="outline" 
             title="Cancel" 
             onPress={handleBack} 
-            disabled={isSubmitting || isUploading}
+            disabled={signupStore.isSubmitting || isUploading}
           />
           <View style={{ flex: 1, marginLeft: theme.spacing.sm }}>
             <Button
               variant="primary"
               fullWidth
-              title={isSubmitting ? "Saving..." : "Continue"}
-              onPress={handleContinue}
-              loading={isSubmitting}
+              title={signupStore.isSubmitting ? "Creating Account..." : "Complete Signup"}
+              onPress={handleCompleteSignup}
+              loading={signupStore.isSubmitting}
               disabled={isUploading}
             />
           </View>

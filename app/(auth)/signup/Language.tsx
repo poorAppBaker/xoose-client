@@ -1,3 +1,4 @@
+// app/(auth)/signup/Language.tsx
 import React, { useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -8,6 +9,7 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import DefaultLayout from '@/components/layout/DefaultLayout';
 import Button from '@/components/common/Button';
 import { Country } from '@/components/common/PhoneNumberInput';
+import { useSignupStore } from '@/store/signupStore';
 
 const LANGUAGE_COUNTRIES = [
   { name: 'Portugal', code: 'PT', dialCode: '+351', format: '### ### ###' },
@@ -15,22 +17,28 @@ const LANGUAGE_COUNTRIES = [
   { name: 'United States', code: 'US', dialCode: '+1', format: '(###) ###-####' },
   { name: 'France', code: 'FR', dialCode: '+33', format: '## ## ## ## ##' },
   { name: 'Germany', code: 'DE', dialCode: '+49', format: '#### #######' },
-]
+];
 
 export default function LanguageScreen() {
   const { theme } = useTheme();
   const router = useRouter();
-  const [selectedLanguage, setSelectedLanguage] = useState<Country | null>(null);
+  const signupStore = useSignupStore();
+  const [selectedLanguage, setSelectedLanguage] = useState<Country | null>(
+    signupStore.selectedCountry
+  );
 
   const styles = createStyles(theme);
 
-  const handleSelectLanguage = (_country: Country) => {
-    setSelectedLanguage(selectedLanguage === _country ? null : _country);
-  }
+  const handleSelectLanguage = (country: Country) => {
+    setSelectedLanguage(selectedLanguage === country ? null : country);
+  };
 
   const handleContinue = () => {
-    router.push('/(auth)/login/PhoneNumber');
-  }
+    if (selectedLanguage) {
+      signupStore.setSelectedCountry(selectedLanguage);
+      router.push('/(auth)/signup/PhoneNumber');
+    }
+  };
 
   return (
     <DefaultLayout scrollable>
@@ -48,38 +56,35 @@ export default function LanguageScreen() {
         </View>
 
         <View style={styles.languageList}>
-          {
-            LANGUAGE_COUNTRIES.map((country) => (
-              <TouchableOpacity
-                key={country.code}
-                style={[
-                  styles.languageItem,
-                  selectedLanguage?.code === country.code && styles.languageItemSelected
-                ]}
-                onPress={() => handleSelectLanguage(country)}
-              >
-                <CountryFlag
-                  isoCode={country.code}
-                  size={24}
-                  style={{
-                    borderRadius: 100,
-                    width: 24,
-                  }}
-                />
-                <Text style={[
-                  styles.languageItemText,
-                  selectedLanguage?.code === country.code && styles.languageItemTextSelected
-                ]}>
-                  {country.name}
-                </Text>
-              </TouchableOpacity>
-            ))
-          }
+          {LANGUAGE_COUNTRIES.map((country) => (
+            <TouchableOpacity
+              key={country.code}
+              style={[
+                styles.languageItem,
+                selectedLanguage?.code === country.code && styles.languageItemSelected
+              ]}
+              onPress={() => handleSelectLanguage(country)}
+            >
+              <CountryFlag
+                isoCode={country.code}
+                size={24}
+                style={{
+                  borderRadius: 100,
+                  width: 24,
+                }}
+              />
+              <Text style={[
+                styles.languageItemText,
+                selectedLanguage?.code === country.code && styles.languageItemTextSelected
+              ]}>
+                {country.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         <View style={styles.spacer} />
 
-        {/* Footer Buttons */}
         <View style={styles.bottomContainer}>
           <Button
             variant="primary"
@@ -100,7 +105,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     backgroundColor: theme.colors.white,
     padding: theme.spacing.md,
   },
-
   textContainer: {
     marginBottom: theme.spacing.md,
   },
