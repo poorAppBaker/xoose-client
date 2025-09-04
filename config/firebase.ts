@@ -16,33 +16,36 @@ const firebaseConfig = {
   measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-// Validate that all required config values are present
+// Soft-validate required config values to avoid crashing the app on startup
 const requiredConfigKeys = [
   'apiKey',
-  'authDomain', 
+  'authDomain',
   'databaseURL',
   'projectId',
   'storageBucket',
   'messagingSenderId',
-  'appId'
-];
+  'appId',
+] as const;
 
-for (const key of requiredConfigKeys) {
-  if (!firebaseConfig[key as keyof typeof firebaseConfig]) {
-    throw new Error(`Missing required Firebase configuration: ${key}`);
+let app;
+let auth;
+let database;
+let firestore;
+
+try {
+  const missing = requiredConfigKeys.filter((key) => !firebaseConfig[key]);
+  if (missing.length > 0) {
+    console.warn(
+      `Firebase config missing keys: ${missing.join(', ')}. The app will start, but Firebase features will be disabled until env vars are set.`
+    );
   }
+
+  app = initializeApp(firebaseConfig as any);
+  auth = getAuth(app);
+  database = getDatabase(app);
+  firestore = getFirestore(app);
+} catch (e) {
+  console.error('Failed to initialize Firebase. Features depending on Firebase will not work.', e);
 }
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-
-// Initialize Auth
-const auth = getAuth(app);
-
-// Initialize Realtime Database
-const database = getDatabase(app);
-
-// Initialize Firestore (optional)
-const firestore = getFirestore(app);
 
 export { app, auth, database, firestore };
