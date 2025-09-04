@@ -9,7 +9,7 @@ export default {
     icon: "./assets/images/icon.png",
     scheme: "xooseclient",
     userInterfaceStyle: "automatic",
-    newArchEnabled: true,
+    newArchEnabled: false,
     notification: {
       "icon": "./assets/images/notification-icon.png",
       "color": "#FD8B19"
