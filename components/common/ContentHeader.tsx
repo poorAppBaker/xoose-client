@@ -25,7 +25,7 @@ export default function ContentHeader({ title = "", back = true, onBackPress, st
     }
   }
 
-  return <View style={styles.container}>
+  return <View style={[styles.container, style]}>
     {
       back &&
       <TouchableOpacity onPress={handleBackPress}>

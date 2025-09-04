@@ -1,73 +1,64 @@
 import React from 'react';
-import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 
-interface CheckboxProps {
+interface CheckBoxProps {
   checked: boolean;
   onPress: () => void;
-  label: string;
   theme: any;
-  onLinkPress?: () => void;
+  size?: number;
+  children?: React.ReactNode;
+  disabled?: boolean;
+  style?: any;
+  checkboxStyle?: any;
 }
 
-const Checkbox: React.FC<CheckboxProps> = ({
-  checked,
-  onPress,
-  label,
+const CheckBox: React.FC<CheckBoxProps> = ({ 
+  checked, 
+  onPress, 
   theme,
-  onLinkPress
+  size = 20,
+  children,
+  disabled = false,
+  style,
+  checkboxStyle
 }) => {
-  const styles = createStyles(theme);
-
-  const renderLabel = () => {
-    // Split text to identify clickable links
-    const parts = label.split(/(\bTerms & Conditions\b|\bPrivacy Policy\b)/);
-
-    return (
-      <Text style={styles.label}>
-        {parts.map((part, index) => {
-          if (part === 'Terms & Conditions' || part === 'Privacy Policy') {
-            return (
-              <Text
-                key={index}
-                style={styles.linkText}
-                onPress={onLinkPress}
-              >
-                {part}
-              </Text>
-            );
-          }
-          return part;
-        })}
-      </Text>
-    );
-  };
+  const styles = createStyles(theme, size);
 
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress}>
-      <View style={[styles.checkbox, checked && styles.checked]}>
-        {checked && <Text style={styles.checkmark}>✓</Text>}
+    <TouchableOpacity 
+      style={[styles.container, style]} 
+      onPress={onPress}
+      disabled={disabled}
+      activeOpacity={0.7}
+    >
+      <View style={[
+        styles.checkbox, 
+        checked && styles.checked,
+        disabled && styles.disabled,
+        checkboxStyle
+      ]}>
+        {checked && <View style={styles.checkmark} />}
       </View>
-      <View style={styles.labelContainer}>
-        {renderLabel()}
-      </View>
+      {children && (
+        <View style={styles.childrenContainer}>
+          {children}
+        </View>
+      )}
     </TouchableOpacity>
   );
 };
 
-const createStyles = (theme: any) => StyleSheet.create({
+const createStyles = (theme: any, size: number) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: theme.spacing.md,
   },
   checkbox: {
-    width: 20,
-    height: 20,
+    width: size,
+    height: size,
     borderWidth: 2,
     borderColor: theme.colors.gray300 || '#D1D5DB',
     borderRadius: 4,
-    marginRight: theme.spacing.sm,
-    marginTop: 2,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
@@ -76,23 +67,23 @@ const createStyles = (theme: any) => StyleSheet.create({
     backgroundColor: theme.colors.blue500 || '#3B82F6',
     borderColor: theme.colors.blue500 || '#3B82F6',
   },
+  disabled: {
+    opacity: 0.5,
+  },
   checkmark: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
+    width: size * 0.4,
+    height: size * 0.2,
+    borderLeftWidth: 2,
+    borderBottomWidth: 2,
+    borderColor: 'white',
+    transform: [{ rotate: '-45deg' }],
+    marginTop: -size * 0.1,
   },
-  labelContainer: {
+  childrenContainer: {
     flex: 1,
-  },
-  label: {
-    fontSize: 14,
-    color: theme.colors.gray700 || '#374151',
-    lineHeight: 20,
-  },
-  linkText: {
-    color: theme.colors.blue500 || '#3B82F6',
-    textDecorationLine: 'underline',
+    marginLeft: theme.spacing.sm,
+    marginTop: 2,
   },
 });
 
-export default Checkbox;
+export default CheckBox;
