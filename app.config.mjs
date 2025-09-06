@@ -119,7 +119,7 @@ export default {
           }
         }
       ],
-      // Image picker plugin (you have this installed)
+      // Image picker plugin
       [
         "expo-image-picker",
         {
@@ -127,14 +127,14 @@ export default {
           "cameraPermission": "The app needs access to your camera to let you take photos for your profile and focus sessions."
         }
       ],
-      // Document picker plugin (you have this installed)
+      // Document picker plugin
       [
         "expo-document-picker",
         {
           "iCloudContainerEnvironment": "Production"
         }
       ],
-      // Notifications plugin (you have this installed)
+      // Notifications plugin
       [
         "expo-notifications",
         {
@@ -143,23 +143,17 @@ export default {
           "defaultChannel": "default"
         }
       ],
-      // // firebase
-      // "@react-native-firebase/app",
-      // [
-      //   "@react-native-firebase/auth",
-      //   {
-      //     "android_client_id": process.env.EXPO_PUBLIC_FIREBASE_ANDROID_CLIENT_ID,
-      //     "ios_client_id": process.env.EXPO_PUBLIC_FIREBASE_IOS_CLIENT_ID
-      //   }
-      // ],
-      // "@react-native-firebase/firestore",
-      // "@react-native-firebase/storage",
-      // [
-      //   "@react-native-firebase/messaging",
-      //   {
-      //     "ios_foreground_presentation_options": ["badge", "sound", "banner", "list"]
-      //   }
-      // ]
+      // React Native Firebase plugins - using compatible versions
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      "@react-native-firebase/firestore",
+      "@react-native-firebase/storage",
+      [
+        "@react-native-firebase/messaging",
+        {
+          "ios_foreground_presentation_options": ["badge", "sound", "banner", "list"]
+        }
+      ]
     ],
     experiments: {
       typedRoutes: true
@@ -176,7 +170,6 @@ export default {
       FIREBASE_STORAGE_BUCKET: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
       FIREBASE_MESSAGING_SENDER_ID: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
       FIREBASE_APP_ID: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
-      FIREBASE_MEASUREMENT_ID: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID,
       FIREBASE_API_KEY: process.env.EXPO_PUBLIC_FIREBASE_API_KEY
     }
   }

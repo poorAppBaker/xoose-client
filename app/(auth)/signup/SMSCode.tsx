@@ -64,13 +64,13 @@ export default function SMSCodeScreen() {
     try {
       signupStore.setVerifyingCode(true);
       signupStore.setError(null);
-
+      
+      console.log('Verifying code:', code);
+      console.log('Verification ID:', signupStore.verificationId);
       // Note: We don't actually sign in yet, just verify the code is valid
       // We'll complete the signup in the PersonalInfo screen
-      await authService.verifyPhoneCode(signupStore.verificationId, code, {
-        role: 'worker' // Default role, can be changed later
-      });
-
+      await authService.verifyPhoneCodeForSignup(signupStore.verificationId, code);
+      console.log("VERIFIED!!!!!!");
       // If verification succeeds, navigate to PersonalInfo
       router.push('/(auth)/signup/PersonalInfo');
 
@@ -106,8 +106,7 @@ export default function SMSCodeScreen() {
       signupStore.setSendingCode(true);
       signupStore.setError(null);
       
-      // Reinitialize reCAPTCHA and send new code
-      authService.initializeRecaptcha();
+      // Send new code (reCAPTCHA handled automatically)
       const newVerificationId = await authService.signInWithPhoneNumber(signupStore.fullPhoneNumber);
       signupStore.setVerificationId(newVerificationId);
       
@@ -152,8 +151,7 @@ export default function SMSCodeScreen() {
   return (
     <DefaultLayout scrollable showKeyboardAvoidance={false}>
       <View style={styles.container}>
-        {/* Hidden reCAPTCHA container for resend */}
-        <View id="recaptcha-container" style={{ height: 0, overflow: 'hidden' }} />
+        {/* reCAPTCHA handled automatically by React Native Firebase */}
         
         <ContentHeader title='Enter SMS Code' />
 

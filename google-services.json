@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "1071866663241",
-    "project_id": "xoose-c868b",
-    "storage_bucket": "xoose-c868b.firebasestorage.app"
+    "project_number": "562905311636",
+    "project_id": "chooze-7e193",
+    "storage_bucket": "chooze-7e193.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1071866663241:android:802e5154f17547ce278a98",
+        "mobilesdk_app_id": "1:562905311636:android:747d2a7abc26d7f2050781",
         "android_client_info": {
           "package_name": "com.xoose.client"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBR8mOKR6O4R7NxE7x3LLYrt2q436nXk4s"
+          "current_key": "AIzaSyDq9RkJAbyQuvN3Q0tc0hKrL4SPCXrxoDw"
         }
       ],
       "services": {

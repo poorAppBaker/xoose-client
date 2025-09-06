@@ -1,20 +1,5 @@
-// services/realtimeService.ts
-import { 
-  ref, 
-  push, 
-  set, 
-  get, 
-  child, 
-  onValue, 
-  off, 
-  query, 
-  orderByChild, 
-  equalTo,
-  limitToLast,
-  update,
-  remove
-} from 'firebase/database';
-import { database } from '../config/firebase';
+// services/realtimeService.ts - React Native Firebase version
+import database from '@react-native-firebase/database';
 
 class RealtimeService {
   // Generic methods for any collection
@@ -22,8 +7,8 @@ class RealtimeService {
   // Create a new document
   async create<T>(path: string, data: T): Promise<string> {
     try {
-      const newRef = push(ref(database, path));
-      await set(newRef, {
+      const newRef = database().ref(path).push();
+      await newRef.set({
         ...data,
         id: newRef.key,
         createdAt: new Date().toISOString(),
@@ -38,7 +23,7 @@ class RealtimeService {
   // Get a single document
   async get<T>(path: string): Promise<T | null> {
     try {
-      const snapshot = await get(ref(database, path));
+      const snapshot = await database().ref(path).once('value');
       return snapshot.val();
     } catch (error) {
       throw error;
@@ -48,7 +33,7 @@ class RealtimeService {
   // Get all documents from a path
   async getAll<T>(path: string): Promise<T[]> {
     try {
-      const snapshot = await get(ref(database, path));
+      const snapshot = await database().ref(path).once('value');
       const data = snapshot.val();
       
       if (!data) return [];
@@ -62,7 +47,7 @@ class RealtimeService {
   // Update a document
   async update<T>(path: string, updates: Partial<T>): Promise<void> {
     try {
-      await update(ref(database, path), {
+      await database().ref(path).update({
         ...updates,
         updatedAt: new Date().toISOString()
       });
@@ -74,7 +59,7 @@ class RealtimeService {
   // Delete a document
   async delete(path: string): Promise<void> {
     try {
-      await remove(ref(database, path));
+      await database().ref(path).remove();
     } catch (error) {
       throw error;
     }
@@ -83,8 +68,11 @@ class RealtimeService {
   // Query documents
   async query<T>(path: string, orderBy: string, value: any): Promise<T[]> {
     try {
-      const q = query(ref(database, path), orderByChild(orderBy), equalTo(value));
-      const snapshot = await get(q);
+      const snapshot = await database()
+        .ref(path)
+        .orderByChild(orderBy)
+        .equalTo(value)
+        .once('value');
       const data = snapshot.val();
       
       if (!data) return [];
@@ -97,29 +85,29 @@ class RealtimeService {
 
   // Listen to real-time updates
   listen<T>(path: string, callback: (data: T | null) => void): () => void {
-    const dbRef = ref(database, path);
+    const dbRef = database().ref(path);
     
-    const unsubscribe = onValue(dbRef, (snapshot) => {
+    const unsubscribe = dbRef.on('value', (snapshot) => {
       const data = snapshot.val();
       callback(data);
     });
 
     // Return unsubscribe function
-    return () => off(dbRef, 'value', unsubscribe);
+    return () => dbRef.off('value', unsubscribe);
   }
 
   // Listen to a collection
   listenToCollection<T>(path: string, callback: (data: T[]) => void): () => void {
-    const dbRef = ref(database, path);
+    const dbRef = database().ref(path);
     
-    const unsubscribe = onValue(dbRef, (snapshot) => {
+    const unsubscribe = dbRef.on('value', (snapshot) => {
       const data = snapshot.val();
       const items = data ? Object.values(data) as T[] : [];
       callback(items);
     });
 
     // Return unsubscribe function
-    return () => off(dbRef, 'value', unsubscribe);
+    return () => dbRef.off('value', unsubscribe);
   }
 
   // Specific methods for your app

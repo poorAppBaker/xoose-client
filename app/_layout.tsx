@@ -55,10 +55,9 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       // User is not signed in and not on auth screen, redirect to login
       console.log('Redirecting to login - no user');
       router.dismissAll();
-      router.replace('/(auth)/login/Language');
+      router.replace('/(auth)/signup');
     } else if (user && (inAuthGroup || segments.length as number === 0)) {
-      //       // If user is signed in and on auth screen, redirect to home
-      router.replace('/(auth)/login/Language');
+      router.replace('/(tabs)/dashboard');
     }
   }, [user, segments, isInitialized, router]);
 

@@ -1,11 +1,10 @@
 // store/authStore.ts
 import { create } from 'zustand';
-import { User } from 'firebase/auth';
 import authService, { UserData } from '../services/authService';
 
 interface AuthState {
   user: UserData | null;
-  firebaseUser: User | null;
+  firebaseUser: any | null; // Changed from User to any since we're using React Native Firebase
   isLoading: boolean;
   isInitialized: boolean;
   

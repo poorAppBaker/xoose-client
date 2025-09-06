@@ -21,14 +21,7 @@ export default function PhoneNumberScreen() {
 
   const styles = createStyles(theme);
 
-  // Initialize reCAPTCHA when component mounts
-  useEffect(() => {
-    try {
-      authService.initializeRecaptcha();
-    } catch (error) {
-      console.error('Failed to initialize reCAPTCHA:', error);
-    }
-  }, []);
+  // Note: reCAPTCHA is handled automatically by React Native Firebase
 
   const handleBack = () => {
     router.back();
@@ -91,8 +84,7 @@ export default function PhoneNumberScreen() {
   return (
     <DefaultLayout scrollable showKeyboardAvoidance={false}>
       <View style={styles.container}>
-        {/* Hidden reCAPTCHA container */}
-        <View id="recaptcha-container" style={{ height: 0, overflow: 'hidden' }} />
+        {/* reCAPTCHA handled automatically by React Native Firebase */}
         
         <ContentHeader title='Enter Your Phone Number' />
 

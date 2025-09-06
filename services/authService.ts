@@ -1,23 +1,7 @@
-// services/authService.ts
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged,
-  User,
-  updateProfile,
-  sendPasswordResetEmail,
-  GoogleAuthProvider,
-  signInWithCredential,
-  AuthCredential,
-  PhoneAuthProvider,
-  signInWithPhoneNumber,
-  RecaptchaVerifier,
-  ConfirmationResult,
-  updateEmail
-} from 'firebase/auth';
-import { ref, set, get, child, update } from 'firebase/database';
-import { auth, database } from '../config/firebase';
+// services/authService.ts - React Native Firebase version
+import auth from '@react-native-firebase/auth';
+import database from '@react-native-firebase/database';
+import firestore from '@react-native-firebase/firestore';
 
 export interface UserData {
   _id: string;
@@ -42,42 +26,17 @@ export interface UserData {
 }
 
 class AuthService {
-  private recaptchaVerifier: RecaptchaVerifier | null = null;
   private pendingCredential: any = null;
-
-  // Initialize reCAPTCHA for phone auth
-  initializeRecaptcha(containerId: string = 'recaptcha-container') {
-    try {
-      if (this.recaptchaVerifier) {
-        this.recaptchaVerifier.clear();
-      }
-      
-      this.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
-        size: 'invisible',
-        callback: () => {
-          console.log('reCAPTCHA solved');
-        },
-        'expired-callback': () => {
-          console.log('reCAPTCHA expired');
-        }
-      });
-
-      return this.recaptchaVerifier;
-    } catch (error) {
-      console.error('Failed to initialize reCAPTCHA:', error);
-      throw error;
-    }
-  }
 
   // Sign up with email and password
   async signUp(email: string, password: string, userData: Partial<UserData>) {
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await auth().createUserWithEmailAndPassword(email, password);
       const user = userCredential.user;
 
       // Update user profile
       if (userData.displayName) {
-        await updateProfile(user, {
+        await user.updateProfile({
           displayName: userData.displayName
         });
       }
@@ -93,7 +52,7 @@ class AuthService {
         ...userData
       };
 
-      await set(ref(database, `users/${user.uid}`), userDataToSave);
+      await database().ref(`users/${user.uid}`).set(userDataToSave);
 
       return { user, userData: userDataToSave };
     } catch (error) {
@@ -104,14 +63,14 @@ class AuthService {
   // Sign in with email and password
   async signIn(email: string, password: string) {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await auth().signInWithEmailAndPassword(email, password);
       const user = userCredential.user;
 
       // Update last login time
       await this.updateUserData(user.uid, { lastLoginAt: new Date().toISOString() });
 
       // Get user data from database
-      const userDataSnapshot = await get(child(ref(database), `users/${user.uid}`));
+      const userDataSnapshot = await database().ref(`users/${user.uid}`).once('value');
       const userData = userDataSnapshot.val();
 
       return { user, userData };
@@ -120,32 +79,18 @@ class AuthService {
     }
   }
 
-  // Send phone verification code
+  // Send phone verification code using React Native Firebase
   async signInWithPhoneNumber(phoneNumber: string): Promise<string> {
     try {
-      if (!this.recaptchaVerifier) {
-        throw new Error('reCAPTCHA not initialized. Call initializeRecaptcha() first.');
-      }
-
       console.log('Sending verification code to:', phoneNumber);
       
-      const confirmationResult = await signInWithPhoneNumber(
-        auth, 
-        phoneNumber, 
-        this.recaptchaVerifier
-      );
+      // React Native Firebase handles reCAPTCHA automatically
+      const confirmation = await auth().signInWithPhoneNumber(phoneNumber);
       
       console.log('Verification code sent successfully');
-      return confirmationResult.verificationId;
+      return confirmation.verificationId;
     } catch (error: any) {
       console.error('Failed to send verification code:', error);
-      
-      // Clean up reCAPTCHA on error
-      if (this.recaptchaVerifier) {
-        this.recaptchaVerifier.clear();
-        this.recaptchaVerifier = null;
-      }
-      
       throw error;
     }
   }
@@ -153,7 +98,7 @@ class AuthService {
   // Verify phone code and complete authentication
   async verifyPhoneCode(verificationId: string, code: string, userData?: Partial<UserData>) {
     try {
-      const credential = PhoneAuthProvider.credential(verificationId, code);
+      const credential = auth.PhoneAuthProvider.credential(verificationId, code);
       
       // If this is being called during signup completion and we don't need the code
       // (because it was already verified), we can skip the code verification
@@ -162,14 +107,14 @@ class AuthService {
       if (code === '') {
         // This means we're completing signup and code was already verified
         if (this.pendingCredential) {
-          userCredential = await signInWithCredential(auth, this.pendingCredential);
+          userCredential = await auth().signInWithCredential(this.pendingCredential);
           this.pendingCredential = null;
         } else {
           throw new Error('No pending credential found');
         }
       } else {
         // Normal code verification flow
-        userCredential = await signInWithCredential(auth, credential);
+        userCredential = await auth().signInWithCredential(credential);
       }
       
       const user = userCredential.user;
@@ -197,7 +142,7 @@ class AuthService {
           ...userData
         };
         
-        await set(ref(database, `users/${user.uid}`), userDataToSave);
+        await database().ref(`users/${user.uid}`).set(userDataToSave);
         existingUserData = userDataToSave;
       } else {
         // Update last login for existing user
@@ -214,14 +159,14 @@ class AuthService {
   // Alternative method for storing credential temporarily during signup flow
   async verifyPhoneCodeForSignup(verificationId: string, code: string): Promise<boolean> {
     try {
-      const credential = PhoneAuthProvider.credential(verificationId, code);
+      const credential = auth.PhoneAuthProvider.credential(verificationId, code);
       
       // Test the credential without signing in
-      const userCredential = await signInWithCredential(auth, credential);
+      const userCredential = await auth().signInWithCredential(credential);
       
       // Store credential for later use and sign out immediately
       this.pendingCredential = credential;
-      await signOut(auth);
+      await auth().signOut();
       
       return true;
     } catch (error: any) {
@@ -237,13 +182,13 @@ class AuthService {
         throw new Error('No pending phone credential found');
       }
 
-      const userCredential = await signInWithCredential(auth, this.pendingCredential);
+      const userCredential = await auth().signInWithCredential(this.pendingCredential);
       const user = userCredential.user;
 
       // Add email if provided
       if (userData.email && userData.email !== user.email) {
         try {
-          await updateEmail(user, userData.email);
+          await user.updateEmail(userData.email);
         } catch (emailError) {
           console.warn('Failed to update email:', emailError);
         }
@@ -251,7 +196,7 @@ class AuthService {
 
       // Update profile
       if (userData.displayName) {
-        await updateProfile(user, {
+        await user.updateProfile({
           displayName: userData.displayName
         });
       }
@@ -274,7 +219,7 @@ class AuthService {
         signupCompletedAt: new Date().toISOString(),
       };
 
-      await set(ref(database, `users/${user.uid}`), userDataToSave);
+      await database().ref(`users/${user.uid}`).set(userDataToSave);
 
       // Clear pending credential
       this.pendingCredential = null;
@@ -290,11 +235,7 @@ class AuthService {
   // Sign out
   async signOut() {
     try {
-      await signOut(auth);
-      if (this.recaptchaVerifier) {
-        this.recaptchaVerifier.clear();
-        this.recaptchaVerifier = null;
-      }
+      await auth().signOut();
       this.pendingCredential = null;
     } catch (error) {
       throw error;
@@ -304,10 +245,10 @@ class AuthService {
   // Get current user data
   async getCurrentUserData(): Promise<UserData | null> {
     try {
-      const user = auth.currentUser;
+      const user = auth().currentUser;
       if (!user) return null;
 
-      const userDataSnapshot = await get(child(ref(database), `users/${user.uid}`));
+      const userDataSnapshot = await database().ref(`users/${user.uid}`).once('value');
       return userDataSnapshot.val();
     } catch (error) {
       console.error('Error getting user data:', error);
@@ -318,7 +259,7 @@ class AuthService {
   // Update user data
   async updateUserData(userId: string, updates: Partial<UserData>) {
     try {
-      await update(ref(database, `users/${userId}`), updates);
+      await database().ref(`users/${userId}`).update(updates);
     } catch (error) {
       throw error;
     }
@@ -327,15 +268,15 @@ class AuthService {
   // Reset password
   async resetPassword(email: string) {
     try {
-      await sendPasswordResetEmail(auth, email);
+      await auth().sendPasswordResetEmail(email);
     } catch (error) {
       throw error;
     }
   }
 
   // Listen to auth state changes
-  onAuthStateChanged(callback: (user: User | null, userData: UserData | null) => void): () => void {
-    return onAuthStateChanged(auth, async (user) => {
+  onAuthStateChanged(callback: (user: any | null, userData: UserData | null) => void): () => void {
+    return auth().onAuthStateChanged(async (user) => {
       if (user) {
         try {
           const userData = await this.getCurrentUserData();
@@ -351,9 +292,9 @@ class AuthService {
   }
 
   // Sign in with Google (requires additional setup)
-  async signInWithGoogle(credential: AuthCredential) {
+  async signInWithGoogle(credential: any) {
     try {
-      const userCredential = await signInWithCredential(auth, credential);
+      const userCredential = await auth().signInWithCredential(credential);
       const user = userCredential.user;
 
       // Check if user exists in database
@@ -369,7 +310,7 @@ class AuthService {
           createdAt: new Date().toISOString(),
           lastLoginAt: new Date().toISOString(),
         };
-        await set(ref(database, `users/${user.uid}`), userData);
+        await database().ref(`users/${user.uid}`).set(userData);
       } else {
         // Update last login
         await this.updateUserData(user.uid, { lastLoginAt: new Date().toISOString() });
@@ -383,10 +324,6 @@ class AuthService {
 
   // Clean up resources
   cleanup() {
-    if (this.recaptchaVerifier) {
-      this.recaptchaVerifier.clear();
-      this.recaptchaVerifier = null;
-    }
     this.pendingCredential = null;
   }
 }
