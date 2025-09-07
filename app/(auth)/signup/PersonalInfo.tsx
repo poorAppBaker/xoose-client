@@ -191,9 +191,9 @@ export default function PersonalInfoScreen() {
         name: signupStore.name,
         surname: signupStore.surname,
         dateOfBirth: signupStore.dob?.toISOString(),
-        gender: signupStore.gender,
+        gender: signupStore.gender || undefined,
         email: signupStore.email,
-        profileImage: signupStore.profileImage,
+        profileImage: signupStore.profileImage || undefined,
         agreements: {
           terms: signupStore.agreeTerms,
           privacy: signupStore.agreePrivacy,

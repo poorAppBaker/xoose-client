@@ -44,7 +44,7 @@ class AuthService {
       // Save user data to Realtime Database
       const userDataToSave: UserData = {
         _id: user.uid,
-        email: user.email!,
+        email: user.email || '',
         displayName: userData.displayName || '',
         role: userData.role || 'worker',
         createdAt: new Date().toISOString(),
@@ -88,6 +88,11 @@ class AuthService {
       const confirmation = await auth().signInWithPhoneNumber(phoneNumber);
       
       console.log('Verification code sent successfully');
+      
+      if (!confirmation.verificationId) {
+        throw new Error('Failed to get verification ID from confirmation');
+      }
+      
       return confirmation.verificationId;
     } catch (error: any) {
       console.error('Failed to send verification code:', error);
@@ -304,7 +309,7 @@ class AuthService {
         // Create new user data
         userData = {
           _id: user.uid,
-          email: user.email!,
+          email: user.email || '',
           displayName: user.displayName || '',
           role: 'worker',
           createdAt: new Date().toISOString(),
