@@ -1,5 +1,6 @@
 // store/authStore.ts
 import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import authService, { UserData } from '../services/authService';
 
 interface AuthState {
@@ -7,17 +8,21 @@ interface AuthState {
   firebaseUser: any | null; // Changed from User to any since we're using React Native Firebase
   isLoading: boolean;
   isInitialized: boolean;
+  isFirstLaunch: boolean;
   
   // Actions
-  initialize: () => void;
+  initialize: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, userData: Partial<UserData>) => Promise<void>;
   signInWithPhone: (phoneNumber: string) => Promise<string>; // Returns verification ID
   verifyPhoneCode: (verificationId: string, code: string, userData?: Partial<UserData>) => Promise<void>;
+  verifyPhoneCodeForLogin: (verificationId: string, code: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateUserData: (updates: Partial<UserData>) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   setLoading: (loading: boolean) => void;
+  checkFirstLaunch: () => Promise<boolean>;
+  markFirstLaunchComplete: () => Promise<void>;
 }
 
 const useAuthStore = create<AuthState>((set, get) => {
@@ -28,13 +33,17 @@ const useAuthStore = create<AuthState>((set, get) => {
     firebaseUser: null,
     isLoading: true,
     isInitialized: false,
+    isFirstLaunch: true,
 
-    initialize: () => {
+    initialize: async () => {
       if (unsubscribeAuth) {
         unsubscribeAuth(); // Clean up existing listener
       }
 
       set({ isLoading: true });
+
+      // Check first launch status
+      await get().checkFirstLaunch();
 
       // Set up auth state listener
       unsubscribeAuth = authService.onAuthStateChanged((firebaseUser, userData) => {
@@ -92,6 +101,20 @@ const useAuthStore = create<AuthState>((set, get) => {
       }
     },
 
+    verifyPhoneCodeForLogin: async (verificationId: string, code: string) => {
+      try {
+        console.log('Starting phone verification for login...');
+        set({ isLoading: true });
+        const { user, userData } = await authService.verifyPhoneCodeForLogin(verificationId, code);
+        console.log('Phone verification successful:', { userId: user.uid, userDataExists: !!userData });
+        set({ firebaseUser: user, user: userData, isLoading: false });
+      } catch (error) {
+        console.error('Phone verification failed:', error);
+        set({ isLoading: false });
+        throw error;
+      }
+    },
+
     signOut: async () => {
       try {
         set({ isLoading: true });
@@ -125,6 +148,28 @@ const useAuthStore = create<AuthState>((set, get) => {
 
     setLoading: (loading: boolean) => {
       set({ isLoading: loading });
+    },
+
+    checkFirstLaunch: async () => {
+      try {
+        const hasLaunched = await AsyncStorage.getItem('hasLaunched');
+        const isFirstLaunch = hasLaunched === null;
+        set({ isFirstLaunch });
+        return isFirstLaunch;
+      } catch (error) {
+        console.error('Error checking first launch:', error);
+        set({ isFirstLaunch: true });
+        return true;
+      }
+    },
+
+    markFirstLaunchComplete: async () => {
+      try {
+        await AsyncStorage.setItem('hasLaunched', 'true');
+        set({ isFirstLaunch: false });
+      } catch (error) {
+        console.error('Error marking first launch complete:', error);
+      }
     }
   };
 });

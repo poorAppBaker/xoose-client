@@ -204,13 +204,13 @@ export default function PersonalInfoScreen() {
       };
 
       // This will complete the phone auth and create the user account
-      const result = await authService.verifyPhoneCode(
-        signupStore.verificationId, 
-        '', // We already verified the code in SMS step
-        userData
-      );
+      // const result = await authService.verifyPhoneCode(
+      //   signupStore.verificationId, 
+      //   '', // We already verified the code in SMS step
+      //   userData
+      // );
 
-      console.log('Signup completed successfully:', result);
+      // console.log('Signup completed successfully:', result);
       
       // Clear signup data
       signupStore.reset();

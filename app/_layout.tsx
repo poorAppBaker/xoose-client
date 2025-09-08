@@ -24,7 +24,7 @@ import SplashProvider from '@/contexts/SplashProvider';
 
 // Auth guard component
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, isLoading, isInitialized, initialize } = useAuthStore();
+  const { user, isLoading, isInitialized, isFirstLaunch, initialize } = useAuthStore();
   // const { pushTokenInfo } = usePushNotifications();
   const segments = useSegments();
   const router = useRouter();
@@ -52,14 +52,22 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     const inAuthGroup = segments[0] === '(auth)';
 
     if (!user && !inAuthGroup) {
-      // User is not signed in and not on auth screen, redirect to login
-      console.log('Redirecting to login - no user');
-      router.dismissAll();
-      router.replace('/(auth)/signup');
+      // Check if it's first launch - show onboarding
+      if (isFirstLaunch) {
+        console.log('Redirecting to onboarding - first launch');
+        router.dismissAll();
+        router.replace('/(auth)/onboarding');
+      } else {
+        // User is not signed in and not on auth screen, redirect to signup
+        // console.log('Redirecting to signup - no user');
+        // router.dismissAll();
+        // router.replace('/(auth)/signup');
+        router.replace('/(tabs)/dashboard');
+      }
     } else if (user && (inAuthGroup || segments.length as number === 0)) {
       router.replace('/(tabs)/dashboard');
     }
-  }, [user, segments, isInitialized, router]);
+  }, [user, segments, isInitialized, isFirstLaunch, router]);
 
   if (isLoading) {
     return <Loading />;

@@ -327,6 +327,52 @@ class AuthService {
     }
   }
 
+  // Verify phone code for login (existing users only)
+  async verifyPhoneCodeForLogin(verificationId: string, code: string) {
+    try {
+      const credential = auth.PhoneAuthProvider.credential(verificationId, code);
+      const userCredential = await auth().signInWithCredential(credential);
+      const user = userCredential.user;
+
+      // Get existing user data
+      const existingUserData = await this.getCurrentUserData();
+      
+      if (!existingUserData || !existingUserData.signupCompletedAt) {
+        // User doesn't exist or hasn't completed signup, sign them out
+        await auth().signOut();
+        throw new Error('No account found with this phone number. Please sign up first.');
+      }
+
+      // Update last login for existing user
+      await this.updateUserData(user.uid, { lastLoginAt: new Date().toISOString() });
+
+      return { user, userData: existingUserData };
+    } catch (error: any) {
+      console.error('Phone verification for login failed:', error);
+      throw error;
+    }
+  }
+
+  // Check if phone number is already verified
+  async isPhoneNumberVerified(phoneNumber: string): Promise<boolean> {
+    try {
+      // Check if there's an existing user with this phone number
+      const usersSnapshot = await database().ref('users').orderByChild('phoneNumber').equalTo(phoneNumber).once('value');
+      const users = usersSnapshot.val();
+      
+      if (users) {
+        // Phone number exists, check if it's verified
+        const userData = Object.values(users)[0] as UserData;
+        return !!userData.signupCompletedAt;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error checking phone verification:', error);
+      return false;
+    }
+  }
+
   // Clean up resources
   cleanup() {
     this.pendingCredential = null;
