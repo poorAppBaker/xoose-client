@@ -103,13 +103,18 @@ const Sidebar: React.FC<SidebarProps> = ({
     setShowLogoutModal(false);
   };
 
+  const handleConfirmLogout = () => {
+    // This will be handled by the LogoutModal itself
+    setShowLogoutModal(false);
+  };
+
   return (
     <>
       {/* Logout Confirmation Modal - Always rendered */}
       <LogoutModal
         visible={showLogoutModal}
         onClose={handleCloseLogoutModal}
-        onConfirm={handleLogout}
+        onConfirm={handleConfirmLogout}
       />
 
       {/* Sidebar - Only render when visible */}

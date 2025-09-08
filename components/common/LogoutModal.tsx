@@ -1,6 +1,7 @@
 // components/common/LogoutModal.tsx
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import Modal from './Modal';
 import Button from './Button';
@@ -14,12 +15,20 @@ interface LogoutModalProps {
 
 const LogoutModal: React.FC<LogoutModalProps> = ({ visible, onClose, onConfirm }) => {
   const { theme } = useTheme();
+  const router = useRouter();
   const { signOut } = useAuthStore();
   const styles = createStyles(theme);
 
-  const handleConfirm = () => {
-    onConfirm();
-    onClose();
+  const handleConfirm = async () => {
+    try {
+      onClose(); // Close modal first
+      // await signOut(); // Sign out user
+      // Navigate to login phone number screen
+      router.push('/(auth)/login/PhoneNumber');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // If logout fails, you might want to show an error message
+    }
   };
 
   return (
