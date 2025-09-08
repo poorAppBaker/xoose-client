@@ -113,41 +113,43 @@ const Sidebar: React.FC<SidebarProps> = ({
         <SafeAreaView style={styles.safeArea}>
           {/* Header Section */}
           <View style={styles.header}>
-            <View style={styles.userSection}>
-              <View style={styles.avatarContainer}>
-                {userImage ? (
-                  <Image source={{ uri: userImage }} style={styles.avatar} />
-                ) : (
-                  <View style={styles.avatarPlaceholder}>
-                    <Text style={styles.avatarText}>
-                      {userName.charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
-                )}
+            <View style={styles.headerRow}>
+              <View style={styles.userSection}>
+                <View style={styles.avatarContainer}>
+                  {userImage ? (
+                    <Image source={{ uri: userImage }} style={styles.avatar} />
+                  ) : (
+                    <View style={styles.avatarPlaceholder}>
+                      <Text style={styles.avatarText}>
+                        {userName.charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                
+                <View style={styles.userInfo}>
+                  <Text style={styles.userName}>{userName}</Text>
+                  <TouchableOpacity style={styles.viewAccountButton}>
+                    <Text style={styles.viewAccountText}>View Account</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-              
-              <View style={styles.userInfo}>
-                <Text style={styles.userName}>{userName}</Text>
-                <TouchableOpacity style={styles.viewAccountButton}>
-                  <Text style={styles.viewAccountText}>View Account</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
 
-            {/* Country Selector */}
-            <TouchableOpacity style={styles.countrySelector}>
-              <CountryFlag
-                isoCode={selectedCountry}
-                size={20}
-                style={styles.countryFlag}
-              />
-              <Text style={styles.countryText}>{selectedCountry}</Text>
-              <Ionicons 
-                name="chevron-down" 
-                size={16} 
-                color={theme.colors.gray500} 
-              />
-            </TouchableOpacity>
+              {/* Country Selector */}
+              <TouchableOpacity style={styles.countrySelector}>
+                <CountryFlag
+                  isoCode={selectedCountry}
+                  size={20}
+                  style={styles.countryFlag}
+                />
+                <Text style={styles.countryText}>{selectedCountry}</Text>
+                <Ionicons 
+                  name="chevron-down" 
+                  size={16} 
+                  color={theme.colors.gray500} 
+                />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Menu Items */}
@@ -222,10 +224,15 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.gray100,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   userSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.spacing.lg,
+    flex: 1,
   },
   avatarContainer: {
     marginRight: theme.spacing.md,
@@ -268,15 +275,16 @@ const createStyles = (theme: any) => StyleSheet.create({
   countrySelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-end',
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
     borderRadius: theme.borderRadius.sm,
     backgroundColor: theme.colors.gray50,
   },
   countryFlag: {
-    borderRadius: 10,
+    borderRadius: theme.borderRadius.full,
     marginRight: theme.spacing.xs,
+    width: 20,
+    height: 20,
   },
   countryText: {
     fontSize: 14,
