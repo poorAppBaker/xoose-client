@@ -1,9 +1,10 @@
 // components/common/Sidebar.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CountryFlag from 'react-native-country-flag';
 import { useTheme } from '../../contexts/ThemeContext';
+import LogoutModal from './LogoutModal';
 
 interface SidebarProps {
   visible: boolean;
@@ -28,9 +29,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   selectedCountry = "PT"
 }) => {
   const { theme } = useTheme();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const styles = createStyles(theme);
-
-  if (!visible) return null;
 
   const menuItems: MenuItem[] = [
     {
@@ -95,21 +95,35 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const handleLogout = () => {
-    console.log('Log out');
-    onClose();
+    setShowLogoutModal(true);
+    onClose(); // Hide sidebar when showing logout modal
+  };
+
+  const handleCloseLogoutModal = () => {
+    setShowLogoutModal(false);
   };
 
   return (
     <>
-      {/* Backdrop */}
-      <TouchableOpacity
-        style={styles.backdrop}
-        activeOpacity={1}
-        onPress={onClose}
+      {/* Logout Confirmation Modal - Always rendered */}
+      <LogoutModal
+        visible={showLogoutModal}
+        onClose={handleCloseLogoutModal}
+        onConfirm={handleLogout}
       />
-      
-      {/* Sidebar */}
-      <View style={styles.sidebar}>
+
+      {/* Sidebar - Only render when visible */}
+      {visible && (
+        <>
+          {/* Backdrop */}
+          <TouchableOpacity
+            style={styles.backdrop}
+            activeOpacity={1}
+            onPress={onClose}
+          />
+          
+          {/* Sidebar */}
+          <View style={styles.sidebar}>
         <SafeAreaView style={styles.safeArea}>
           {/* Header Section */}
           <View style={styles.header}>
@@ -190,6 +204,8 @@ const Sidebar: React.FC<SidebarProps> = ({
           </View>
         </SafeAreaView>
       </View>
+        </>
+      )}
     </>
   );
 };
