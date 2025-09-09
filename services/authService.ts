@@ -2,6 +2,7 @@
 import auth from '@react-native-firebase/auth';
 import database from '@react-native-firebase/database';
 import firestore from '@react-native-firebase/firestore';
+import storage from '@react-native-firebase/storage';
 
 export interface UserData {
   _id: string;
@@ -114,9 +115,9 @@ class AuthService {
 
   // Verify phone code and complete authentication
   async verifyPhoneCode(verificationId: string, code: string, userData?: Partial<UserData>) {
+    console.log('userData', userData);
     try {
       const credential = auth.PhoneAuthProvider.credential(verificationId, code);
-      console.log('Credential:', credential, code, verificationId);
       // If this is being called during signup completion and we don't need the code
       // (because it was already verified), we can skip the code verification
       let userCredential;
@@ -124,9 +125,7 @@ class AuthService {
       if (code === '') {
         // This means we're completing signup and code was already verified
         if (this.pendingCredential) {
-          console.log('Pending credential:', this.pendingCredential);
           userCredential = await auth().signInWithCredential(this.pendingCredential);
-          console.log('User credential1:', userCredential);
           this.pendingCredential = null;
         } else {
           throw new Error('No pending credential found');
@@ -134,15 +133,12 @@ class AuthService {
       } else {
         // Normal code verification flow
         userCredential = await auth().signInWithCredential(credential);
-        console.log('User credential2:', userCredential);
       }
       
       const user = userCredential.user;
-      console.log('User:', user);
 
       // Check if user exists in Firestore
       let existingUserData = await this.getCurrentUserData();
-      console.log('Existing user data:', existingUserData);
       
       if (!existingUserData || !existingUserData.signupCompletedAt) {
         // Create new user data for phone sign-in or complete signup
@@ -163,7 +159,6 @@ class AuthService {
           signupCompletedAt: userData?.signupCompletedAt,
           ...userData
         });
-        console.log('User data to save:', userDataToSave);
         
         await firestore().collection('users').doc(user.uid).set(userDataToSave);
         console.log('User data saved:', userDataToSave);
@@ -172,7 +167,6 @@ class AuthService {
       } else {
         // Update last login for existing user
         await this.updateUserData(user.uid, { lastLoginAt: new Date().toISOString() });
-        console.log('Existing user data updated:', existingUserData);
       }
 
       return { user, userData: existingUserData };
@@ -362,6 +356,44 @@ class AuthService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async uploadUserProfileImage(
+    userId: string,
+    options: { file?: { uri: string; type?: string; name?: string }; dataUri?: string }
+  ): Promise<string> {
+    const ts = Date.now();
+    const filename = options.file?.name ?? `profile_${ts}.jpg`;
+    const contentType = options.file?.type ?? 'image/jpeg';
+    const ref = storage().ref(`users/${userId}/profile/${filename}`);
+
+    // Choose upload method
+    if (options.file?.uri) {
+      // Ensure we strip any "file://" prefixes for Android putFile
+      const path = options.file.uri.replace('file://', '');
+      await ref.putFile(path, { contentType, cacheControl: 'public,max-age=604800' });
+    } else if (options.dataUri) {
+      await ref.putString(options.dataUri, 'data_url', {
+        contentType,
+        cacheControl: 'public,max-age=604800',
+      });
+    } else {
+      throw new Error('No image source provided');
+    }
+
+    // Get a download URL
+    const downloadURL = await ref.getDownloadURL();
+
+    // Update Firestore user doc
+    await firestore().collection('users').doc(userId).set(
+      {
+        profileImage: downloadURL,
+        lastLoginAt: new Date().toISOString(), // optional extra
+      },
+      { merge: true }
+    );
+
+    return downloadURL;
   }
 
   // Clean up resources

@@ -1,6 +1,7 @@
 // components/common/Sidebar.tsx
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import CountryFlag from 'react-native-country-flag';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -30,6 +31,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onLogout
 }) => {
   const { theme } = useTheme();
+  const router = useRouter();
   const styles = createStyles(theme);
 
   if (!visible) return null;
@@ -39,7 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       id: 'profiles',
       title: 'Profiles & Payment',
       icon: 'card-outline',
-      onPress: () => console.log('Profiles & Payment')
+      onPress: () => router.push('/(tabs)/profilepayment')
     },
     {
       id: 'rides',
