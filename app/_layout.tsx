@@ -48,7 +48,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   // }, [user?._id, pushTokenInfo]);
 
   useEffect(() => {
-    if (!isInitialized) return; // Wait for auth to initialize
+    if (!isInitialized || isLoading) return; // Wait for auth to initialize
     const inAuthGroup = segments[0] === '(auth)';
 
     if (!user && !inAuthGroup) {
@@ -72,15 +72,16 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
   return <>{children}</>;
 }
-
 export default function RootLayout() {
+  const { user } = useAuthStore();
+
   return (
     <GestureHandlerRootView>
       <SplashProvider>
         <ThemeProvider>
           <SidebarProvider
-            userName="Simon"
-            selectedCountry="PT"
+            userName={user?.displayName}
+            selectedCountry={user?.country}
           >
             <StatusBar style="auto" />
             <AuthGuard>

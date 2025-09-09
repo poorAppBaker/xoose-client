@@ -13,6 +13,7 @@ export interface UserData {
   dateOfBirth?: string;
   gender?: string;
   profileImage?: string;
+  country?: string;
   role: 'manager' | 'worker';
   createdAt: string;
   agreements?: {
@@ -27,6 +28,17 @@ export interface UserData {
 
 class AuthService {
   private pendingCredential: any = null;
+  
+  private removeUndefined<T extends Record<string, any>>(obj: T): T {
+    const cleaned: Record<string, any> = {};
+    Object.keys(obj).forEach((key) => {
+      const value = (obj as any)[key];
+      if (value !== undefined) {
+        cleaned[key] = value;
+      }
+    });
+    return cleaned as T;
+  }
 
   // Sign up with email and password
   async signUp(email: string, password: string, userData: Partial<UserData>) {
@@ -41,8 +53,8 @@ class AuthService {
         });
       }
 
-      // Save user data to Realtime Database
-      const userDataToSave: UserData = {
+      // Save user data to Firestore
+      const userDataToSave: UserData = this.removeUndefined({
         _id: user.uid,
         email: user.email || '',
         displayName: userData.displayName || '',
@@ -50,9 +62,9 @@ class AuthService {
         createdAt: new Date().toISOString(),
         lastLoginAt: new Date().toISOString(),
         ...userData
-      };
+      });
 
-      await database().ref(`users/${user.uid}`).set(userDataToSave);
+      await firestore().collection('users').doc(user.uid).set(userDataToSave);
 
       return { user, userData: userDataToSave };
     } catch (error) {
@@ -69,9 +81,9 @@ class AuthService {
       // Update last login time
       await this.updateUserData(user.uid, { lastLoginAt: new Date().toISOString() });
 
-      // Get user data from database
-      const userDataSnapshot = await database().ref(`users/${user.uid}`).once('value');
-      const userData = userDataSnapshot.val();
+      // Get user data from Firestore
+      const userDoc = await firestore().collection('users').doc(user.uid).get();
+      const userData = (userDoc.exists() ? (userDoc.data() as UserData) : null);
 
       return { user, userData };
     } catch (error) {
@@ -104,7 +116,7 @@ class AuthService {
   async verifyPhoneCode(verificationId: string, code: string, userData?: Partial<UserData>) {
     try {
       const credential = auth.PhoneAuthProvider.credential(verificationId, code);
-      
+      console.log('Credential:', credential, code, verificationId);
       // If this is being called during signup completion and we don't need the code
       // (because it was already verified), we can skip the code verification
       let userCredential;
@@ -112,7 +124,9 @@ class AuthService {
       if (code === '') {
         // This means we're completing signup and code was already verified
         if (this.pendingCredential) {
+          console.log('Pending credential:', this.pendingCredential);
           userCredential = await auth().signInWithCredential(this.pendingCredential);
+          console.log('User credential1:', userCredential);
           this.pendingCredential = null;
         } else {
           throw new Error('No pending credential found');
@@ -120,16 +134,19 @@ class AuthService {
       } else {
         // Normal code verification flow
         userCredential = await auth().signInWithCredential(credential);
+        console.log('User credential2:', userCredential);
       }
       
       const user = userCredential.user;
+      console.log('User:', user);
 
-      // Check if user exists in database
+      // Check if user exists in Firestore
       let existingUserData = await this.getCurrentUserData();
+      console.log('Existing user data:', existingUserData);
       
       if (!existingUserData || !existingUserData.signupCompletedAt) {
         // Create new user data for phone sign-in or complete signup
-        const userDataToSave: UserData = {
+        const userDataToSave: UserData = this.removeUndefined({
           _id: user.uid,
           phoneNumber: user.phoneNumber || '',
           email: userData?.email || user.email || '',
@@ -145,13 +162,17 @@ class AuthService {
           agreements: userData?.agreements,
           signupCompletedAt: userData?.signupCompletedAt,
           ...userData
-        };
+        });
+        console.log('User data to save:', userDataToSave);
         
-        await database().ref(`users/${user.uid}`).set(userDataToSave);
+        await firestore().collection('users').doc(user.uid).set(userDataToSave);
+        console.log('User data saved:', userDataToSave);
         existingUserData = userDataToSave;
+        console.log('Existing user data:', existingUserData);
       } else {
         // Update last login for existing user
         await this.updateUserData(user.uid, { lastLoginAt: new Date().toISOString() });
+        console.log('Existing user data updated:', existingUserData);
       }
 
       return { user, userData: existingUserData };
@@ -162,18 +183,33 @@ class AuthService {
   }
 
   // Alternative method for storing credential temporarily during signup flow
-  async verifyPhoneCodeForSignup(verificationId: string, code: string): Promise<boolean> {
+  async verifyPhoneCodeForSignup(verificationId: string, code: string): Promise<{ isValid: boolean; userExists: boolean; userData?: UserData }> {
     try {
       const credential = auth.PhoneAuthProvider.credential(verificationId, code);
       
       // Test the credential without signing in
       const userCredential = await auth().signInWithCredential(credential);
+      const user = userCredential.user;
+      
+      // Check if user already exists in Firestore
+      let existingUserData: UserData | null = null;
+      try {
+        existingUserData = await this.getCurrentUserData();
+      } catch (error) {
+        console.log('No existing user data found');
+      }
+      
+      const userExists = existingUserData && existingUserData.signupCompletedAt;
       
       // Store credential for later use and sign out immediately
       this.pendingCredential = credential;
       await auth().signOut();
       
-      return true;
+      return { 
+        isValid: true, 
+        userExists: !!userExists,
+        userData: existingUserData || undefined
+      };
     } catch (error: any) {
       console.error('Phone code verification failed:', error);
       throw error;
@@ -207,7 +243,7 @@ class AuthService {
       }
 
       // Save complete user data
-      const userDataToSave: UserData = {
+      const userDataToSave: UserData = this.removeUndefined({
         _id: user.uid,
         phoneNumber: user.phoneNumber || '',
         email: userData.email || user.email || '',
@@ -222,9 +258,9 @@ class AuthService {
         lastLoginAt: new Date().toISOString(),
         agreements: userData.agreements,
         signupCompletedAt: new Date().toISOString(),
-      };
+      });
 
-      await database().ref(`users/${user.uid}`).set(userDataToSave);
+      await firestore().collection('users').doc(user.uid).set(userDataToSave);
 
       // Clear pending credential
       this.pendingCredential = null;
@@ -240,6 +276,7 @@ class AuthService {
   // Sign out
   async signOut() {
     try {
+      // 
       await auth().signOut();
       this.pendingCredential = null;
     } catch (error) {
@@ -253,8 +290,8 @@ class AuthService {
       const user = auth().currentUser;
       if (!user) return null;
 
-      const userDataSnapshot = await database().ref(`users/${user.uid}`).once('value');
-      return userDataSnapshot.val();
+      const userDoc = await firestore().collection('users').doc(user.uid).get();
+      return userDoc.exists() ? (userDoc.data() as UserData) : null;
     } catch (error) {
       console.error('Error getting user data:', error);
       return null;
@@ -264,7 +301,7 @@ class AuthService {
   // Update user data
   async updateUserData(userId: string, updates: Partial<UserData>) {
     try {
-      await database().ref(`users/${userId}`).update(updates);
+      await firestore().collection('users').doc(userId).set(this.removeUndefined(updates), { merge: true });
     } catch (error) {
       throw error;
     }
@@ -307,15 +344,15 @@ class AuthService {
       
       if (!userData) {
         // Create new user data
-        userData = {
+        userData = this.removeUndefined({
           _id: user.uid,
           email: user.email || '',
           displayName: user.displayName || '',
-          role: 'worker',
+          role: 'worker' as const,
           createdAt: new Date().toISOString(),
           lastLoginAt: new Date().toISOString(),
-        };
-        await database().ref(`users/${user.uid}`).set(userData);
+        });
+        await firestore().collection('users').doc(user.uid).set(userData as UserData);
       } else {
         // Update last login
         await this.updateUserData(user.uid, { lastLoginAt: new Date().toISOString() });

@@ -5,10 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import useAuthStore from '../../store/authStore';
+import { useSidebarContext } from '../../contexts/SidebarContext';
 
 export default function DashboardScreen() {
   const { theme } = useTheme();
   const user = useAuthStore(state => state.user);
+  const { toggleSidebar } = useSidebarContext();
   const styles = createStyles(theme);
 
   return (
@@ -16,7 +18,11 @@ export default function DashboardScreen() {
       {/* Header Section */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
+          <TouchableOpacity onPress={toggleSidebar} style={styles.menuButton} activeOpacity={0.8}>
+            <Ionicons name="menu" size={28} color={theme.colors.blue500} />
+          </TouchableOpacity>
           <Text style={styles.headerTitle}>Home</Text>
+          <View style={{ width: 28 }} />
         </View>
       </View>
     </SafeAreaView>
@@ -39,6 +45,15 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  menuButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...theme.shadows.sm,
   },
   headerTitle: {
     ...theme.typography.h2,

@@ -11,6 +11,7 @@ interface SidebarProps {
   userName?: string;
   userImage?: string;
   selectedCountry?: string;
+  onLogout?: () => void;
 }
 
 interface MenuItem {
@@ -25,7 +26,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onClose,
   userName = "Simon",
   userImage,
-  selectedCountry = "PT"
+  selectedCountry,
+  onLogout
 }) => {
   const { theme } = useTheme();
   const styles = createStyles(theme);
@@ -95,9 +97,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const handleLogout = () => {
-    console.log('Log out');
-    onClose();
+    onLogout?.();
   };
+  console.log('Selected country:', selectedCountry);
 
   return (
     <>
@@ -107,47 +109,51 @@ const Sidebar: React.FC<SidebarProps> = ({
         activeOpacity={1}
         onPress={onClose}
       />
-      
+
       {/* Sidebar */}
       <View style={styles.sidebar}>
         <SafeAreaView style={styles.safeArea}>
           {/* Header Section */}
           <View style={styles.header}>
-            <View style={styles.userSection}>
-              <View style={styles.avatarContainer}>
-                {userImage ? (
-                  <Image source={{ uri: userImage }} style={styles.avatar} />
-                ) : (
-                  <View style={styles.avatarPlaceholder}>
-                    <Text style={styles.avatarText}>
-                      {userName.charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
-                )}
-              </View>
-              
-              <View style={styles.userInfo}>
-                <Text style={styles.userName}>{userName}</Text>
-                <TouchableOpacity style={styles.viewAccountButton}>
-                  <Text style={styles.viewAccountText}>View Account</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+            <View style={styles.headerContent}>
+              <View style={styles.userSection}>
+                <View style={styles.avatarContainer}>
+                  {userImage ? (
+                    <Image source={{ uri: userImage }} style={styles.avatar} />
+                  ) : (
+                    <View style={styles.avatarPlaceholder}>
+                      <Text style={styles.avatarText}>
+                        {userName.charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
+                  )}
+                </View>
 
-            {/* Country Selector */}
-            <TouchableOpacity style={styles.countrySelector}>
-              <CountryFlag
-                isoCode={selectedCountry}
-                size={20}
-                style={styles.countryFlag}
-              />
-              <Text style={styles.countryText}>{selectedCountry}</Text>
-              <Ionicons 
-                name="chevron-down" 
-                size={16} 
-                color={theme.colors.gray500} 
-              />
-            </TouchableOpacity>
+                <View style={styles.userInfo}>
+                  <Text style={styles.userName}>{userName}</Text>
+                  <TouchableOpacity style={styles.viewAccountButton}>
+                    <Text style={styles.viewAccountText}>View Account</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Country Selector */}
+              <TouchableOpacity style={styles.countrySelector}>
+                <View style={styles.countryFlagSection}>
+                  <CountryFlag
+                    isoCode={selectedCountry || 'US'}
+                    size={20}
+                    style={styles.countryFlag}
+                  />
+                </View>
+                <Text style={styles.countryText}>{selectedCountry}</Text>
+                <Ionicons
+                  name="chevron-down"
+                  size={16}
+                  color={theme.colors.gray500}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Menu Items */}
@@ -217,15 +223,21 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   header: {
     paddingHorizontal: theme.spacing.md,
+    marginTop: theme.spacing.lg,
     paddingTop: theme.spacing.lg,
-    paddingBottom: theme.spacing.md,
+    paddingBottom: theme.spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.gray100,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   userSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.spacing.lg,
+    flex: 1,
   },
   avatarContainer: {
     marginRight: theme.spacing.md,
@@ -266,16 +278,22 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontWeight: '500',
   },
   countrySelector: {
+    gap: theme.spacing.xs,
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-end',
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
     borderRadius: theme.borderRadius.sm,
     backgroundColor: theme.colors.gray50,
   },
+  countryFlagSection: {
+    width: 20,
+    height: 20,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
   countryFlag: {
-    borderRadius: 10,
+    borderRadius: 20,
     marginRight: theme.spacing.xs,
   },
   countryText: {

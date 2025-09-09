@@ -7,7 +7,7 @@ interface AuthState {
   firebaseUser: any | null; // Changed from User to any since we're using React Native Firebase
   isLoading: boolean;
   isInitialized: boolean;
-  
+
   // Actions
   initialize: () => void;
   signIn: (email: string, password: string) => Promise<void>;
@@ -18,6 +18,7 @@ interface AuthState {
   updateUserData: (updates: Partial<UserData>) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   setLoading: (loading: boolean) => void;
+  cleanup: () => void;
 }
 
 const useAuthStore = create<AuthState>((set, get) => {
@@ -38,8 +39,8 @@ const useAuthStore = create<AuthState>((set, get) => {
 
       // Set up auth state listener
       unsubscribeAuth = authService.onAuthStateChanged((firebaseUser, userData) => {
-        set({ 
-          firebaseUser, 
+        set({
+          firebaseUser,
           user: userData,
           isLoading: false,
           isInitialized: true
@@ -125,7 +126,16 @@ const useAuthStore = create<AuthState>((set, get) => {
 
     setLoading: (loading: boolean) => {
       set({ isLoading: loading });
-    }
+    },
+
+    // Optionally expose:
+    cleanup: () => {
+      if (unsubscribeAuth) {
+        unsubscribeAuth();
+        unsubscribeAuth = null;
+      }
+      authService.cleanup(); // clears pendingCredential just in case
+    },
   };
 });
 

@@ -8,12 +8,14 @@ import Button from '@/components/common/Button';
 import ContentHeader from '@/components/common/ContentHeader';
 import CodeInput, { CodeInputRef } from '@/components/common/CodeInput';
 import { useSignupStore } from '@/store/signupStore';
+import useAuthStore from '@/store/authStore';
 import authService from '@/services/authService';
 
 export default function SMSCodeScreen() {
   const { theme } = useTheme();
   const router = useRouter();
   const signupStore = useSignupStore();
+  const authStore = useAuthStore();
   const codeInputRef = useRef<CodeInputRef>(null);
   
   const [code, setCode] = useState('');
@@ -51,7 +53,6 @@ export default function SMSCodeScreen() {
 
   const handleVerifyCode = async () => {
     if (code.length !== 6) {
-      Alert.alert('Error', 'Please enter the complete 6-digit code');
       return;
     }
 
@@ -67,12 +68,21 @@ export default function SMSCodeScreen() {
       
       console.log('Verifying code:', code);
       console.log('Verification ID:', signupStore.verificationId);
-      // Note: We don't actually sign in yet, just verify the code is valid
-      // We'll complete the signup in the PersonalInfo screen
-      await authService.verifyPhoneCodeForSignup(signupStore.verificationId, code);
-      console.log("VERIFIED!!!!!!");
-      // If verification succeeds, navigate to PersonalInfo
-      router.push('/(auth)/signup/PersonalInfo');
+      
+      // Verify code and check if user already exists
+      const result = await authService.verifyPhoneCodeForSignup(signupStore.verificationId, code);
+      console.log("VERIFIED!!!!!!", result);
+      
+      if (result.userExists) {
+        // User already exists, complete the login flow
+        console.log('User already exists, completing login...');
+        await authStore.verifyPhoneCode(signupStore.verificationId, '', result.userData);
+        // Navigation will be handled by AuthGuard
+        router.push('/(tabs)/dashboard');
+      } else {
+        // New user, navigate to PersonalInfo for signup completion
+        router.push('/(auth)/signup/PersonalInfo');
+      }
 
     } catch (error: any) {
       console.error('Code verification failed:', error);

@@ -103,9 +103,9 @@ export default function PersonalInfoScreen() {
       newErrors.confirmEmail = 'Emails do not match';
     }
 
-    if (!signupStore.profileImage) {
-      newErrors.profileImage = 'Profile photo is required';
-    }
+    // if (!signupStore.profileImage) {
+    //   newErrors.profileImage = 'Profile photo is required';
+    // }
 
     // Agreement validations
     if (!signupStore.agreeTerms || !signupStore.agreePrivacy) {
@@ -194,6 +194,7 @@ export default function PersonalInfoScreen() {
         gender: signupStore.gender || undefined,
         email: signupStore.email,
         profileImage: signupStore.profileImage || undefined,
+        country: signupStore.selectedCountry?.code || 'US',
         agreements: {
           terms: signupStore.agreeTerms,
           privacy: signupStore.agreePrivacy,
@@ -203,20 +204,20 @@ export default function PersonalInfoScreen() {
         signupCompletedAt: new Date().toISOString(),
       };
 
-      // This will complete the phone auth and create the user account
-      const result = await authService.verifyPhoneCode(
-        signupStore.verificationId, 
+      // Complete the phone auth and create the user account via auth store
+      // Using store ensures state updates immediately (avoids guard redirect to auth)
+      await authStore.verifyPhoneCode(
+        signupStore.verificationId,
         '', // We already verified the code in SMS step
         userData
       );
 
-      console.log('Signup completed successfully:', result);
+      console.log('Signup completed successfully');
       
       // Clear signup data
       signupStore.reset();
 
-      // The auth store will automatically update via the auth listener
-      // Navigate to main app or onboarding
+      // Auth store is updated already; navigate to main app
       router.replace('/(tabs)/dashboard');
 
     } catch (error: any) {
