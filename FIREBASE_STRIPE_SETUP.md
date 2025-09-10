@@ -35,7 +35,7 @@ export const STRIPE_CONFIG = {
 cd firebase-functions/functions
 
 # Set Stripe secret key as environment variable
-firebase functions:config:set stripe.secret_key="sk_test_your_stripe_secret_key_here"
+firebase functions:config:set stripe.secret_key="sk_test_YOUR_ACTUAL_STRIPE_SECRET_KEY_HERE"
 
 # Deploy functions
 firebase deploy --only functions
