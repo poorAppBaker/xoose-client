@@ -17,6 +17,7 @@ export interface UserData {
   country?: string;
   role: 'manager' | 'worker';
   createdAt: string;
+  stripeCustomerId?: string; // Added for Stripe integration
   agreements?: {
     terms: boolean;
     privacy: boolean;

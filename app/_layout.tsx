@@ -5,6 +5,8 @@ import { SidebarProvider } from '../contexts/SidebarContext';
 import { Slot, Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { StripeProvider } from '@stripe/stripe-react-native';
+import { STRIPE_CONFIG } from '../config/stripe';
 import useAuthStore from '@/store/authStore';
 import Loading from '@/components/common/Loading';
 // import { usePushNotifications } from '@/hooks/usePushNotifications';
@@ -79,15 +81,21 @@ export default function RootLayout() {
     <GestureHandlerRootView>
       <SplashProvider>
         <ThemeProvider>
-          <SidebarProvider
-            userName={user?.displayName}
-            selectedCountry={user?.country}
+          <StripeProvider
+            publishableKey={STRIPE_CONFIG.publishableKey}
+            merchantIdentifier={STRIPE_CONFIG.merchantId}
+            urlScheme={STRIPE_CONFIG.urlScheme}
           >
-            <StatusBar style="auto" />
-            <AuthGuard>
-              <Slot />
-            </AuthGuard>
-          </SidebarProvider>
+            <SidebarProvider
+              userName={user?.displayName}
+              selectedCountry={user?.country}
+            >
+              <StatusBar style="auto" />
+              <AuthGuard>
+                <Slot />
+              </AuthGuard>
+            </SidebarProvider>
+          </StripeProvider>
         </ThemeProvider>
       </SplashProvider>
     </GestureHandlerRootView>

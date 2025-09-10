@@ -19,6 +19,21 @@ export interface InvoiceDetails {
   updatedAt?: string;
 }
 
+export interface PaymentMethod {
+  id?: string; // Document ID from Firestore
+  stripePaymentMethodId: string; // Stripe payment method ID
+  customerId: string; // Stripe customer ID
+  cardholderName: string;
+  cardBrand: string; // e.g., 'visa', 'mastercard'
+  last4: string; // Last 4 digits
+  expMonth: number;
+  expYear: number;
+  tab: 'personal' | 'work' | 'other';
+  userId: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 class PaymentService {
   private removeUndefined<T extends Record<string, any>>(obj: T): T {
     const cleaned: Record<string, any> = {};
@@ -86,12 +101,125 @@ class PaymentService {
         updatedAt: new Date().toISOString(),
       });
       
-      await firestore().collection('invoiceDetails').doc(docId).update(updatesToSave);
+      await firestore().collection('invoices').doc(docId).update(updatesToSave);
       
       console.log('Invoice details updated:', updatesToSave);
       return updatesToSave;
     } catch (error) {
       console.error('Error updating invoice details:', error);
+      throw error;
+    }
+  }
+
+  // Save payment method for user
+  async savePaymentMethod(userId: string, paymentMethodData: Omit<PaymentMethod, 'userId' | 'createdAt' | 'updatedAt'>) {
+    try {
+      const paymentMethodToSave = this.removeUndefined({
+        ...paymentMethodData,
+        userId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      
+      // Save to payment methods collection
+      await firestore().collection('paymentMethods').add(paymentMethodToSave);
+      
+      console.log('Payment method saved:', paymentMethodToSave);
+      return paymentMethodToSave;
+    } catch (error) {
+      console.error('Error saving payment method:', error);
+      throw error;
+    }
+  }
+
+  // Get payment methods for user
+  async getPaymentMethods(userId: string, tab?: 'personal' | 'work' | 'other'): Promise<PaymentMethod[]> {
+    try {
+      let query = firestore().collection('paymentMethods').where('userId', '==', userId);
+      
+      if (tab) {
+        query = query.where('tab', '==', tab);
+      }
+      
+      const snapshot = await query.get();
+      const paymentMethods: PaymentMethod[] = [];
+      
+      snapshot.forEach((doc) => {
+        paymentMethods.push({
+          ...doc.data() as PaymentMethod,
+          id: doc.id,
+        });
+      });
+      
+      return paymentMethods;
+    } catch (error) {
+      console.error('Error getting payment methods:', error);
+      throw error;
+    }
+  }
+
+  // Update payment method for user
+  async updatePaymentMethod(docId: string, updates: Partial<PaymentMethod>) {
+    try {
+      const updatesToSave = this.removeUndefined({
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      });
+      
+      await firestore().collection('paymentMethods').doc(docId).update(updatesToSave);
+      
+      console.log('Payment method updated:', updatesToSave);
+      return updatesToSave;
+    } catch (error) {
+      console.error('Error updating payment method:', error);
+      throw error;
+    }
+  }
+
+  // Delete payment method
+  async deletePaymentMethod(docId: string, userId: string) {
+    try {
+      // First, get the payment method to get the customerId
+      const paymentMethodDoc = await firestore().collection('paymentMethods').doc(docId).get();
+      const paymentMethodData = paymentMethodDoc.data() as PaymentMethod;
+      
+      if (!paymentMethodData) {
+        throw new Error('Payment method not found');
+      }
+
+      // Delete the payment method
+      await firestore().collection('paymentMethods').doc(docId).delete();
+      console.log('Payment method deleted:', docId);
+
+      // Check if user has any remaining payment methods
+      const remainingMethods = await this.getPaymentMethods(userId);
+      
+      // If no payment methods remain, clear the stripeCustomerId from user document
+      if (remainingMethods.length === 0) {
+        await firestore().collection('users').doc(userId).update({
+          stripeCustomerId: null,
+          updatedAt: new Date().toISOString(),
+        });
+        console.log('User stripeCustomerId cleared - no payment methods remaining');
+      } else {
+        console.log('User still has payment methods, keeping stripeCustomerId');
+      }
+    } catch (error) {
+      console.error('Error deleting payment method:', error);
+      throw error;
+    }
+  }
+
+  // Update user's Stripe customer ID
+  async updateUserStripeCustomerId(userId: string, stripeCustomerId: string) {
+    try {
+      await firestore().collection('users').doc(userId).update({
+        stripeCustomerId,
+        updatedAt: new Date().toISOString(),
+      });
+      console.log('User Stripe customer ID updated:', stripeCustomerId);
+    } catch (error) {
+      console.error('Error updating user Stripe customer ID:', error);
       throw error;
     }
   }
