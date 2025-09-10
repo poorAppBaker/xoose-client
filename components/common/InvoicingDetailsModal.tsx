@@ -1,8 +1,10 @@
 // components/common/InvoicingDetailsModal.tsx
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import useAuthStore from '../../store/authStore';
+import paymentService, { InvoiceDetails } from '../../services/paymentService';
 import Modal from './Modal';
 import Input from './Input';
 import Select from './Select';
@@ -13,6 +15,9 @@ interface InvoicingDetailsModalProps {
   visible: boolean;
   onClose: () => void;
   onApply: (data: InvoicingData) => void;
+  tab?: 'personal' | 'work' | 'other';
+  editData?: InvoiceDetails | null;
+  isEdit?: boolean;
 }
 
 interface InvoicingData {
@@ -38,9 +43,11 @@ const COUNTRIES = [
   // Add more countries as needed
 ];
 
-export default function InvoicingDetailsModal({ visible, onClose, onApply }: InvoicingDetailsModalProps) {
+export default function InvoicingDetailsModal({ visible, onClose, onApply, tab = 'personal', editData = null, isEdit = false }: InvoicingDetailsModalProps) {
   const { theme } = useTheme();
+  const { user } = useAuthStore();
   const styles = createStyles(theme);
+  const [isLoading, setIsLoading] = useState(false);
   
   const [formData, setFormData] = useState<InvoicingData>({
     fullName: '',
@@ -54,6 +61,38 @@ export default function InvoicingDetailsModal({ visible, onClose, onApply }: Inv
     confirmEmail: '',
     phone: '',
   });
+
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (isEdit && editData) {
+      setFormData({
+        fullName: editData.fullName || '',
+        addressLine1: editData.addressLine1 || '',
+        addressLine2: editData.addressLine2 || '',
+        city: editData.city || '',
+        postCode: editData.postCode || '',
+        country: editData.country || '',
+        taxId: editData.taxId || '',
+        email: editData.email || '',
+        confirmEmail: editData.confirmEmail || '',
+        phone: editData.phone || '',
+      });
+    } else {
+      // Reset form for new entry
+      setFormData({
+        fullName: '',
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        postCode: '',
+        country: '',
+        taxId: '',
+        email: '',
+        confirmEmail: '',
+        phone: '',
+      });
+    }
+  }, [isEdit, editData, visible]);
 
   const [errors, setErrors] = useState<Partial<InvoicingData>>({});
 
@@ -108,10 +147,35 @@ export default function InvoicingDetailsModal({ visible, onClose, onApply }: Inv
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleApply = () => {
-    if (validateForm()) {
+  const handleApply = async () => {
+    if (!validateForm()) return;
+    
+    if (!user?._id) {
+      Alert.alert('Error', 'User not found. Please try logging in again.');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      // Save to Firebase with tab information
+      await paymentService.saveInvoiceDetails(user._id, {
+        ...formData,
+        tab,
+      });
+      
+      // Call the onApply callback
       onApply(formData);
+      
+      // Close the modal
       onClose();
+      
+      Alert.alert('Success', 'Invoice details saved successfully!');
+    } catch (error) {
+      console.error('Error saving invoice details:', error);
+      Alert.alert('Error', 'Failed to save invoice details. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -120,13 +184,15 @@ export default function InvoicingDetailsModal({ visible, onClose, onApply }: Inv
                          !formData.confirmEmail || !formData.phone;
 
   return (
-    <Modal visible={visible} onClose={onClose} maxHeight={"95%"}>
+    <Modal visible={visible} onClose={onClose} maxHeight={"99%"}>
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={theme.colors.blue500} />
           </TouchableOpacity>
-          <Text style={styles.title}>Add Invoicing Details</Text>
+          <Text style={styles.title}>
+            {isEdit ? 'Edit Invoice Details' : 'Add Invoicing Details'}
+          </Text>
         </View>
         
         <View style={styles.form}>
@@ -239,9 +305,9 @@ export default function InvoicingDetailsModal({ visible, onClose, onApply }: Inv
           />
           <Button
             variant="primary"
-            title="Apply"
+            title={isLoading ? (isEdit ? "Updating..." : "Saving...") : (isEdit ? "Update" : "Apply")}
             onPress={handleApply}
-            disabled={isApplyDisabled}
+            disabled={isApplyDisabled || isLoading}
             style={styles.applyButton}
           />
         </View>
@@ -257,7 +323,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
     paddingBottom: theme.spacing.lg,
   },
   backButton: {
@@ -269,7 +334,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.gray800,
   },
   form: {
-    padding: theme.spacing.xs,
+    paddingVertical: theme.spacing.xs,
     backgroundColor: theme.colors.white,
   },
   compactInput: {
@@ -288,11 +353,10 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   buttonContainer: {
     flexDirection: 'row',
-    padding: theme.spacing.lg,
-    gap: theme.spacing.md,
+    gap: theme.spacing.md, 
+    paddingVertical: theme.spacing.lg
   },
   cancelButton: {
-    flex: 1,
   },
   applyButton: {
     flex: 1,

@@ -76,6 +76,8 @@ export default function ProfilePaymentScreen() {
             title="Payment Method"
             onAddPress={handleAddPaymentMethod}
             addButtonText="Add Payment Method"
+            showInvoicingModal={false}
+            tab={selectedProfileType as 'personal' | 'work' | 'other'}
           />
 
           {/* Invoicing Section */}
@@ -84,6 +86,7 @@ export default function ProfilePaymentScreen() {
             onAddPress={handleAddInvoicingDetails}
             addButtonText="Add Invoicing Details"
             showInvoicingModal={true}
+            tab={selectedProfileType as 'personal' | 'work' | 'other'}
           />
         </View>
 
@@ -152,7 +155,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   bottomContainer: {
     paddingHorizontal: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
   },
   backButtonBottom: {
     backgroundColor: theme.colors.white,
