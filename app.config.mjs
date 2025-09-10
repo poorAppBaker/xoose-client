@@ -1,5 +1,16 @@
 import 'dotenv/config';
 
+// Ensure environment variables are loaded
+console.log('Environment check:', {
+  EXPO_PUBLIC_STRIPE_SECRET_KEY: process.env.EXPO_PUBLIC_STRIPE_SECRET_KEY ? 'Found' : 'Not found',
+  NODE_ENV: process.env.NODE_ENV
+});
+
+// Validate that the Stripe key is loaded
+if (!process.env.EXPO_PUBLIC_STRIPE_SECRET_KEY) {
+  console.warn('WARNING: EXPO_PUBLIC_STRIPE_SECRET_KEY not found in environment variables');
+}
+
 export default {
   expo: {
     name: "Xoose",
@@ -170,7 +181,8 @@ export default {
       FIREBASE_STORAGE_BUCKET: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
       FIREBASE_MESSAGING_SENDER_ID: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
       FIREBASE_APP_ID: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
-      FIREBASE_API_KEY: process.env.EXPO_PUBLIC_FIREBASE_API_KEY
+      FIREBASE_API_KEY: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+      STRIPE_SECRET_KEY: process.env.EXPO_PUBLIC_STRIPE_SECRET_KEY
     }
   }
 };
