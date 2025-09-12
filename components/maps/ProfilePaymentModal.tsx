@@ -1,11 +1,9 @@
-// app/(tabs)/profilepayment.tsx
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import DefaultLayout from '@/components/layout/DefaultLayout';
-import PaymentSection from '@/components/common/PaymentSection';
+import Modal from '../common/Modal';
+import PaymentSection from '../common/PaymentSection';
 
 const PROFILE_TYPES = [
   { id: 'personal', label: 'Personal' },
@@ -13,38 +11,32 @@ const PROFILE_TYPES = [
   { id: 'other', label: 'Other' }
 ];
 
-export default function ProfilePaymentScreen() {
+interface ProfilePaymentModalProps {
+  visible: boolean;
+  onClose: () => void;
+  isSelectionMode?: boolean;
+  onPaymentMethodSelect?: (paymentMethod: any) => void;
+}
+
+export default function ProfilePaymentModal({
+  visible,
+  onClose,
+  isSelectionMode = false,
+  onPaymentMethodSelect
+}: ProfilePaymentModalProps) {
   const { theme } = useTheme();
-  const router = useRouter();
-  const params = useLocalSearchParams();
   const [selectedProfileType, setSelectedProfileType] = useState('personal');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<any>(null);
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
   const styles = createStyles(theme);
-
-  useEffect(() => {
-    if (params.selectionMode === 'true') {
-      setIsSelectionMode(true);
-    }
-  }, [params.selectionMode]);
-
-  const handleBack = () => {
-    router.back();
-  };
 
   const handlePaymentMethodSelect = (paymentMethod: any) => {
     setSelectedPaymentMethod(paymentMethod);
   };
 
   const handleSelect = () => {
-    if (selectedPaymentMethod && isSelectionMode) {
-      // Return to dashboard with selected payment method
-      router.push({
-        pathname: '/(tabs)/dashboard',
-        params: {
-          selectedPaymentMethod: JSON.stringify(selectedPaymentMethod)
-        }
-      });
+    if (selectedPaymentMethod && isSelectionMode && onPaymentMethodSelect) {
+      onPaymentMethodSelect(selectedPaymentMethod);
+      onClose();
     }
   };
 
@@ -59,14 +51,19 @@ export default function ProfilePaymentScreen() {
   };
 
   return (
-    <DefaultLayout>
+    <Modal
+      visible={visible}
+      onClose={onClose}
+      maxHeight="100%"
+    >
       <SafeAreaView style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+          <TouchableOpacity onPress={onClose} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={theme.colors.blue500} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Profile & Payment</Text>
+          <View style={styles.placeholder} />
         </View>
 
         {/* Profile Type Selector */}
@@ -122,8 +119,8 @@ export default function ProfilePaymentScreen() {
         <View style={styles.bottomContainer}>
           {isSelectionMode ? (
             <View style={styles.selectionButtons}>
-              <TouchableOpacity style={styles.backButtonBottom} onPress={handleBack}>
-                <Text style={styles.backButtonText}>Cancel</Text>
+              <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 style={[styles.selectButton, !selectedPaymentMethod && styles.selectButtonDisabled]} 
@@ -134,27 +131,25 @@ export default function ProfilePaymentScreen() {
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity style={styles.backButtonBottom} onPress={handleBack}>
-              <Text style={styles.backButtonText}>Back</Text>
+            <TouchableOpacity style={styles.backButtonBottom} onPress={onClose}>
+              <Text style={styles.backButtonText}>Close</Text>
             </TouchableOpacity>
           )}
         </View>
       </SafeAreaView>
-    </DefaultLayout>
+    </Modal>
   );
 }
 
 const createStyles = (theme: any) => StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: theme.colors.white,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.lg,
+    paddingBottom: theme.spacing.md,
   },
   backButton: {
     marginRight: theme.spacing.md,
@@ -164,9 +159,12 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontWeight: '700',
     color: theme.colors.gray800,
   },
+  placeholder: {
+    width: 40,
+  },
   profileTypeContainer: {
     paddingHorizontal: theme.spacing.lg,
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.md,
   },
   segmentedControl: {
     flexDirection: 'row',
@@ -193,11 +191,11 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.white,
   },
   content: {
-    flex: 1,
     paddingHorizontal: theme.spacing.lg,
   },
   bottomContainer: {
     paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.lg,
   },
   backButtonBottom: {
     backgroundColor: theme.colors.white,
@@ -216,6 +214,21 @@ const createStyles = (theme: any) => StyleSheet.create({
   selectionButtons: {
     flexDirection: 'row',
     gap: theme.spacing.md,
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: theme.colors.white,
+    borderWidth: 2,
+    borderColor: theme.colors.blue500,
+    borderRadius: 25,
+    paddingVertical: theme.spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.blue500,
   },
   selectButton: {
     flex: 1,

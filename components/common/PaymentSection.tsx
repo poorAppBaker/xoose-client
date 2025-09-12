@@ -15,6 +15,9 @@ interface PaymentSectionProps {
   addButtonText: string;
   showInvoicingModal?: boolean;
   tab?: 'personal' | 'work' | 'other';
+  isSelectionMode?: boolean;
+  selectedPaymentMethod?: any;
+  onPaymentMethodSelect?: (paymentMethod: any) => void;
 }
 
 interface PaymentMethodItemProps {
@@ -76,6 +79,9 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
   addButtonText,
   showInvoicingModal = false,
   tab = 'personal',
+  isSelectionMode = false,
+  selectedPaymentMethod,
+  onPaymentMethodSelect,
 }) => {
   const { theme } = useTheme();
   const { user } = useAuthStore();
@@ -251,8 +257,12 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
               <PaymentMethodItem
                 key={method.id || index}
                 method={method}
-                isSelected={index === 0} // First item selected by default
-                onSelect={() => {}}
+                isSelected={isSelectionMode ? selectedPaymentMethod?.id === method.id : index === 0}
+                onSelect={() => {
+                  if (isSelectionMode && onPaymentMethodSelect) {
+                    onPaymentMethodSelect(method);
+                  }
+                }}
                 onDelete={() => handleDeletePaymentMethod(method.id!)}
               />
             ))}

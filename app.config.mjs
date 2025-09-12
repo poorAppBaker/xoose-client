@@ -164,6 +164,14 @@ export default {
         {
           "ios_foreground_presentation_options": ["badge", "sound", "banner", "list"]
         }
+      ],
+      // Mapbox plugin
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsImpl": "mapbox",
+          "RNMapboxMapsDownloadToken": process.env.EXPO_PUBLIC_MAPBOX_DOWNLOADS_TOKEN || "pk.eyJ1IjoiYWJ3ZWhyMTIyNSIsImEiOiJjbWZmYmNtNW0wNHc1MnFvdDkybmdzNWdlIn0.B0AntzGDfY-3brsMbfM4Sw"
+        }
       ]
     ],
     experiments: {
