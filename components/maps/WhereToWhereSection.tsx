@@ -58,10 +58,12 @@ export default function WhereToWhereSection({
       </TouchableOpacity>
 
       {/* Add Stop Button */}
-      <TouchableOpacity style={styles.addStopButton} onPress={onAddStop}>
-        <Ionicons name="add" size={20} color={theme.colors.white} />
-        <Text style={styles.addStopText}>Add Stop</Text>
-      </TouchableOpacity>
+      <View style={styles.addStopButtonContainer}>
+        <TouchableOpacity style={styles.addStopButton} onPress={onAddStop}>
+          <Ionicons name="add" size={20} color={theme.colors.white} />
+          <Text style={styles.addStopText}>Add Stop</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -117,12 +119,15 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.gray600,
     fontWeight: '500',
   },
+  addStopButtonContainer: {
+  },
   addStopButton: {
+    width: 150,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: theme.colors.blue500,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: theme.borderRadius.full,
     paddingVertical: theme.spacing.sm,
     paddingHorizontal: theme.spacing.md,
     ...theme.shadows.sm,
