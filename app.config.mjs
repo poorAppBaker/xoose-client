@@ -19,8 +19,13 @@ export default {
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "xooseclient",
+    owner: "mobile.hub",
     userInterfaceStyle: "automatic",
     newArchEnabled: false,
+    updates: {
+      url: "https://u.expo.dev/d55b56c0-75b8-4d8c-a929-91e7c5dbda65",
+      fallbackToCacheTimeout: 300000,
+    },
     notification: {
       "icon": "./assets/images/notification-icon.png",
       "color": "#FD8B19"
@@ -179,7 +184,7 @@ export default {
     },
     extra: {
       eas: {
-        projectId: "0ed46fb4-8b52-4450-84c0-ef27e18e6778"
+        projectId: "d55b56c0-75b8-4d8c-a929-91e7c5dbda65"
       },
       API_URL: process.env.EXPO_PUBLIC_API_URL,
       APP_URL: process.env.EXPO_PUBLIC_APP_URL,
