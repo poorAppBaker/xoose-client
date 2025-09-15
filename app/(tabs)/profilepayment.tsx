@@ -153,8 +153,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.lg,
+    paddingTop: theme.spacing.xl,
+    paddingBottom: theme.spacing.sm,
   },
   backButton: {
     marginRight: theme.spacing.md,
@@ -166,23 +166,26 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   profileTypeContainer: {
     paddingHorizontal: theme.spacing.lg,
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.md,
   },
   segmentedControl: {
+    marginTop: theme.spacing.md,
     flexDirection: 'row',
-    backgroundColor: theme.colors.gray100,
+    gap: theme.spacing.md,
     borderRadius: theme.borderRadius.lg,
     padding: 4,
   },
   segmentButton: {
     flex: 1,
-    paddingVertical: theme.spacing.sm,
+    paddingVertical: 4,
     paddingHorizontal: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.gray200,
+    borderRadius: theme.borderRadius.full,
     alignItems: 'center',
   },
   segmentButtonActive: {
-    backgroundColor: theme.colors.blue500,
+    backgroundColor: theme.colors.primary,
   },
   segmentButtonText: {
     fontSize: 16,
@@ -198,6 +201,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   bottomContainer: {
     paddingHorizontal: theme.spacing.lg,
+    marginBottom: 40,
   },
   backButtonBottom: {
     backgroundColor: theme.colors.white,
@@ -216,6 +220,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   selectionButtons: {
     flexDirection: 'row',
     gap: theme.spacing.md,
+    marginBottom: 40,
   },
   selectButton: {
     flex: 1,

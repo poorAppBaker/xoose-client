@@ -56,16 +56,16 @@ const PaymentMethodItem: React.FC<PaymentMethodItemProps> = ({
           {isSelected && <View style={styles.radioInner} />}
         </View>
       </TouchableOpacity>
-      
+
       <View style={styles.cardIconContainer}>
         <Image source={getCardIcon(method.cardBrand)} style={styles.cardIcon} resizeMode="contain" />
       </View>
-      
+
       <View style={styles.cardInfo}>
         <Text style={styles.cardType}>Credit Card</Text>
-        <Text style={styles.cardNumber}>* {method.last4}</Text>
+        {/* <Text style={styles.cardNumber}>* {method.last4}</Text> */}
       </View>
-      
+
       <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
         <Ionicons name="trash-outline" size={20} color={theme.colors.blue500} />
       </TouchableOpacity>
@@ -96,7 +96,7 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
   useEffect(() => {
     const fetchData = async () => {
       if (!user?._id) return;
-      
+
       setIsLoading(true);
       try {
         if (showInvoicingModal) {
@@ -191,13 +191,13 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
                 Alert.alert('Error', 'User not found. Please try logging in again.');
                 return;
               }
-              
+
               await paymentService.deletePaymentMethod(paymentMethodId, user._id);
-              
+
               // Refresh the payment methods after deletion
               const methods = await paymentService.getPaymentMethods(user._id, tab);
               setPaymentMethods(methods);
-              
+
               // Also update the user store to clear stripeCustomerId if needed
               const { updateUserData } = useAuthStore.getState();
               if (methods.length === 0) {
@@ -217,7 +217,7 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      
+
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading...</Text>
@@ -244,7 +244,9 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
               onPress={handleAddPress}
               activeOpacity={0.7}
             >
-              <Ionicons name="add" size={20} color={theme.colors.blue500} />
+              <View style={styles.addButtonIcon}>
+                <Ionicons name="add" size={16} color={theme.colors.blue500} />
+              </View>
               <Text style={styles.addButtonText}>{addButtonText}</Text>
             </TouchableOpacity>
           </>
@@ -272,7 +274,7 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
               activeOpacity={0.7}
             >
               <View style={styles.addButtonIcon}>
-                <Ionicons name="add" size={20} color={theme.colors.blue500} />
+                <Ionicons name="add" size={16} color={theme.colors.blue500} />
               </View>
               <Text style={styles.addButtonText}>{addButtonText}</Text>
             </TouchableOpacity>
@@ -292,7 +294,9 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
               onPress={handleAddPress}
               activeOpacity={0.7}
             >
-              <Ionicons name="add" size={20} color={theme.colors.blue500} />
+              <View style={styles.addButtonIcon}>
+                <Ionicons name="add" size={16} color={theme.colors.blue500} />
+              </View>
               <Text style={styles.addButtonText}>{addButtonText}</Text>
             </TouchableOpacity>
           </>
@@ -373,7 +377,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.gray600,
   },
   paymentMethodsList: {
-    gap: theme.spacing.sm,
   },
   paymentMethodItem: {
     flexDirection: 'row',
@@ -381,10 +384,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     backgroundColor: theme.colors.white,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: theme.colors.gray200,
-    marginTop: theme.spacing.sm,
-    marginBottom: theme.spacing.sm,
   },
   radioButton: {
     marginRight: theme.spacing.md,
@@ -408,12 +407,15 @@ const createStyles = (theme: any) => StyleSheet.create({
     backgroundColor: theme.colors.blue500,
   },
   cardIconContainer: {
+    borderWidth: 1,
+    borderColor: theme.colors.gray200,
+    borderRadius: theme.borderRadius.md,
+    marginRight: theme.spacing.sm,
   },
   cardIcon: {
-    width: 40,
-    height: 30,
+    width: 70,
+    height: 40,
     backgroundColor: theme.colors.white,
-    marginRight: theme.spacing.md,
   },
   cardInfo: {
     flex: 1,
@@ -437,11 +439,12 @@ const createStyles = (theme: any) => StyleSheet.create({
     paddingVertical: theme.spacing.md,
   },
   addButtonIcon: {
-    width: 32,
-    height: 32,
+    width: 24,
+    height: 24,
     borderRadius: 16,
-    backgroundColor: theme.colors.blue50,
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: theme.colors.blue500,
     justifyContent: 'center',
     marginRight: theme.spacing.md,
   },

@@ -12,6 +12,7 @@ import WhereToGoModal from '@/components/maps/WhereToGoModal';
 import InviteFriends from '@/components/maps/InviteFriends';
 import ConfirmDestinationModal from '@/components/maps/ConfirmDestinationModal';
 import PickupModal from '@/components/maps/PickupModal';
+import DestinationModal from '@/components/maps/DestinationModal';
 import ConfirmPickupModal from '@/components/maps/ConfirmPickupModal';
 import WhereToWhereSection from '@/components/maps/WhereToWhereSection';
 import ConfirmDetailsModal from '@/components/maps/ConfirmDetailsModal';
@@ -37,6 +38,8 @@ export default function DashboardScreen() {
   } | null>(null);
   const [showPickupModal, setShowPickupModal] = useState(false);
   const [isPickupFullScreen, setIsPickupFullScreen] = useState(false);
+  const [showDestinationModal, setShowDestinationModal] = useState(false);
+  const [isDestinationFullScreen, setIsDestinationFullScreen] = useState(false);
   const [showConfirmPickup, setShowConfirmPickup] = useState(false);
   const [pickup, setPickup] = useState<{
     id: string;
@@ -77,8 +80,10 @@ export default function DashboardScreen() {
       return screenHeight * 0.6; // 30% height for large modals (WhereToGo, Pickup)
     } else if (showConfirmDestination || showConfirmPickup) {
       return screenHeight * 0.7; // 70% height for smaller modals (ConfirmDestination, ConfirmPickup)
-    } else if (showConfirmDetails || showWhoWillTakeTrip || showProfilePaymentModal) {
-      return screenHeight * 0.5; // 40% height for medium modals (ConfirmDetails, WhoWillTakeTrip, ProfilePayment)
+    } else if (showConfirmDetails) {
+      return screenHeight; // Full height when confirm details modal is showing (no overlay)
+    } else if (showWhoWillTakeTrip || showProfilePaymentModal) {
+      return screenHeight * 0.5; // 40% height for medium modals (WhoWillTakeTrip, ProfilePayment)
     }
     
     return screenHeight; // Full height when no modals
@@ -86,6 +91,7 @@ export default function DashboardScreen() {
 
   const handleLocationSelect = (location: any) => {
     if (location.latitude && location.longitude) {
+      console.log('Setting destination:', location);
       setSelectedLocation([location.longitude, location.latitude]);
       setDestination({
         id: location.id,
@@ -108,8 +114,23 @@ export default function DashboardScreen() {
     setShowPickupModal(true);
   };
 
+  const handleDestinationSelect = (location: any) => {
+    if (location.latitude && location.longitude) {
+      setDestination({
+        id: location.id,
+        coordinate: [location.longitude, location.latitude],
+        title: location.title,
+        subtitle: location.subtitle
+      });
+      setSelectedLocation([location.longitude, location.latitude]); // Move map to destination location
+      setShowDestinationModal(false);
+      setShowConfirmDestination(true);
+    }
+  };
+
   const handlePickupSelect = (location: any) => {
     if (location.latitude && location.longitude) {
+      console.log('Setting pickup:', location);
       setPickup({
         id: location.id,
         coordinate: [location.longitude, location.latitude],
@@ -121,6 +142,7 @@ export default function DashboardScreen() {
       setShowConfirmPickup(true);
     }
   };
+
 
   const handlePickupBack = () => {
     setShowConfirmPickup(false);
@@ -265,14 +287,16 @@ export default function DashboardScreen() {
         mapHeight={getMapHeight()}
       />
       
-      {/* Floating Header */}
-      <View style={styles.floatingHeader}>
-        <View style={styles.headerContent}>
-          <TouchableOpacity onPress={toggleSidebar} style={styles.menuButton} activeOpacity={0.8}>
-            <Ionicons name="menu" size={28} color={theme.colors.blue500} />
-          </TouchableOpacity>
+      {/* Floating Header - Hide when confirm details modal is showing */}
+      {!showConfirmDetails && (
+        <View style={styles.floatingHeader}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity onPress={toggleSidebar} style={styles.menuButton} activeOpacity={0.8}>
+              <Ionicons name="menu" size={28} color={theme.colors.blue500} />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      )}
 
       {/* Where to Where Section - Only show after pickup confirmation */}
       {showWhereToWhereSection && (
@@ -288,9 +312,9 @@ export default function DashboardScreen() {
         />
       )}
 
-      {/* Invite Friends Section */}
+      {/* Invite Friends Section - Only show with WhereToGoModal */}
       <InviteFriends 
-        visible={showInviteFriends && !isWhereToGoFullScreen}
+        visible={showInviteFriends && showWhereToGoModal && !isWhereToGoFullScreen}
         onClose={() => setShowInviteFriends(false)}
       />
 
@@ -301,6 +325,7 @@ export default function DashboardScreen() {
         onLocationSelect={handleLocationSelect}
         isFullScreen={isWhereToGoFullScreen}
         onFullScreenChange={setIsWhereToGoFullScreen}
+        onMapMove={(coordinate) => setSelectedLocation(coordinate)}
       />
 
       {/* Confirm Destination Modal */}
@@ -312,8 +337,18 @@ export default function DashboardScreen() {
         onClose={() => setShowConfirmDestination(false)}
         onEdit={() => {
           setShowConfirmDestination(false);
-          setShowWhereToGoModal(true);
+          setShowDestinationModal(true);
         }}
+      />
+
+      {/* Destination Modal */}
+      <DestinationModal
+        visible={showDestinationModal}
+        onClose={() => setShowDestinationModal(false)}
+        onLocationSelect={handleDestinationSelect}
+        isFullScreen={isDestinationFullScreen}
+        onFullScreenChange={setIsDestinationFullScreen}
+        onMapMove={(coordinate) => setSelectedLocation(coordinate)}
       />
 
       {/* Pickup Modal */}
@@ -323,7 +358,9 @@ export default function DashboardScreen() {
         onLocationSelect={handlePickupSelect}
         isFullScreen={isPickupFullScreen}
         onFullScreenChange={setIsPickupFullScreen}
+        onMapMove={(coordinate) => setSelectedLocation(coordinate)}
       />
+
 
       {/* Confirm Pickup Modal */}
       <ConfirmPickupModal
@@ -346,9 +383,15 @@ export default function DashboardScreen() {
         selectedPaymentMethod={selectedPaymentMethod}
         tripTaker={tripTaker}
         isCreatingBooking={isCreatingBooking}
-        onBack={() => setShowConfirmDetails(false)}
+        onBack={() => {
+          setShowConfirmDetails(false);
+          setShowConfirmPickup(true);
+        }}
         onContinue={createBooking}
-        onClose={() => setShowConfirmDetails(false)}
+        onClose={() => {
+          setShowConfirmDetails(false);
+          setShowConfirmPickup(true);
+        }}
         onTripTakerPress={() => setShowWhoWillTakeTrip(true)}
         onPaymentPress={handlePaymentPress}
         onCouponPress={() => setShowCouponModal(true)}

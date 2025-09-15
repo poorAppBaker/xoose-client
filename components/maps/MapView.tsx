@@ -43,6 +43,12 @@ export default function MapViewComponent({
   mapHeight = height,
   useDestinationPointer = false
 }: MapViewProps) {
+  // Debug logging
+  console.log('MapView received props:', {
+    destination: destination ? { coordinate: destination.coordinate, title: destination.title } : null,
+    pickup: pickup ? { coordinate: pickup.coordinate, title: pickup.title } : null,
+    selectedLocation
+  });
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [userHeading, setUserHeading] = useState<number>(0);
   const [waypoints, setWaypoints] = useState<[number, number][]>([]);
@@ -254,41 +260,48 @@ export default function MapViewComponent({
         )}
 
         {/* Destination Marker with Label */}
-        {destination && (
-          <Mapbox.PointAnnotation
-            id="destination"
-            coordinate={destination.coordinate}
-          >
-            <View style={styles.destinationContainer}>
-                <Image
-                  source={require('../../assets/images/destination-pointer.png')}
-                  style={[
-                    styles.locationPointer,
-                    { transform: [{ rotate: `${userHeading}deg` }] }
-                  ]}
-                  resizeMode="contain"
-                />
-            </View>
-          </Mapbox.PointAnnotation>
-        )}
+        {destination && (() => {
+          console.log('Rendering destination marker at:', destination.coordinate);
+          return (
+            <Mapbox.PointAnnotation
+              id="destination"
+              coordinate={destination.coordinate}
+              anchor={{ x: 0.5, y: 1 }}
+            >
+              <View style={styles.destinationContainer}>
+              <Image
+                source={require('../../assets/images/destination-pointer.png')}
+                style={styles.locationPointer}
+                resizeMode="contain"
+                onError={(error) => console.log('Destination image error:', error)}
+                onLoad={() => console.log('Destination image loaded successfully')}
+              />
+              </View>
+            </Mapbox.PointAnnotation>
+          );
+        })()}
 
         {/* Pickup Marker with Label */}
-        {pickup && (
-          <Mapbox.PointAnnotation
-            id="pickup"
-            coordinate={pickup.coordinate}
-          >
-            <View style={styles.pickupContainer}>
-              <View style={styles.pickupLabel}>
-                <Text style={styles.pickupLabelText}>Pickup</Text>
+        {pickup && (() => {
+          console.log('Rendering pickup marker at:', pickup.coordinate);
+          return (
+            <Mapbox.PointAnnotation
+              id="pickup"
+              coordinate={pickup.coordinate}
+              anchor={{ x: 0.5, y: 1 }}
+            >
+              <View style={styles.pickupContainer}>
+              <Image
+                source={require('../../assets/images/pickup-pointer.png')}
+                style={styles.locationPointer}
+                resizeMode="contain"
+                onError={(error) => console.log('Pickup image error:', error)}
+                onLoad={() => console.log('Pickup image loaded successfully')}
+              />
               </View>
-              <View style={styles.pickupConnector} />
-              <View style={styles.pickupMarker}>
-                <Ionicons name="car" size={16} color="#FFFFFF" />
-              </View>
-            </View>
-          </Mapbox.PointAnnotation>
-        )}
+            </Mapbox.PointAnnotation>
+          );
+        })()}
 
         {/* Route Line */}
         {destination && pickup && getRouteCoordinates().length > 1 && (
@@ -377,11 +390,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   locationPointer: {
-    width: 30,
-    height: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderColor: '#007AFF',
+    width: 60,
+    height: 60,
   },
   selectedLocationContainer: {
     alignItems: 'center',
@@ -407,8 +417,7 @@ const styles = StyleSheet.create({
   },
   destinationContainer: {
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    height: 60, // Increased height to accommodate label and connector
+    justifyContent: 'center',
   },
   destinationLabel: {
     backgroundColor: '#4CAF50',

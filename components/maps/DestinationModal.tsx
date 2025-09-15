@@ -26,7 +26,7 @@ interface LocationItem {
   longitude?: number;
 }
 
-interface PickupModalProps {
+interface DestinationModalProps {
   visible: boolean;
   onClose?: () => void;
   onLocationSelect?: (location: LocationItem) => void;
@@ -35,14 +35,14 @@ interface PickupModalProps {
   onMapMove?: (coordinate: [number, number]) => void;
 }
 
-export default function PickupModal({
+export default function DestinationModal({
   visible,
   onClose,
   onLocationSelect,
   isFullScreen = false,
   onFullScreenChange,
   onMapMove
-}: PickupModalProps) {
+}: DestinationModalProps) {
   const { theme } = useTheme();
   const user = useAuthStore(state => state.user);
   const [activeTab, setActiveTab] = useState<'recents' | 'myPlaces' | 'search'>('recents');
@@ -57,13 +57,13 @@ export default function PickupModal({
   const mapboxClient = Mapbox({ accessToken: 'pk.eyJ1IjoiYWJ3ZWhyMTIyNSIsImEiOiJjbWZmYmNtNW0wNHc1MnFvdDkybmdzNWdlIn0.B0AntzGDfY-3brsMbfM4Sw' });
   const geocodingClient = mbxGeocoding(mapboxClient);
 
-  // Fetch recent pickup locations from Firestore
+  // Fetch recent destination locations from Firestore
   const fetchRecentLocations = async () => {
     if (!user?._id) return;
     
     setIsLoadingRecents(true);
     try {
-      const recentData = await recentLocationsService.getRecentPickupLocations(user._id, 3);
+      const recentData = await recentLocationsService.getRecentDestinationLocations(user._id, 3);
       const locationItems: LocationItem[] = recentData.map(location => ({
         id: location.id,
         title: location.title,
@@ -73,7 +73,7 @@ export default function PickupModal({
       }));
       setRecentLocations(locationItems);
     } catch (error) {
-      console.error('Error fetching recent pickup locations:', error);
+      console.error('Error fetching recent destination locations:', error);
       setRecentLocations([]);
     } finally {
       setIsLoadingRecents(false);
@@ -183,60 +183,41 @@ export default function PickupModal({
 
   return (
     <View style={[styles.container, isFullScreen && styles.fullScreenContainer]}>
-      {/* Full Screen Header */}
-      {isFullScreen && (
-        <View style={styles.fullScreenHeader}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => {
-              if (onFullScreenChange) {
-                onFullScreenChange(false);
-              }
-              setSearchQuery('');
-            }}
-          >
-            <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
-          </TouchableOpacity>
-          <Text style={styles.fullScreenTitle}>Where is the Pickup?</Text>
-          <View style={styles.placeholder} />
-        </View>
-      )}
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={onClose}>
+          <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
+        </TouchableOpacity>
+        <Text style={styles.title}>Where to?</Text>
+        <TouchableOpacity 
+          style={styles.fullScreenButton} 
+          onPress={() => onFullScreenChange && onFullScreenChange(!isFullScreen)}
+        >
+          <Ionicons 
+            name={isFullScreen ? "contract" : "expand"} 
+            size={24} 
+            color={theme.colors.primary} 
+          />
+        </TouchableOpacity>
+      </View>
 
-      {/* Search Input Section */}
-      <View style={styles.searchSection}>
-        {isFullScreen && (
-          <Text style={styles.destinationLabel}>Pickup</Text>
-        )}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputWrapper}>
-            <Input
-              placeholder="Enter your pickup point"
-              placeholderTextColor="#999999"
-              value={searchQuery}
-              onChangeText={(text) => {
-                setSearchQuery(text);
-                setActiveTab('search');
-              }}
-              onFocus={() => {
-                setActiveTab('search');
-                if (onFullScreenChange) {
-                  onFullScreenChange(true);
-                }
-              }}
-              autoFocus={isFullScreen}
-              leftIcon={<Ionicons name="location" size={20} color="#999999" />}
-              rightIcon={searchQuery.length > 0 ? (
-                <TouchableOpacity onPress={() => setSearchQuery('')}>
-                  <Ionicons name="close-circle" size={20} color="#999999" />
-                </TouchableOpacity>
-              ) : undefined}
-              style={isFullScreen ? [styles.searchInput, styles.searchInputFullScreen] : styles.searchInput}
-            />
-            <View style={styles.headerRight}>
-              <Ionicons name="map" size={20} color={theme.colors.blue500} />
-              <Text style={styles.headerMapText}>Map</Text>
-            </View>
-          </View>
+      {/* Search Input */}
+      <View style={styles.searchContainer}>
+        <Input
+          placeholder="Search destinations..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          leftIcon={<Ionicons name="search" size={20} color="#999999" />}
+          rightIcon={searchQuery.length > 0 ? (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={20} color="#999999" />
+            </TouchableOpacity>
+          ) : undefined}
+          style={isFullScreen ? [styles.searchInput, styles.searchInputFullScreen] : styles.searchInput}
+        />
+        <View style={styles.headerRight}>
+          <Ionicons name="map" size={20} color={theme.colors.blue500} />
+          <Text style={styles.headerMapText}>Map</Text>
         </View>
       </View>
 
@@ -308,59 +289,44 @@ const createStyles = (theme: any) => StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    paddingHorizontal: theme.spacing.md,
     paddingTop: theme.spacing.lg,
     paddingBottom: 40, // Account for safe area
     maxHeight: '70%',
-    zIndex: 1000,
     ...theme.shadows.lg,
   },
   fullScreenContainer: {
-    top: 0,
-    bottom: 0,
     maxHeight: '100%',
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
-    paddingTop: 50, // Account for status bar
+    height: '100%',
   },
-  fullScreenHeader: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.lg,
   },
   backButton: {
     padding: theme.spacing.sm,
   },
-  fullScreenTitle: {
-    fontSize: 18,
+  title: {
+    fontSize: 24,
     fontWeight: 'bold',
-    color: theme.colors.text,
+    color: theme.colors.black,
   },
-  placeholder: {
-    width: 40, // Same width as back button for centering
-  },
-  searchSection: {
-    paddingHorizontal: theme.spacing.md,
-  },
-  destinationLabel: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
-    fontWeight: '500',
+  fullScreenButton: {
+    padding: theme.spacing.sm,
   },
   searchContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: theme.spacing.lg,
-  },
-  searchInputWrapper: {
-    flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
-    marginRight: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
   },
   searchInput: {
     flex: 1,
+    marginRight: theme.spacing.sm,
+    marginBottom: 0,
     backgroundColor: '#FFFFFF',
+    height: 48,
   },
   searchInputFullScreen: {
     backgroundColor: '#FFFFFF',
@@ -368,66 +334,51 @@ const createStyles = (theme: any) => StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    position: 'absolute',
-    right: 30,
-    top: 22,
   },
   headerMapText: {
     fontSize: 16,
-    color: theme.colors.blue500,
-    marginLeft: theme.spacing.xs,
     fontWeight: '500',
+    color: theme.colors.blue500,
+    marginLeft: 6,
   },
   tabsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    padding: 4,
   },
   tab: {
-    paddingHorizontal: theme.spacing.lg,
+    flex: 1,
     paddingVertical: theme.spacing.sm,
-    borderRadius: 20,
-    marginRight: theme.spacing.sm,
+    alignItems: 'center',
+    borderRadius: 6,
   },
   activeTab: {
-    backgroundColor: theme.colors.blue100,
+    backgroundColor: '#FFFFFF',
+    ...theme.shadows.sm,
   },
   tabText: {
-    ...theme.typography.body,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
     fontWeight: '500',
+    color: theme.colors.gray600,
   },
   activeTabText: {
-    color: theme.colors.blue500,
+    color: theme.colors.primary,
   },
   listContainer: {
     flex: 1,
-    paddingHorizontal: theme.spacing.lg,
   },
   loadingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: theme.spacing.xl,
+    paddingVertical: theme.spacing.lg,
   },
   loadingText: {
     marginLeft: theme.spacing.sm,
-    fontSize: 16,
-    color: theme.colors.textSecondary,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: theme.spacing.xl,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: theme.colors.text,
-    marginTop: theme.spacing.md,
-  },
-  emptySubtext: {
-    ...theme.typography.body,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.xs,
+    fontSize: 14,
+    color: theme.colors.gray600,
   },
   list: {
     flex: 1,
@@ -436,19 +387,15 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.gray200,
-  },
-  continueButton: {
-    padding: theme.spacing.sm,
-    borderRadius: 20,
-    backgroundColor: theme.colors.blue50,
+    borderBottomColor: '#F0F0F0',
   },
   locationIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: theme.colors.blue50,
+    backgroundColor: '#F0F8FF',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: theme.spacing.md,
@@ -458,12 +405,36 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   locationTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: theme.colors.black,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   locationSubtitle: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: theme.colors.gray600,
+  },
+  continueButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F0F8FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xl,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: theme.colors.gray600,
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: theme.colors.gray500,
+    textAlign: 'center',
   },
 });

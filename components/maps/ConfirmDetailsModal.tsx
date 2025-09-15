@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import Modal from '../common/Modal';
 
 interface LocationItem {
   coordinate: [number, number];
@@ -73,12 +72,10 @@ export default function ConfirmDetailsModal({
     ? `${selectedPaymentMethod.type} | **** ${selectedPaymentMethod.last4}`
     : 'Select payment method';
 
+  if (!visible) return null;
+
   return (
-    <Modal
-      visible={visible}
-      onClose={onClose}
-      maxHeight="70%"
-    >
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
@@ -130,11 +127,24 @@ export default function ConfirmDetailsModal({
             </Text>
           </TouchableOpacity>
         </View>
-    </Modal>
+    </View>
   );
 }
 
 const createStyles = (theme: any) => StyleSheet.create({
+  container: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.lg,
+    paddingBottom: 40, // Account for safe area
+    ...theme.shadows.lg,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

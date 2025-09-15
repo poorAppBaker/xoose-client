@@ -13,6 +13,8 @@ import { useTheme } from '../../contexts/ThemeContext';
 import Mapbox from '@mapbox/mapbox-sdk';
 import mbxGeocoding from '@mapbox/mapbox-sdk/services/geocoding';
 import Input from '../common/Input';
+import recentLocationsService, { RecentLocation } from '../../services/recentLocationsService';
+import useAuthStore from '../../store/authStore';
 
 const { width } = Dimensions.get('window');
 
@@ -30,6 +32,7 @@ interface WhereToGoModalProps {
   onLocationSelect?: (location: LocationItem) => void;
   isFullScreen?: boolean;
   onFullScreenChange?: (isFullScreen: boolean) => void;
+  onMapMove?: (coordinate: [number, number]) => void;
 }
 
 export default function WhereToGoModal({
@@ -37,25 +40,45 @@ export default function WhereToGoModal({
   onClose,
   onLocationSelect,
   isFullScreen = false,
-  onFullScreenChange
+  onFullScreenChange,
+  onMapMove
 }: WhereToGoModalProps) {
   const { theme } = useTheme();
+  const user = useAuthStore(state => state.user);
   const [activeTab, setActiveTab] = useState<'recents' | 'myPlaces' | 'search'>('recents');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<LocationItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [recentLocations, setRecentLocations] = useState<LocationItem[]>([]);
+  const [isLoadingRecents, setIsLoadingRecents] = useState(false);
   const styles = createStyles(theme);
 
   // Initialize Mapbox geocoding service
   const mapboxClient = Mapbox({ accessToken: 'pk.eyJ1IjoiYWJ3ZWhyMTIyNSIsImEiOiJjbWZmYmNtNW0wNHc1MnFvdDkybmdzNWdlIn0.B0AntzGDfY-3brsMbfM4Sw' });
   const geocodingClient = mbxGeocoding(mapboxClient);
 
-  // Sample data for demonstration
-  const recentLocations: LocationItem[] = [
-    { id: '1', title: 'Loyal Heights', subtitle: 'Sunset Hill 400, San Francisco' },
-    { id: '2', title: 'Downtown Plaza', subtitle: 'Main Street 123, San Francisco' },
-    { id: '3', title: 'Golden Gate Park', subtitle: 'Park Avenue 456, San Francisco' },
-  ];
+  // Fetch recent destination locations from Firestore
+  const fetchRecentLocations = async () => {
+    if (!user?._id) return;
+    
+    setIsLoadingRecents(true);
+    try {
+      const recentData = await recentLocationsService.getRecentDestinationLocations(user._id, 3);
+      const locationItems: LocationItem[] = recentData.map(location => ({
+        id: location.id,
+        title: location.title,
+        subtitle: location.subtitle,
+        latitude: location.coordinate[1],
+        longitude: location.coordinate[0]
+      }));
+      setRecentLocations(locationItems);
+    } catch (error) {
+      console.error('Error fetching recent destination locations:', error);
+      setRecentLocations([]);
+    } finally {
+      setIsLoadingRecents(false);
+    }
+  };
 
   const myPlaces: LocationItem[] = [
     { id: '1', title: 'Home', subtitle: '123 Oak Street, San Francisco' },
@@ -82,7 +105,7 @@ export default function WhereToGoModal({
         })
         .send();
 
-      const results: LocationItem[] = response.body.features.map((feature, index) => ({
+      const results: LocationItem[] = response.body.features.map((feature: any, index: number) => ({
         id: `search_${index}`,
         title: feature.place_name?.split(',')[0] || feature.text || 'Unknown Location',
         subtitle: feature.place_name || 'Unknown Address',
@@ -107,6 +130,13 @@ export default function WhereToGoModal({
     }
   }, [searchQuery]);
 
+  // Fetch recent locations when modal becomes visible
+  useEffect(() => {
+    if (visible && activeTab === 'recents') {
+      fetchRecentLocations();
+    }
+  }, [visible, activeTab, user?._id]);
+
   const getCurrentData = () => {
     if (activeTab === 'search') {
       return searchResults;
@@ -115,6 +145,11 @@ export default function WhereToGoModal({
   };
 
   const handleLocationSelect = (item: LocationItem) => {
+    // Move map to the selected location if coordinates are available
+    if (item.latitude && item.longitude && onMapMove) {
+      onMapMove([item.longitude, item.latitude]);
+    }
+    
     if (onLocationSelect) {
       onLocationSelect(item);
     }
@@ -163,7 +198,7 @@ export default function WhereToGoModal({
            >
              <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
            </TouchableOpacity>
-           <Text style={styles.fullScreenTitle}>Where to Go?</Text>
+           <Text style={styles.fullScreenTitle}>Where to?</Text>
            <View style={styles.placeholder} />
          </View>
        )}
@@ -176,7 +211,7 @@ export default function WhereToGoModal({
          <View style={styles.searchContainer}>
            <View style={styles.searchInputWrapper}>
              <Input
-               placeholder="Where to Go?"
+               placeholder="Where to?"
                placeholderTextColor="#999999"
                value={searchQuery}
                onChangeText={(text) => {
@@ -196,10 +231,7 @@ export default function WhereToGoModal({
                    <Ionicons name="close-circle" size={20} color="#999999" />
                  </TouchableOpacity>
                ) : undefined}
-               style={[
-                 styles.searchInput,
-                 isFullScreen && styles.searchInputFullScreen
-               ]}
+               style={isFullScreen ? [styles.searchInput, styles.searchInputFullScreen] : styles.searchInput}
              />
              <View style={styles.headerRight}>
                <Ionicons name="map" size={20} color={theme.colors.blue500} />
@@ -233,10 +265,12 @@ export default function WhereToGoModal({
 
       {/* Content */}
       <View style={styles.listContainer}>
-        {isSearching && (
+        {(isSearching || isLoadingRecents) && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="small" color={theme.colors.blue500} />
-            <Text style={styles.loadingText}>Searching...</Text>
+            <Text style={styles.loadingText}>
+              {isSearching ? 'Searching...' : 'Loading recent locations...'}
+            </Text>
           </View>
         )}
         <FlatList
@@ -246,11 +280,17 @@ export default function WhereToGoModal({
           style={styles.list}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            !isSearching && searchQuery.length > 0 ? (
+            !isSearching && !isLoadingRecents && searchQuery.length > 0 ? (
               <View style={styles.emptyContainer}>
-                <Ionicons name="search" size={48} color={theme.colors.textSecondary} />
+                <Ionicons name="search" size={48} color={theme.colors.gray400} />
                 <Text style={styles.emptyText}>No results found</Text>
                 <Text style={styles.emptySubtext}>Try a different search term</Text>
+              </View>
+            ) : !isSearching && !isLoadingRecents && activeTab === 'recents' && recentLocations.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="time-outline" size={48} color={theme.colors.gray400} />
+                <Text style={styles.emptyText}>No recent locations</Text>
+                <Text style={styles.emptySubtext}>Your recent trips will appear here</Text>
               </View>
             ) : null
           }

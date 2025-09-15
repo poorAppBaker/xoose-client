@@ -33,39 +33,39 @@ const InvoiceDetailsDisplay: React.FC<InvoiceDetailsDisplayProps> = ({
           <Text style={styles.label}>Name:</Text>
           <Text style={styles.value}>{invoiceDetails.fullName}</Text>
         </View>
-        
+
         <View style={styles.detailRow}>
           <Text style={styles.label}>Address:</Text>
           <Text style={styles.value}>{invoiceDetails.addressLine1}</Text>
         </View>
-        
+
         <View style={styles.detailRow}>
           <Text style={styles.label}>City:</Text>
           <Text style={styles.value}>{invoiceDetails.city}</Text>
         </View>
-        
+
         <View style={styles.detailRow}>
           <Text style={styles.label}>Post Code:</Text>
           <Text style={styles.value}>{invoiceDetails.postCode}</Text>
         </View>
-        
+
         <View style={styles.detailRow}>
           <Text style={styles.label}>Country:</Text>
           <Text style={styles.value}>{invoiceDetails.country}</Text>
         </View>
-        
+
         {invoiceDetails.taxId && (
           <View style={styles.detailRow}>
             <Text style={styles.label}>Tax ID:</Text>
             <Text style={styles.value}>{invoiceDetails.taxId}</Text>
           </View>
         )}
-        
+
         <View style={styles.detailRow}>
           <Text style={styles.label}>Email:</Text>
           <Text style={styles.value}>{invoiceDetails.email}</Text>
         </View>
-        
+
         <View style={styles.detailRow}>
           <Text style={styles.label}>Phone:</Text>
           <Text style={styles.value}>{formatPhoneNumber(invoiceDetails.phone)}</Text>
@@ -73,7 +73,9 @@ const InvoiceDetailsDisplay: React.FC<InvoiceDetailsDisplayProps> = ({
       </View>
 
       <TouchableOpacity style={styles.editButton} onPress={onEdit}>
-        <Ionicons name="pencil" size={16} color={theme.colors.blue500} />
+        <View style={styles.addButtonIcon}>
+          <Ionicons name="pencil" size={16} color={theme.colors.blue500} />
+        </View>
         <Text style={styles.editButtonText}>Edit Invoice Details</Text>
       </TouchableOpacity>
     </View>
@@ -84,7 +86,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   container: {
     backgroundColor: theme.colors.white,
     borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.lg,
+    paddingTop: theme.spacing.lg,
     marginBottom: theme.spacing.md,
   },
   detailsList: {
@@ -97,14 +99,14 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginBottom: theme.spacing.sm,
   },
   label: {
-    fontSize: 14,
+    fontSize: 16,
     color: theme.colors.gray600,
-    fontWeight: '400',
+    fontWeight: '500',
   },
   value: {
-    fontSize: 14,
-    color: theme.colors.gray800,
-    fontWeight: '400',
+    fontSize: 16,
+    color: theme.colors.black,
+    fontWeight: '700',
     textAlign: 'right',
     flex: 1,
     marginLeft: theme.spacing.sm,
@@ -115,10 +117,18 @@ const createStyles = (theme: any) => StyleSheet.create({
     alignSelf: 'flex-start',
   },
   editButtonText: {
-    fontSize: 14,
+    fontSize: 16,
     color: theme.colors.blue500,
-    fontWeight: '500',
+    fontWeight: '700',
     marginLeft: theme.spacing.xs,
+  },
+  addButtonIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.md,
   },
 });
 
