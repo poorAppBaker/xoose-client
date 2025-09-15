@@ -12,6 +12,7 @@
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    "**/*.d.ts",
     "app.config.mjs"
   ]
 }

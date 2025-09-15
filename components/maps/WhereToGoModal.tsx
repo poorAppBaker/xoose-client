@@ -6,7 +6,8 @@ import {
   TouchableOpacity,
   FlatList,
   Dimensions,
-  ActivityIndicator
+  ActivityIndicator,
+  Image
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -98,21 +99,27 @@ export default function WhereToGoModal({
     try {
       const response = await geocodingClient
         .forwardGeocode({
-          query: query,
+          query,
           limit: 10,
-          countries: ['us'], // You can modify this based on your target region
+          countries: ['us'],
           types: ['place', 'poi', 'address', 'neighborhood', 'locality', 'district', 'postcode', 'region', 'country']
         })
         .send();
 
-      const results: LocationItem[] = response.body.features.map((feature: any, index: number) => ({
+      const features = response?.body?.features;
+      if (!Array.isArray(features)) {
+        console.warn('Geocoding returned no features', { statusCode: response?.statusCode, body: response?.body });
+        setSearchResults([]);
+        return;
+      }
+
+      const results: LocationItem[] = features.map((feature: any, index: number) => ({
         id: `search_${index}`,
         title: feature.place_name?.split(',')[0] || feature.text || 'Unknown Location',
         subtitle: feature.place_name || 'Unknown Address',
-        latitude: feature.center[1],
-        longitude: feature.center[0],
+        latitude: feature.center?.[1],
+        longitude: feature.center?.[0],
       }));
-
       setSearchResults(results);
     } catch (error) {
       console.error('Geocoding error:', error);
@@ -198,7 +205,7 @@ export default function WhereToGoModal({
            >
              <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
            </TouchableOpacity>
-           <Text style={styles.fullScreenTitle}>Where to?</Text>
+           <Text style={styles.fullScreenTitle}>Where to Go?</Text>
            <View style={styles.placeholder} />
          </View>
        )}
@@ -211,8 +218,8 @@ export default function WhereToGoModal({
          <View style={styles.searchContainer}>
            <View style={styles.searchInputWrapper}>
              <Input
-               placeholder="Where to?"
-               placeholderTextColor="#999999"
+               placeholder="Where to Go?"
+               placeholderTextColor="#121212"
                value={searchQuery}
                onChangeText={(text) => {
                  setSearchQuery(text);
@@ -225,7 +232,7 @@ export default function WhereToGoModal({
                  }
                }}
                autoFocus={isFullScreen}
-               leftIcon={<Ionicons name="paper-plane" size={20} color="#999999" />}
+               leftIcon={<Image source={require('@/assets/images/paperPlane.png')}  />}
                rightIcon={searchQuery.length > 0 ? (
                  <TouchableOpacity onPress={() => setSearchQuery('')}>
                    <Ionicons name="close-circle" size={20} color="#999999" />
@@ -234,7 +241,7 @@ export default function WhereToGoModal({
                style={isFullScreen ? [styles.searchInput, styles.searchInputFullScreen] : styles.searchInput}
              />
              <View style={styles.headerRight}>
-               <Ionicons name="map" size={20} color={theme.colors.blue500} />
+               <Image source={require('@/assets/images/map.png')} />
                <Text style={styles.headerMapText}>Map</Text>
              </View>
            </View>
@@ -372,7 +379,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     position: 'absolute',
-    right: 30,
+    right: 42,
     top: 0,
     bottom: 0,
   },

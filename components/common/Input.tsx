@@ -268,7 +268,7 @@ const Input: React.FC<InputProps> = ({
             (rightIcon || secureTextEntry || type === 'password' || loading) && !props.multiline && styles.inputWithRightIcon,
           ]}
           secureTextEntry={(secureTextEntry || type === 'password') && !isPasswordVisible}
-          placeholderTextColor={theme.colors.gray300}
+          placeholderTextColor={theme.colors.gray800}
           placeholder={getPlaceholderText()}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
