@@ -101,7 +101,7 @@ export default function WhereToGoModal({
         .forwardGeocode({
           query,
           limit: 10,
-          countries: ['us'],
+          // Remove countries restriction to search globally
           types: ['place', 'poi', 'address', 'neighborhood', 'locality', 'district', 'postcode', 'region', 'country']
         })
         .send();
