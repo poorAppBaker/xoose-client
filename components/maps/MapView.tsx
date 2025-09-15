@@ -10,6 +10,11 @@ Mapbox.setAccessToken('pk.eyJ1IjoiYWJ3ZWhyMTIyNSIsImEiOiJjbWZmYmNtNW0wNHc1MnFvdD
 
 const { width, height } = Dimensions.get('window');
 
+// Use static imports to ensure Metro resolves assets reliably
+const USER_POINTER_IMG = require('../../assets/images/pointer.png');
+const DESTINATION_POINTER_IMG = require('../../assets/images/destination-pointer.png');
+const PICKUP_POINTER_IMG = require('../../assets/images/pickup-pointer.png');
+
 interface MapViewProps {
   style?: any;
   onPress?: (event: any) => void;
@@ -171,7 +176,9 @@ export default function MapViewComponent({
 
       if (response.body.routes && response.body.routes.length > 0) {
         const route = response.body.routes[0];
-        const coordinates = route.geometry.coordinates;
+        const coordinates = (route.geometry.coordinates as number[][]).map(
+          (coord) => [coord[0], coord[1]] as [number, number]
+        );
         setRouteGeometry(coordinates);
       }
     } catch (error) {
@@ -219,6 +226,18 @@ export default function MapViewComponent({
         logoEnabled={false}
         attributionEnabled={false}
       >
+        {/* Register marker images for SymbolLayers */}
+        <Mapbox.Images
+          images={{
+            userIcon: USER_POINTER_IMG,
+            destinationIcon: DESTINATION_POINTER_IMG,
+            pickupIcon: PICKUP_POINTER_IMG,
+          }}
+        />
+        <Mapbox.UserLocation
+          visible={true}
+          showsUserHeadingIndicator={true}
+        />
         <Mapbox.Camera
           centerCoordinate={selectedLocation || userLocation || centerCoordinate || [0, 0]}
           zoomLevel={userLocation ? zoomLevel : 2}
@@ -234,12 +253,18 @@ export default function MapViewComponent({
           >
             <View style={styles.userLocationContainer}>
               <Image
-                source={require('../../assets/images/pointer.png')}
+                source={USER_POINTER_IMG}
                 style={[
                   styles.locationPointer,
                   { transform: [{ rotate: `${userHeading}deg` }] }
                 ]}
                 resizeMode="contain"
+                onError={(e) => {
+                  console.log('User pointer image failed to load', e.nativeEvent);
+                }}
+                onLoad={() => {
+                  console.log('User pointer image loaded successfully');
+                }}
               />
             </View>
           </Mapbox.PointAnnotation>
@@ -259,49 +284,67 @@ export default function MapViewComponent({
           </Mapbox.PointAnnotation>
         )}
 
-        {/* Destination Marker with Label */}
-        {destination && (() => {
-          console.log('Rendering destination marker at:', destination.coordinate);
-          return (
-            <Mapbox.PointAnnotation
-              id="destination"
-              coordinate={destination.coordinate}
-              anchor={{ x: 0.5, y: 1 }}
-            >
-              <View style={styles.destinationContainer}>
-              <Image
-                source={require('../../assets/images/destination-pointer.png')}
-                style={styles.locationPointer}
-                resizeMode="contain"
-                onError={(error) => console.log('Destination image error:', error)}
-                onLoad={() => console.log('Destination image loaded successfully')}
-              />
-              </View>
-            </Mapbox.PointAnnotation>
-          );
-        })()}
+        {/* Destination Marker using SymbolLayer to ensure PNG renders reliably */}
+        {destination && (
+          <Mapbox.ShapeSource
+            id="destinationSource"
+            shape={{
+              type: 'FeatureCollection',
+              features: [
+                {
+                  type: 'Feature',
+                  properties: { icon: 'destinationIcon' },
+                  geometry: {
+                    type: 'Point',
+                    coordinates: destination.coordinate,
+                  },
+                },
+              ],
+            }}
+          >
+            <Mapbox.SymbolLayer
+              id="destinationLayer"
+              style={{
+                iconImage: ['get', 'icon'],
+                iconAnchor: 'bottom',
+                iconAllowOverlap: true,
+                iconIgnorePlacement: true,
+                iconSize: 0.6,
+              }}
+            />
+          </Mapbox.ShapeSource>
+        )}
 
-        {/* Pickup Marker with Label */}
-        {pickup && (() => {
-          console.log('Rendering pickup marker at:', pickup.coordinate);
-          return (
-            <Mapbox.PointAnnotation
-              id="pickup"
-              coordinate={pickup.coordinate}
-              anchor={{ x: 0.5, y: 1 }}
-            >
-              <View style={styles.pickupContainer}>
-              <Image
-                source={require('../../assets/images/pickup-pointer.png')}
-                style={styles.locationPointer}
-                resizeMode="contain"
-                onError={(error) => console.log('Pickup image error:', error)}
-                onLoad={() => console.log('Pickup image loaded successfully')}
-              />
-              </View>
-            </Mapbox.PointAnnotation>
-          );
-        })()}
+        {/* Pickup Marker using SymbolLayer */}
+        {pickup && (
+          <Mapbox.ShapeSource
+            id="pickupSource"
+            shape={{
+              type: 'FeatureCollection',
+              features: [
+                {
+                  type: 'Feature',
+                  properties: { icon: 'pickupIcon' },
+                  geometry: {
+                    type: 'Point',
+                    coordinates: pickup.coordinate,
+                  },
+                },
+              ],
+            }}
+          >
+            <Mapbox.SymbolLayer
+              id="pickupLayer"
+              style={{
+                iconImage: ['get', 'icon'],
+                iconAnchor: 'bottom',
+                iconAllowOverlap: true,
+                iconIgnorePlacement: true,
+                iconSize: 0.6,
+              }}
+            />
+          </Mapbox.ShapeSource>
+        )}
 
         {/* Route Line */}
         {destination && pickup && getRouteCoordinates().length > 1 && (
@@ -346,9 +389,13 @@ export default function MapViewComponent({
             id={`waypoint-${index}`}
             coordinate={waypoint}
             draggable={true}
-            onDragEnd={(event) => {
-              const { coordinate } = event.nativeEvent;
-              handleWaypointDrag(index, coordinate);
+            onDragEnd={(event: any) => {
+              const coordinate = (event?.nativeEvent as any)?.coordinate ?? (event as any)?.geometry?.coordinates;
+              if (!coordinate) {
+                console.log('Waypoint drag event missing coordinate payload', event);
+                return;
+              }
+              handleWaypointDrag(index, coordinate as [number, number]);
             }}
           >
             <View style={styles.waypointContainer}>

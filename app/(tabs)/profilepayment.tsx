@@ -108,6 +108,8 @@ export default function ProfilePaymentScreen() {
             onPaymentMethodSelect={handlePaymentMethodSelect}
           />
 
+          <View style={styles.separator} />
+          
           {/* Invoicing Section */}
           <PaymentSection
             title="Invoicing"
@@ -185,7 +187,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     alignItems: 'center',
   },
   segmentButtonActive: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: theme.colors.blue300,
   },
   segmentButtonText: {
     fontSize: 16,
@@ -237,5 +239,10 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: theme.colors.white,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: theme.colors.gray200,
+    marginVertical: theme.spacing.md,
   },
 });

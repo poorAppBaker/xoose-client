@@ -244,9 +244,7 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
               onPress={handleAddPress}
               activeOpacity={0.7}
             >
-              <View style={styles.addButtonIcon}>
-                <Ionicons name="add" size={16} color={theme.colors.blue500} />
-              </View>
+              <Image source={require('@/assets/images/addIcon.png')} style={styles.addButtonIcon} />
               <Text style={styles.addButtonText}>{addButtonText}</Text>
             </TouchableOpacity>
           </>
@@ -273,9 +271,7 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
               onPress={handleAddPress}
               activeOpacity={0.7}
             >
-              <View style={styles.addButtonIcon}>
-                <Ionicons name="add" size={16} color={theme.colors.blue500} />
-              </View>
+              <Image source={require('@/assets/images/addIcon.png')} style={styles.addButtonIcon} />
               <Text style={styles.addButtonText}>{addButtonText}</Text>
             </TouchableOpacity>
           </View>
@@ -294,9 +290,7 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
               onPress={handleAddPress}
               activeOpacity={0.7}
             >
-              <View style={styles.addButtonIcon}>
-                <Ionicons name="add" size={16} color={theme.colors.blue500} />
-              </View>
+              <Image source={require('@/assets/images/addIcon.png')} style={styles.addButtonIcon} />
               <Text style={styles.addButtonText}>{addButtonText}</Text>
             </TouchableOpacity>
           </>
@@ -354,7 +348,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: 16,
     color: theme.colors.gray600,
     textAlign: 'center',
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: '20%',
   },
   addButton: {
     flexDirection: 'row',
@@ -408,7 +402,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   cardIconContainer: {
     borderWidth: 1,
-    borderColor: theme.colors.gray200,
+    borderColor: theme.colors.lightGray,
     borderRadius: theme.borderRadius.md,
     marginRight: theme.spacing.sm,
   },

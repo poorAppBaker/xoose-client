@@ -24,6 +24,8 @@ export const theme = {
     gray600: '#121212',
     gray800: '#121212',
 
+    lightGray: '#DFE3E6',
+
     green500: '#9FD456',
 
     error: '#FF4D4F',

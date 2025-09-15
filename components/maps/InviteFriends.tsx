@@ -33,12 +33,13 @@ const createStyles = (theme: any) => StyleSheet.create({
   container: {
     position: 'absolute',
     bottom: '44%',
-    left: 0,
-    right: 0,
+    left: '3%',
+    right: '3%',
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
+    maxWidth: '94%',
     ...theme.shadows.sm,
   },
   content: {

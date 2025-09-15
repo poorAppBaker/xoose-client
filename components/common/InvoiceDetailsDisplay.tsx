@@ -1,6 +1,6 @@
 // components/common/InvoiceDetailsDisplay.tsx
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { InvoiceDetails } from '../../services/paymentService';
@@ -73,9 +73,7 @@ const InvoiceDetailsDisplay: React.FC<InvoiceDetailsDisplayProps> = ({
       </View>
 
       <TouchableOpacity style={styles.editButton} onPress={onEdit}>
-        <View style={styles.addButtonIcon}>
-          <Ionicons name="pencil" size={16} color={theme.colors.blue500} />
-        </View>
+        <Image source={require('@/assets/images/editIcon.png')} style={styles.editButtonIcon} />
         <Text style={styles.editButtonText}>Edit Invoice Details</Text>
       </TouchableOpacity>
     </View>
@@ -94,22 +92,24 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   detailRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
     marginBottom: theme.spacing.sm,
   },
   label: {
     fontSize: 16,
     color: theme.colors.gray600,
     fontWeight: '500',
+    width: 110,
+    marginRight: theme.spacing.sm,
   },
   value: {
     fontSize: 16,
     color: theme.colors.black,
     fontWeight: '700',
-    textAlign: 'right',
+    textAlign: 'left',
     flex: 1,
-    marginLeft: theme.spacing.sm,
+    flexShrink: 1,
   },
   editButton: {
     flexDirection: 'row',
@@ -130,6 +130,9 @@ const createStyles = (theme: any) => StyleSheet.create({
     justifyContent: 'center',
     marginRight: theme.spacing.md,
   },
+  editButtonIcon: {
+    marginRight: theme.spacing.md,
+  }
 });
 
 export default InvoiceDetailsDisplay;
