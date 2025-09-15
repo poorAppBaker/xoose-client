@@ -17,9 +17,11 @@ import WhereToWhereSection from '@/components/maps/WhereToWhereSection';
 import ConfirmDetailsModal from '@/components/maps/ConfirmDetailsModal';
 import WhoWillTakeTripModal from '@/components/maps/WhoWillTakeTripModal';
 import ProfilePaymentModal from '@/components/maps/ProfilePaymentModal';
+import { DriverOption } from '@/types/driver';
 
 export default function DashboardScreen() {
   const { theme } = useTheme();
+  const router = useRouter();
   const user = useAuthStore(state => state.user);
   const { toggleSidebar } = useSidebarContext();
   const [showWhereToGoModal, setShowWhereToGoModal] = useState(true);
@@ -28,6 +30,7 @@ export default function DashboardScreen() {
   const [selectedLocation, setSelectedLocation] = useState<[number, number] | null>(null);
   const [showConfirmDestination, setShowConfirmDestination] = useState(false);
   const [destination, setDestination] = useState<{
+    id: string;
     coordinate: [number, number];
     title: string;
     subtitle: string;
@@ -36,6 +39,7 @@ export default function DashboardScreen() {
   const [isPickupFullScreen, setIsPickupFullScreen] = useState(false);
   const [showConfirmPickup, setShowConfirmPickup] = useState(false);
   const [pickup, setPickup] = useState<{
+    id: string;
     coordinate: [number, number];
     title: string;
     subtitle: string;
@@ -61,6 +65,7 @@ export default function DashboardScreen() {
     address?: string;
   } | null>(null);
   const [isCreatingBooking, setIsCreatingBooking] = useState(false);
+  const [selectedDriverOption, setSelectedDriverOption] = useState<DriverOption | null>(null);
   const styles = createStyles(theme);
 
   // Calculate map height based on modal visibility
@@ -83,6 +88,7 @@ export default function DashboardScreen() {
     if (location.latitude && location.longitude) {
       setSelectedLocation([location.longitude, location.latitude]);
       setDestination({
+        id: location.id,
         coordinate: [location.longitude, location.latitude],
         title: location.title,
         subtitle: location.subtitle
@@ -105,6 +111,7 @@ export default function DashboardScreen() {
   const handlePickupSelect = (location: any) => {
     if (location.latitude && location.longitude) {
       setPickup({
+        id: location.id,
         coordinate: [location.longitude, location.latitude],
         title: location.title,
         subtitle: location.subtitle
@@ -183,10 +190,10 @@ export default function DashboardScreen() {
         passenger: {
           id: user._id,
           name: user.name || 'Unknown',
-          phone: user.phone,
+          phone: user.phoneNumber,
         },
         payment: {
-          methodId: selectedPaymentMethod.id || 'unknown',
+          methodId: 'unknown', // selectedPaymentMethod doesn't have id property
           type: selectedPaymentMethod.type,
           last4: selectedPaymentMethod.last4,
           brand: selectedPaymentMethod.brand,
@@ -203,9 +210,16 @@ export default function DashboardScreen() {
       // Close the confirm details modal
       setShowConfirmDetails(false);
       
-      // You can show a success message or navigate to a booking confirmation screen
-      // For now, just log success
-      console.log('Booking confirmed!');
+      // Navigate to driver selection screen
+      router.push({
+        pathname: '/choose-your-option',
+        params: {
+          pickup: JSON.stringify(pickup),
+          destination: JSON.stringify(destination)
+        }
+      });
+      
+      console.log('Booking confirmed! Navigating to driver selection...');
       
     } catch (error) {
       console.error('Error creating booking:', error);
@@ -215,11 +229,27 @@ export default function DashboardScreen() {
     }
   };
 
+  const handleDriverSelected = (selectedOption: DriverOption) => {
+    setSelectedDriverOption(selectedOption);
+    
+    // Here you can proceed with the selected driver option
+    // For example, create a final booking confirmation or navigate to tracking screen
+    console.log('Selected driver option:', selectedOption);
+    
+    // You can add additional logic here, such as:
+    // - Update the booking with the selected driver
+    // - Navigate to a tracking screen
+    // - Show a confirmation screen
+    
+    // For now, just navigate back to dashboard
+    router.push('/dashboard');
+  };
+
   return (
     <View style={styles.container}>
       {/* Full Screen Map */}
       <MapView 
-        selectedLocation={selectedLocation} 
+        selectedLocation={selectedLocation || undefined} 
         destination={destination ? {
           coordinate: destination.coordinate,
           title: destination.title
@@ -338,6 +368,7 @@ export default function DashboardScreen() {
         isSelectionMode={true}
         onPaymentMethodSelect={handlePaymentMethodSelected}
       />
+
     </View>
   );
 }
