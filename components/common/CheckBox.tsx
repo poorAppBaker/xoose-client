@@ -71,8 +71,8 @@ const createStyles = (theme: any, size: number) => StyleSheet.create({
     opacity: 0.5,
   },
   checkmark: {
-    width: size * 0.4,
-    height: size * 0.2,
+    width: size * 0.8,
+    height: size * 0.4,
     borderLeftWidth: 2,
     borderBottomWidth: 2,
     borderColor: 'white',

@@ -259,14 +259,10 @@ export default function PersonalInfoScreen() {
         />
 
         <UserProfileUploader
-          label="Profile Photo"
-          required
           value={signupStore.profileImage}
           onImageChange={handleImageChange}
           error={errors.profileImage}
           loading={isUploading}
-          size={120}
-          placeholder="Add your photo"
           style={styles.profileUploader}
         />
 
@@ -292,7 +288,7 @@ export default function PersonalInfoScreen() {
 
         <Input
           label='Date of Birth'
-          placeholder='Select date of birth'
+          placeholder='Select Date of Birth'
           type='date'
           value={signupStore.dob}
           onDateTimeChange={updateFormData('dob')}
@@ -305,7 +301,7 @@ export default function PersonalInfoScreen() {
 
         <Select
           label="Gender"
-          placeholder='Select gender'
+          placeholder='Select Gender'
           options={GENDER_OPTIONS}
           value={signupStore.gender as string}
           onSelectionChange={updateFormData('gender')}
@@ -402,15 +398,16 @@ export default function PersonalInfoScreen() {
         <View style={styles.bottomContainer}>
           <Button 
             variant="outline" 
-            title="Cancel" 
+            title="Back" 
             onPress={handleBack} 
             disabled={signupStore.isSubmitting || isUploading}
+            style={styles.cancelButton}
           />
           <View style={{ flex: 1, marginLeft: theme.spacing.sm }}>
             <Button
               variant="primary"
               fullWidth
-              title={signupStore.isSubmitting ? "Creating Account..." : "Complete Signup"}
+              title={signupStore.isSubmitting ? "Creating Account..." : "Continue"}
               onPress={handleCompleteSignup}
               loading={signupStore.isSubmitting}
               disabled={isUploading}
@@ -438,9 +435,12 @@ const createStyles = (theme: any) => StyleSheet.create({
     flex: 1,
   },
   checkboxSection: {
+    paddingHorizontal: theme.spacing.md,
     marginBottom: theme.spacing.lg,
   },
   checkboxItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: theme.spacing.md,
   },
   checkboxLabelWrap: {
@@ -472,4 +472,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   bottomContainer: {
     flexDirection: 'row',
   },
+  cancelButton: {
+    paddingHorizontal: 45,
+  }
 });

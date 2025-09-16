@@ -315,7 +315,7 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
       <Modal
         visible={modalVisible}
         onClose={handleModalClose}
-        maxHeight={'90%'}
+        maxHeight={'95%'}
         containerStyle={{ gap: theme.spacing.md }}
       >
         {/* Header */}
@@ -327,6 +327,7 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
           placeholder='Search by title'
           value={searchText}
           onChangeText={setSearchText}
+          style={styles.searchInput}
         />
 
         {/* Country List */}
@@ -343,7 +344,7 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
 
         {/* Footer Buttons */}
         <View style={styles.modalBottom}>
-          <Button variant="outline" title="Cancel" onPress={handleModalClose} />
+          <Button style={styles.cancelButton} variant="outline" title="Cancel" onPress={handleModalClose} />
           <View style={{ flex: 1, marginLeft: theme.spacing.sm }}>
             <Button
               variant="primary"
@@ -518,14 +519,15 @@ const createStyles = (theme: any) => StyleSheet.create({
     paddingVertical: theme.spacing.sm,
   },
   searchInput: {
-    flex: 1,
-    ...(theme.typography?.body || {}),
-    fontSize: 16,
-    color: theme.colors.gray800,
-    marginLeft: theme.spacing.sm,
+    height: 30,
+    // flex: 1,
+    // ...(theme.typography?.body || {}),
+    // fontSize: 16,
+    // color: theme.colors.gray800,
+    // marginLeft: theme.spacing.sm,
   },
   listContainer: {
-    maxHeight: 400, // Constrain height so it doesn't overflow
+    maxHeight: 600, // Constrain height so it doesn't overflow
   },
   flatList: {
   },
@@ -549,7 +551,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.sm,
     marginBottom: theme.spacing.sm,
-    borderRadius: theme.borderRadius?.md || 8,
+    borderRadius: theme.borderRadius?.full || 8,
     borderWidth: 1,
     borderColor: 'transparent',
   },
@@ -573,6 +575,9 @@ const createStyles = (theme: any) => StyleSheet.create({
   modalBottom: {
     flexDirection: 'row',
   },
+  cancelButton: {
+    paddingHorizontal: 45,
+  }
 });
 
 export default PhoneNumberInput;

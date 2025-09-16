@@ -18,6 +18,9 @@ import Button from '@/components/common/Button';
 import ContentHeader from '@/components/common/ContentHeader';
 import Modal from '@/components/common/Modal';
 
+// Import the person image
+const personImage = require('../../assets/images/person.png');
+
 interface UserProfileUploaderProps {
   label?: string;
   error?: string;
@@ -39,7 +42,7 @@ const UserProfileUploader: React.FC<UserProfileUploaderProps> = ({
   onImageChange,
   style,
   disabled = false,
-  size = 120,
+  size = 60,
   placeholder,
   loading = false,
 }) => {
@@ -248,7 +251,7 @@ const UserProfileUploader: React.FC<UserProfileUploaderProps> = ({
 
   const getPlaceholderText = () => {
     if (placeholder) return placeholder;
-    return 'Add Photo';
+    return '(optional)';
   };
 
   const renderUploadArea = () => {
@@ -278,25 +281,27 @@ const UserProfileUploader: React.FC<UserProfileUploaderProps> = ({
     }
 
     return (
-      <View style={[
-        styles.uploadPlaceholder,
-        (isUploading || loading) && styles.uploadPlaceholderDisabled
-      ]}>
+      <View style={styles.placeholderWrapper}>
         {(isUploading || loading) ? (
           <ActivityIndicator size="small" color={theme.colors.primary} />
         ) : (
-          <Ionicons
-            name="camera"
-            size={size * 0.25}
-            color={theme.colors.gray400}
+          <Image
+            source={personImage}
+            style={{
+              width: 60,
+              height: 60,
+              tintColor: theme.colors.gray800,
+            }}
+            resizeMode="contain"
           />
         )}
-        <Text style={styles.placeholderText}>
-          {(isUploading || loading) ?
-            'Uploading...' :
-            getPlaceholderText()
-          }
-        </Text>
+        {/* Camera badge with plus sign */}
+        <View style={styles.cameraBadge}>
+          <Ionicons name="camera" size={12} color="white" />
+          <View style={styles.plusSign}>
+            <Ionicons name="add" size={8} color="white" />
+          </View>
+        </View>
       </View>
     );
   };
@@ -393,6 +398,12 @@ const UserProfileUploader: React.FC<UserProfileUploaderProps> = ({
         activeOpacity={0.7}
       >
         {renderUploadArea()}
+        <Text style={styles.placeholderText}>
+          {(isUploading || loading) ?
+            'Uploading...' :
+            getPlaceholderText()
+          }
+        </Text>
       </TouchableOpacity>
 
       {error && (
@@ -413,6 +424,7 @@ const createStyles = (theme: any, size: number) => StyleSheet.create({
     position: 'relative',
     marginBottom: theme.spacing.md,
     alignItems: 'center',
+    paddingBottom: theme.spacing.sm,
   },
   labelContainer: {
     position: 'absolute',
@@ -437,8 +449,8 @@ const createStyles = (theme: any, size: number) => StyleSheet.create({
     color: theme.colors.error,
   },
   uploadContainer: {
-    width: size,
-    height: size,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   uploadContainerError: {
     borderColor: theme.colors.error,
@@ -447,12 +459,19 @@ const createStyles = (theme: any, size: number) => StyleSheet.create({
   uploadContainerDisabled: {
     opacity: 0.6,
   },
+  placeholderWrapper: {
+    position: 'relative',
+    width: size,
+    height: size,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   uploadPlaceholder: {
-    flex: 1,
+    width: size,
+    height: size,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: theme.colors.gray50,
-    paddingHorizontal: theme.spacing.sm,
     borderRadius: size / 2,
     overflow: 'hidden',
   },
@@ -461,10 +480,38 @@ const createStyles = (theme: any, size: number) => StyleSheet.create({
   },
   placeholderText: {
     ...theme.typography.caption,
-    fontSize: 12,
-    color: theme.colors.gray400,
+    fontSize: 18,
+    color: theme.colors.gray500,
     textAlign: 'center',
-    marginTop: theme.spacing.xs,
+    marginTop: theme.spacing.md,
+    fontWeight: '400',
+  },
+  cameraBadge: {
+    position: 'absolute',
+    bottom: -5,
+    right: -5,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: theme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'white',
+    ...theme.shadows.sm,
+  },
+  plusSign: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: theme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'white',
   },
   // NEW: Wrapper to contain both image and badge without clipping
   imageWrapper: {

@@ -193,12 +193,12 @@ const Input: React.FC<InputProps> = ({
             maximumDate={maximumDate}
             style={styles.wheelDatePicker}
             textColor={theme.colors.gray600}
-            textSize={18}
+            textSize={24}
           />
         </View>
 
         <View style={styles.modalBottom}>
-          <Button variant="outline" title="Cancel" onPress={handlePickerCancel} />
+          <Button style={styles.cancelButton} variant="outline" title="Cancel" onPress={handlePickerCancel} />
           <View style={{ flex: 1, marginLeft: theme.spacing.sm }}>
             <Button variant="primary" fullWidth title="Select" onPress={handlePickerConfirm} />
           </View>
@@ -268,7 +268,7 @@ const Input: React.FC<InputProps> = ({
             (rightIcon || secureTextEntry || type === 'password' || loading) && !props.multiline && styles.inputWithRightIcon,
           ]}
           secureTextEntry={(secureTextEntry || type === 'password') && !isPasswordVisible}
-          placeholderTextColor={theme.colors.gray800}
+          placeholderTextColor={theme.colors.gray300}
           placeholder={getPlaceholderText()}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
@@ -445,11 +445,15 @@ const createStyles = (theme: any) => StyleSheet.create({
   wheelDatePicker: {
     width: '100%',
     height: 200,
-    backgroundColor: 'white'
+    backgroundColor: 'white',
+    paddingHorizontal: theme.spacing.lg,
   },
   modalBottom: {
     flexDirection: 'row',
   },
+  cancelButton: {
+    paddingHorizontal: 45,
+  }
 });
 
 export default Input;
