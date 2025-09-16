@@ -191,8 +191,8 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   segmentButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: theme.colors.gray600,
+    fontWeight: '400',
+    color: theme.colors.gray400,
   },
   segmentButtonTextActive: {
     color: theme.colors.white,

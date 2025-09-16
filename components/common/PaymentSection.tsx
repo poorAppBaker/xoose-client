@@ -63,7 +63,7 @@ const PaymentMethodItem: React.FC<PaymentMethodItemProps> = ({
 
       <View style={styles.cardInfo}>
         <Text style={styles.cardType}>Credit Card</Text>
-        {/* <Text style={styles.cardNumber}>* {method.last4}</Text> */}
+        <Text style={styles.cardNumber}>* {method.last4}</Text>
       </View>
 
       <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
@@ -331,18 +331,17 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   illustrationContainer: {
     alignItems: 'center',
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+    marginTop: theme.spacing.md,
   },
   illustration: {
-    width: 200,
-    height: 150,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
   illustrationImage: {
-    width: 100,
-    height: 100,
+    width: 80,
+    height: 80,
   },
   emptyStateText: {
     fontSize: 16,
@@ -422,7 +421,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   cardNumber: {
     fontSize: 14,
-    color: theme.colors.gray600,
+    color: theme.colors.gray300,
   },
   deleteButton: {
     padding: theme.spacing.sm,
@@ -433,14 +432,13 @@ const createStyles = (theme: any) => StyleSheet.create({
     paddingVertical: theme.spacing.md,
   },
   addButtonIcon: {
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
     borderRadius: 16,
     alignItems: 'center',
     borderWidth: 2,
     borderColor: theme.colors.blue500,
     justifyContent: 'center',
-    marginRight: theme.spacing.md,
   },
 });
 
