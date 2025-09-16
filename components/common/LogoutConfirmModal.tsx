@@ -31,6 +31,7 @@ const LogoutConfirmModal: React.FC<LogoutConfirmModalProps> = ({ visible, onCanc
 
         <View style={styles.actionsRow}>
           <Button
+            style={styles.cancelButton}
             variant="outline"
             title="Cancel"
             onPress={onCancel}
@@ -73,6 +74,9 @@ const createStyles = (theme: any) => StyleSheet.create({
   confirmButton: {
     flex: 1,
   },
+  cancelButton: {
+    paddingHorizontal: 40,
+  }
 });
 
 export default LogoutConfirmModal;
