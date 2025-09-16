@@ -5,6 +5,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import { DriverOption, DriverSelectionFilters, DriverSelectionSort } from '../../types/driver';
 import { driverService } from '../../services/driverService';
+import BookTripModal from '../../components/maps/BookTripModal';
 
 interface LocationItem {
   coordinate: [number, number];
@@ -35,6 +36,7 @@ export default function ChooseYourOptionScreen() {
   const [driverOptions, setDriverOptions] = useState<DriverOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedOption, setSelectedOption] = useState<DriverOption | null>(null);
+  const [showBookTripModal, setShowBookTripModal] = useState(false);
   const [filters, setFilters] = useState<DriverSelectionFilters>({
     passengerCount: 1,
     verifiedOnly: false,
@@ -48,10 +50,6 @@ export default function ChooseYourOptionScreen() {
   // Memoize filters and sort to prevent unnecessary re-renders
   const memoizedFilters = useMemo(() => filters, [filters.passengerCount, filters.verifiedOnly, filters.maxWaitTime]);
   const memoizedSort = useMemo(() => sort, [sort.field, sort.order]);
-
-  useEffect(() => {
-    fetchDriverOptions();
-  }, [fetchDriverOptions]);
 
   const fetchDriverOptions = useCallback(async () => {
     if (!pickup || !destination) return;
@@ -86,6 +84,9 @@ export default function ChooseYourOptionScreen() {
     }
   }, [pickup, destination, memoizedFilters, memoizedSort]);
 
+  useEffect(() => {
+    fetchDriverOptions();
+  }, [fetchDriverOptions]);
 
   const handleOptionSelect = (option: DriverOption) => {
     setSelectedOption(option);
@@ -93,14 +94,24 @@ export default function ChooseYourOptionScreen() {
 
   const handleContinue = () => {
     if (selectedOption) {
-      // Navigate back to dashboard with selected driver
-      router.push({
-        pathname: '/dashboard',
-        params: {
-          selectedDriver: JSON.stringify(selectedOption)
-        }
-      });
+      // Show Book Trip modal instead of navigating
+      setShowBookTripModal(true);
     }
+  };
+
+  const handleBookNow = () => {
+    // Close modal and navigate back to dashboard
+    setShowBookTripModal(false);
+    router.push({
+      pathname: '/dashboard',
+      params: {
+        selectedDriver: JSON.stringify(selectedOption)
+      }
+    });
+  };
+
+  const handleCloseBookTripModal = () => {
+    setShowBookTripModal(false);
   };
 
   const handleBack = () => {
@@ -115,45 +126,70 @@ export default function ChooseYourOptionScreen() {
         style={[styles.optionCard, isSelected && styles.selectedCard]}
         onPress={() => handleOptionSelect(item)}
       >
-        {/* Driver Info */}
+        {/* Driver Info Section */}
         <View style={styles.driverSection}>
           <View style={styles.profileImageContainer}>
-            <Image
-              source={{ uri: item.driver.profileImage }}
-              style={styles.profileImage}
-            />
             <View style={styles.verificationBadge}>
+              <Ionicons name="checkmark" size={8} color="white" />
               <Text style={styles.verificationText}>10k+</Text>
             </View>
+            <Image
+              source={require('../../assets/images/profile-avatar.png')}
+              style={styles.profileImage}
+            />
           </View>
           <Text style={styles.driverName}>{item.driver.name}</Text>
-          <Text style={styles.rating}>★{item.driver.rating}</Text>
-          <Text style={styles.languages}>{item.driver.languages.join(' ')}</Text>
+          <View style={styles.ratingLanguagesContainer}>
+            <View style={styles.ratingContainer}>
+              <Ionicons name="star" size={12} color="#FFD700" />
+              <Text style={styles.rating}>{item.driver.rating}</Text>
+            </View>
+            <View style={styles.languageTags}>
+              <View style={styles.languageTag}>
+                <Text style={styles.languageText}>PT</Text>
+              </View>
+              <View style={styles.languageTag}>
+                <Text style={styles.languageText}>EN</Text>
+              </View>
+            </View>
+          </View>
         </View>
 
-        {/* Vehicle Info */}
+        {/* Vehicle Info Section */}
         <View style={styles.vehicleSection}>
           <Image
-            source={{ uri: item.fare.vehicle.image }}
+            source={require('../../assets/images/car.png')}
             style={styles.vehicleImage}
           />
           <Text style={styles.vehicleModel}>{item.fare.vehicle.model}</Text>
-          <Text style={styles.vehicleRating}>★{item.fare.vehicle.rating}</Text>
-          <View style={styles.vehicleDetails}>
-            <Text style={styles.capacity}>👤{item.fare.vehicle.capacity}</Text>
-            <Text style={styles.fuelType}>⛽</Text>
+          <View style={styles.vehicleRatingContainer}>
+            <Ionicons name="star" size={12} color="#FFD700" />
+            <Text style={styles.vehicleRating}>{item.fare.vehicle.rating}</Text>
+          </View>
+          <View style={styles.vehicleFeatures}>
+            <View style={styles.feature}>
+              <Ionicons name="person" size={12} color={theme.colors.primary} />
+              <Text style={styles.featureText}>{item.fare.vehicle.capacity}</Text>
+            </View>
+            <View style={styles.feature}>
+              <Ionicons name="car" size={12} color={theme.colors.primary} />
+            </View>
           </View>
         </View>
 
-        {/* Fare Info */}
-        <View style={styles.fareSection}>
+        {/* Pricing Section */}
+        <View style={styles.pricingSection}>
           <View style={styles.timeContainer}>
-            <Ionicons name="time" size={16} color={theme.colors.gray500} />
+            <Ionicons name="time" size={16} color={theme.colors.primary} />
             <Text style={styles.estimatedTime}>{item.estimatedArrival} min</Text>
           </View>
-          <Text style={styles.originalPrice}>{item.fare.currency}{item.fare.basePrice}</Text>
-          <Text style={styles.discount}>-{item.fare.discount?.percentage}%</Text>
-          <Text style={styles.finalPrice}>{item.fare.currency}{item.fare.finalPrice}</Text>
+          {item.fare.discount && item.fare.discount.percentage > 0 && (
+            <View style={styles.discountContainer}>
+              <Text style={styles.originalPrice}>€{item.fare.basePrice.toFixed(2)}</Text>
+              <Text style={styles.discountText}>-{item.fare.discount.percentage}%</Text>
+            </View>
+          )}
+          <Text style={styles.finalPrice}>€{item.fare.finalPrice.toFixed(2)}</Text>
         </View>
       </TouchableOpacity>
     );
@@ -263,6 +299,16 @@ export default function ChooseYourOptionScreen() {
           <Text style={styles.continueButtonText}>Continue</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Book Trip Modal */}
+      <BookTripModal
+        visible={showBookTripModal}
+        selectedOption={selectedOption}
+        pickup={pickup}
+        destination={destination}
+        onClose={handleCloseBookTripModal}
+        onBookNow={handleBookNow}
+      />
     </SafeAreaView>
   );
 }
@@ -349,7 +395,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   optionCard: {
     flexDirection: 'row',
     backgroundColor: theme.colors.white,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: 12,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.sm,
     borderWidth: 1,
@@ -364,116 +410,150 @@ const createStyles = (theme: any) => StyleSheet.create({
     elevation: 2,
   },
   selectedCard: {
-    borderColor: theme.colors.blue500,
+    borderColor: theme.colors.primary,
     backgroundColor: theme.colors.blue50,
   },
   driverSection: {
     flex: 1,
     alignItems: 'center',
+    paddingRight: theme.spacing.sm,
   },
   profileImageContainer: {
     position: 'relative',
-    marginBottom: theme.spacing.xs,
+    marginBottom: theme.spacing.sm,
   },
   profileImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   verificationBadge: {
     position: 'absolute',
     top: -5,
-    right: -5,
-    backgroundColor: theme.colors.white,
-    borderRadius: 10,
-    width: 20,
-    height: 20,
+    left: -5,
+    backgroundColor: theme.colors.black,
+    borderRadius: theme.borderRadius.full,
+    paddingHorizontal: theme.spacing.xs,
+    paddingVertical: 2,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.gray300,
+    gap: 2,
+    zIndex: 1,
   },
   verificationText: {
-    fontSize: 8,
-    color: theme.colors.gray600,
+    color: 'white',
+    fontSize: 10,
     fontWeight: 'bold',
   },
   driverName: {
-    fontSize: 14,
-    color: theme.colors.gray600,
-    fontWeight: '500',
-    marginBottom: theme.spacing.xs,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: theme.colors.black,
+    marginBottom: theme.spacing.sm,
+  },
+  ratingLanguagesContainer: {
+    alignItems: 'center',
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing.sm,
   },
   rating: {
     fontSize: 12,
     color: theme.colors.gray500,
-    marginBottom: theme.spacing.xs,
+    marginLeft: theme.spacing.xs,
   },
-  languages: {
+  languageTags: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+  },
+  languageTag: {
+    backgroundColor: theme.colors.gray100,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 2,
+    borderRadius: theme.borderRadius.sm,
+  },
+  languageText: {
     fontSize: 10,
     color: theme.colors.gray500,
   },
   vehicleSection: {
     flex: 1,
     alignItems: 'center',
+    paddingHorizontal: theme.spacing.sm,
   },
   vehicleImage: {
-    width: 80,
-    height: 60,
+    width: 130,
+    height: 80,
     borderRadius: theme.borderRadius.sm,
-    marginBottom: theme.spacing.xs,
+    marginBottom: theme.spacing.sm,
   },
   vehicleModel: {
-    fontSize: 12,
-    color: theme.colors.gray600,
-    fontWeight: '500',
-    marginBottom: theme.spacing.xs,
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: theme.colors.black,
+    marginBottom: theme.spacing.sm,
+  },
+  vehicleRatingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing.sm,
   },
   vehicleRating: {
     fontSize: 12,
     color: theme.colors.gray500,
-    marginBottom: theme.spacing.xs,
+    marginLeft: theme.spacing.xs,
   },
-  vehicleDetails: {
+  vehicleFeatures: {
     flexDirection: 'row',
+    gap: theme.spacing.sm,
+  },
+  feature: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: theme.spacing.xs,
   },
-  capacity: {
-    fontSize: 10,
-    color: theme.colors.gray500,
+  featureText: {
+    fontSize: 12,
+    color: theme.colors.gray600,
   },
-  fuelType: {
-    fontSize: 10,
-  },
-  fareSection: {
+  pricingSection: {
     flex: 1,
     alignItems: 'flex-end',
+    paddingLeft: theme.spacing.sm,
   },
   timeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.spacing.xs,
-    gap: theme.spacing.xs,
+    marginBottom: theme.spacing.md,
   },
   estimatedTime: {
-    fontSize: 12,
-    color: theme.colors.gray500,
+    fontSize: 16,
+    color: theme.colors.black,
+    fontWeight: '500',
+    marginLeft: theme.spacing.sm,
+  },
+  discountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.xs,
   },
   originalPrice: {
-    fontSize: 12,
-    color: theme.colors.gray400,
+    fontSize: 16,
+    color: '#FF6B6B',
     textDecorationLine: 'line-through',
-    marginBottom: theme.spacing.xs,
   },
-  discount: {
-    fontSize: 10,
+  discountText: {
+    fontSize: 14,
     color: theme.colors.green500,
-    marginBottom: theme.spacing.xs,
+    fontWeight: 'bold',
   },
   finalPrice: {
-    fontSize: 16,
-    color: theme.colors.gray600,
+    fontSize: 24,
     fontWeight: 'bold',
+    color: theme.colors.black,
   },
   actionButtons: {
     flexDirection: 'row',

@@ -33,6 +33,12 @@ interface MapViewProps {
   onCurrentLocationChange?: (location: { coordinate: [number, number]; address?: string }) => void;
   mapHeight?: number;
   useDestinationPointer?: boolean;
+  showETALabels?: boolean;
+  pickupETA?: string;
+  destinationETA?: string;
+  driverLocation?: [number, number];
+  driverSpeed?: number; // km/h
+  calculateETAs?: boolean;
 }
 
 export default function MapViewComponent({
@@ -46,14 +52,14 @@ export default function MapViewComponent({
   onWaypointChange,
   onCurrentLocationChange,
   mapHeight = height,
-  useDestinationPointer = false
+  useDestinationPointer = false,
+  showETALabels = false,
+  pickupETA,
+  destinationETA,
+  driverLocation,
+  driverSpeed,
+  calculateETAs = false
 }: MapViewProps) {
-  // Debug logging
-  console.log('MapView received props:', {
-    destination: destination ? { coordinate: destination.coordinate, title: destination.title } : null,
-    pickup: pickup ? { coordinate: pickup.coordinate, title: pickup.title } : null,
-    selectedLocation
-  });
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [userHeading, setUserHeading] = useState<number>(0);
   const [waypoints, setWaypoints] = useState<[number, number][]>([]);
@@ -61,6 +67,22 @@ export default function MapViewComponent({
   const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [hasLocationPermission, setHasLocationPermission] = useState(false);
+  const [calculatedPickupETA, setCalculatedPickupETA] = useState<string>('');
+  const [calculatedDestinationETA, setCalculatedDestinationETA] = useState<string>('');
+  const [driverToPickupDistance, setDriverToPickupDistance] = useState<number>(0);
+  const [pickupToDestinationDistance, setPickupToDestinationDistance] = useState<number>(0);
+
+  // Debug logging
+  console.log('MapView received props:', {
+    destination: destination ? { coordinate: destination.coordinate, title: destination.title } : null,
+    pickup: pickup ? { coordinate: pickup.coordinate, title: pickup.title } : null,
+    selectedLocation,
+    calculateETAs,
+    driverLocation,
+    driverSpeed,
+    calculatedPickupETA,
+    calculatedDestinationETA
+  });
 
   // Initialize Mapbox Directions service
   const directionsClient = MapboxDirections({ accessToken: 'pk.eyJ1IjoiYWJ3ZWhyMTIyNSIsImEiOiJjbWZmYmNtNW0wNHc1MnFvdDkybmdzNWdlIn0.B0AntzGDfY-3brsMbfM4Sw' });
@@ -76,6 +98,160 @@ export default function MapViewComponent({
       calculateRoute();
     }
   }, [destination, pickup, waypoints]);
+
+  // Calculate bounds for pickup and destination
+  const calculateBounds = () => {
+    if (!pickup || !destination) return undefined;
+    
+    const pickupCoord = pickup.coordinate;
+    const destCoord = destination.coordinate;
+    
+    const minLng = Math.min(pickupCoord[0], destCoord[0]);
+    const maxLng = Math.max(pickupCoord[0], destCoord[0]);
+    const minLat = Math.min(pickupCoord[1], destCoord[1]);
+    const maxLat = Math.max(pickupCoord[1], destCoord[1]);
+    
+    // Add padding to bounds
+    const padding = 0.01; // Adjust this value for more/less padding
+    
+    return {
+      ne: [maxLng + padding, maxLat + padding] as [number, number],
+      sw: [minLng - padding, minLat - padding] as [number, number]
+    };
+  };
+
+  // Haversine distance calculation (fallback)
+  const calculateHaversineDistance = (coord1: [number, number], coord2: [number, number]): number => {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (coord2[1] - coord1[1]) * Math.PI / 180;
+    const dLon = (coord2[0] - coord1[0]) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(coord1[1] * Math.PI / 180) * Math.cos(coord2[1] * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; // Distance in kilometers
+  };
+
+  // Get driving distance using Mapbox Directions API
+  const getDrivingDistance = async (from: [number, number], to: [number, number]): Promise<number> => {
+    try {
+      const response = await directionsClient
+        .getDirections({
+          profile: 'driving',
+          waypoints: [
+            { coordinates: from, approach: 'curb' },
+            { coordinates: to, approach: 'curb' }
+          ],
+          geometries: 'geojson',
+          overview: 'full',
+          steps: false,
+          alternatives: false
+        })
+        .send();
+
+      if (response.body.routes && response.body.routes.length > 0) {
+        const route = response.body.routes[0];
+        return route.distance / 1000; // Convert meters to kilometers
+      }
+    } catch (error) {
+      console.error('Error getting driving distance:', error);
+    }
+    
+    // Fallback to Haversine distance
+    return calculateHaversineDistance(from, to);
+  };
+
+  // Calculate ETA based on distance and speed
+  const calculateETA = (distanceKm: number, speedKmH: number): string => {
+    // Clamp speed to realistic values
+    const minSpeed = 10; // km/h
+    const maxSpeed = 110; // km/h
+    const clampedSpeed = Math.max(minSpeed, Math.min(maxSpeed, speedKmH));
+    
+    // If distance is very small, show "Arriving"
+    if (distanceKm < 0.05) { // 50 meters
+      return "Arriving";
+    }
+    
+    // Calculate time in hours
+    const timeHours = distanceKm / clampedSpeed;
+    const etaMinutes = Math.ceil(timeHours * 60);
+    
+    // Format ETA
+    if (etaMinutes < 1) {
+      return "<1 min";
+    } else if (etaMinutes < 60) {
+      return `${etaMinutes} min`;
+    } else {
+      const hours = Math.floor(etaMinutes / 60);
+      const minutes = etaMinutes % 60;
+      return minutes > 0 ? `${hours} hr ${minutes} min` : `${hours} hr`;
+    }
+  };
+
+  // Calculate arrival time
+  const calculateArrivalTime = (etaMinutes: number): string => {
+    const now = new Date();
+    const arrivalTime = new Date(now.getTime() + etaMinutes * 60000);
+    return arrivalTime.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
+
+  // Calculate ETAs when driver location or speed changes
+  useEffect(() => {
+    if (!calculateETAs || !driverLocation || !driverSpeed || !pickup || !destination) {
+      return;
+    }
+
+    const performETACalculation = async () => {
+      console.log('🚀 Starting ETA calculation...', {
+        driverLocation,
+        driverSpeed,
+        pickup: pickup?.coordinate,
+        destination: destination?.coordinate
+      });
+      
+      try {
+        // Get distances
+        const driverToPickupDist = await getDrivingDistance(driverLocation, pickup.coordinate);
+        const pickupToDestDist = await getDrivingDistance(pickup.coordinate, destination.coordinate);
+        
+        console.log('📏 Calculated distances:', {
+          driverToPickupDist,
+          pickupToDestDist
+        });
+        
+        setDriverToPickupDistance(driverToPickupDist);
+        setPickupToDestinationDistance(pickupToDestDist);
+        
+        // Calculate ETAs
+        const pickupETA = calculateETA(driverToPickupDist, driverSpeed);
+        const destinationETA = calculateETA(pickupToDestDist, driverSpeed);
+        
+        console.log('⏰ Calculated ETAs:', {
+          pickupETA,
+          destinationETA
+        });
+        
+        setCalculatedPickupETA(pickupETA);
+        setCalculatedDestinationETA(`Arriving by ${calculateArrivalTime(Math.ceil((driverToPickupDist + pickupToDestDist) / driverSpeed * 60))}`);
+        
+        console.log('✅ ETA calculation completed successfully');
+        
+      } catch (error) {
+        console.error('❌ Error calculating ETAs:', error);
+        // Fallback to default values
+        setCalculatedPickupETA("~5 min");
+        setCalculatedDestinationETA("~15 min");
+      }
+    };
+
+    performETACalculation();
+  }, [driverLocation, driverSpeed, pickup, destination, calculateETAs]);
 
   // Debug userLocation changes
   useEffect(() => {
@@ -239,10 +415,16 @@ export default function MapViewComponent({
           showsUserHeadingIndicator={true}
         />
         <Mapbox.Camera
-          centerCoordinate={selectedLocation || userLocation || centerCoordinate || [0, 0]}
-          zoomLevel={userLocation ? zoomLevel : 2}
-          animationMode={userLocation ? "flyTo" : "none"}
-          animationDuration={userLocation ? 1000 : 0}
+          {...(pickup && destination ? {
+            bounds: calculateBounds(),
+            animationMode: "flyTo",
+            animationDuration: 1000
+          } : {
+            centerCoordinate: selectedLocation || userLocation || centerCoordinate || [0, 0],
+            zoomLevel: userLocation ? zoomLevel : 2,
+            animationMode: userLocation ? "flyTo" : "none",
+            animationDuration: userLocation ? 1000 : 0
+          })}
         />
 
         {/* User Location Marker */}
@@ -284,66 +466,110 @@ export default function MapViewComponent({
           </Mapbox.PointAnnotation>
         )}
 
-        {/* Destination Marker using SymbolLayer to ensure PNG renders reliably */}
+        {/* Destination Marker - ETA Label or Pin */}
         {destination && (
-          <Mapbox.ShapeSource
-            id="destinationSource"
-            shape={{
-              type: 'FeatureCollection',
-              features: [
-                {
-                  type: 'Feature',
-                  properties: { icon: 'destinationIcon' },
-                  geometry: {
-                    type: 'Point',
-                    coordinates: destination.coordinate,
+          (() => {
+            console.log('🏷️ Destination ETA Label Check:', {
+              showETALabels,
+              destinationETA,
+              calculatedDestinationETA,
+              willShowETA: showETALabels && (destinationETA || calculatedDestinationETA)
+            });
+            return showETALabels && (destinationETA || calculatedDestinationETA);
+          })() ? (
+            <Mapbox.PointAnnotation
+              id="destinationETA"
+              coordinate={destination.coordinate}
+            >
+              <View style={styles.etaLabelContainer}>
+                <View style={[styles.etaLabel, styles.destinationETALabel]}>
+                  <Text style={styles.etaLabelText}>{calculatedDestinationETA || destinationETA}</Text>
+                </View>
+                <View style={[styles.etaPointer, styles.destinationETAPointer]} />
+              </View>
+            </Mapbox.PointAnnotation>
+          ) : (
+            <Mapbox.ShapeSource
+              id="destinationSource"
+              shape={{
+                type: 'FeatureCollection',
+                features: [
+                  {
+                    type: 'Feature',
+                    properties: { icon: 'destinationIcon' },
+                    geometry: {
+                      type: 'Point',
+                      coordinates: destination.coordinate,
+                    },
                   },
-                },
-              ],
-            }}
-          >
-            <Mapbox.SymbolLayer
-              id="destinationLayer"
-              style={{
-                iconImage: ['get', 'icon'],
-                iconAnchor: 'bottom',
-                iconAllowOverlap: true,
-                iconIgnorePlacement: true,
-                iconSize: 0.6,
+                ],
               }}
-            />
-          </Mapbox.ShapeSource>
+            >
+              <Mapbox.SymbolLayer
+                id="destinationLayer"
+                style={{
+                  iconImage: ['get', 'icon'],
+                  iconAnchor: 'bottom',
+                  iconAllowOverlap: true,
+                  iconIgnorePlacement: true,
+                  iconSize: 0.6,
+                }}
+              />
+            </Mapbox.ShapeSource>
+          )
         )}
 
-        {/* Pickup Marker using SymbolLayer */}
+        {/* Pickup Marker - ETA Label or Pin */}
         {pickup && (
-          <Mapbox.ShapeSource
-            id="pickupSource"
-            shape={{
-              type: 'FeatureCollection',
-              features: [
-                {
-                  type: 'Feature',
-                  properties: { icon: 'pickupIcon' },
-                  geometry: {
-                    type: 'Point',
-                    coordinates: pickup.coordinate,
+          (() => {
+            console.log('🏷️ Pickup ETA Label Check:', {
+              showETALabels,
+              pickupETA,
+              calculatedPickupETA,
+              willShowETA: showETALabels && (pickupETA || calculatedPickupETA)
+            });
+            return showETALabels && (pickupETA || calculatedPickupETA);
+          })() ? (
+            <Mapbox.PointAnnotation
+              id="pickupETA"
+              coordinate={pickup.coordinate}
+            >
+              <View style={styles.etaLabelContainer}>
+                <View style={[styles.etaLabel, styles.pickupETALabel]}>
+                  <Text style={styles.etaLabelText}>{calculatedPickupETA || pickupETA}</Text>
+                </View>
+                <View style={[styles.etaPointer, styles.pickupETAPointer]} />
+              </View>
+            </Mapbox.PointAnnotation>
+          ) : (
+            <Mapbox.ShapeSource
+              id="pickupSource"
+              shape={{
+                type: 'FeatureCollection',
+                features: [
+                  {
+                    type: 'Feature',
+                    properties: { icon: 'pickupIcon' },
+                    geometry: {
+                      type: 'Point',
+                      coordinates: pickup.coordinate,
+                    },
                   },
-                },
-              ],
-            }}
-          >
-            <Mapbox.SymbolLayer
-              id="pickupLayer"
-              style={{
-                iconImage: ['get', 'icon'],
-                iconAnchor: 'bottom',
-                iconAllowOverlap: true,
-                iconIgnorePlacement: true,
-                iconSize: 0.6,
+                ],
               }}
-            />
-          </Mapbox.ShapeSource>
+            >
+              <Mapbox.SymbolLayer
+                id="pickupLayer"
+                style={{
+                  iconImage: ['get', 'icon'],
+                  iconAnchor: 'bottom',
+                  iconAllowOverlap: true,
+                  iconIgnorePlacement: true,
+                  iconSize: 0.6,
+                }}
+              />
+            </Mapbox.ShapeSource>
+          )
         )}
 
         {/* Route Line */}
@@ -614,5 +840,46 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     marginLeft: 8,
+  },
+  // ETA Label Styles
+  etaLabelContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  etaLabel: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  pickupETALabel: {
+    backgroundColor: '#FF9800', // Orange for pickup
+  },
+  destinationETALabel: {
+    backgroundColor: '#4CAF50', // Green for destination
+  },
+  etaLabelText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  etaPointer: {
+    width: 3,
+    height: 12,
+    marginTop: 2,
+  },
+  pickupETAPointer: {
+    backgroundColor: '#FF9800', // Orange for pickup
+  },
+  destinationETAPointer: {
+    backgroundColor: '#4CAF50', // Green for destination
   },
 });

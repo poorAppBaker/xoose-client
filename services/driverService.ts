@@ -194,7 +194,7 @@ class DriverService {
             brand: fareData.vehicleBrand || 'Opel',
             image: fareData.vehicleImage || 'https://via.placeholder.com/80x60/4A90E2/FFFFFF?text=Car',
             capacity: fareData.passengerCount === 'All' ? 8 : parseInt(fareData.passengerCount) || 4,
-            fuelType: fareData.vehicleFuelType || 'Gasoline',
+            fuelType: fareData.vehicleFuelType || '',
             rating: fareData.vehicleRating || 4.5
           },
           pickupAreaCoordinates: fareData.pickupAreaCoordinates,
