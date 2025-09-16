@@ -134,9 +134,9 @@ const UserProfileUploader: React.FC<UserProfileUploaderProps> = ({
       // Use data URI directly instead of saving to local file
       const imageUri = `data:${image.mime};base64,${image.data}`;
 
-      // Create file object for FormData if needed (using original path for upload)
+      // Create file object for upload (use data URI for Firebase upload)
       const file = {
-        uri: image.path, // Keep original path for actual upload
+        uri: imageUri, // Use data URI for Firebase upload
         type: image.mime,
         name: `profile_${new Date().getTime()}.jpg`,
       };
@@ -177,9 +177,9 @@ const UserProfileUploader: React.FC<UserProfileUploaderProps> = ({
       // Use data URI directly instead of saving to local file
       const imageUri = `data:${image.mime};base64,${image.data}`;
 
-      // Create file object for FormData if needed (using original path for upload)
+      // Create file object for upload (use data URI for Firebase upload)
       const file = {
-        uri: image.path, // Keep original path for actual upload
+        uri: imageUri, // Use data URI for Firebase upload
         type: image.mime,
         name: image.filename || `profile_${new Date().getTime()}.jpg`,
       };
@@ -295,13 +295,15 @@ const UserProfileUploader: React.FC<UserProfileUploaderProps> = ({
             resizeMode="contain"
           />
         )}
-        {/* Camera badge with plus sign */}
-        <View style={styles.cameraBadge}>
-          <Ionicons name="camera" size={12} color="white" />
-          <View style={styles.plusSign}>
-            <Ionicons name="add" size={8} color="white" />
+        {/* Camera badge with plus sign - only show when no image */}
+        {!value && (
+          <View style={styles.cameraBadge}>
+            <Ionicons name="camera" size={12} color="white" />
+            <View style={styles.plusSign}>
+              <Ionicons name="add" size={8} color="white" />
+            </View>
           </View>
-        </View>
+        )}
       </View>
     );
   };
@@ -398,12 +400,15 @@ const UserProfileUploader: React.FC<UserProfileUploaderProps> = ({
         activeOpacity={0.7}
       >
         {renderUploadArea()}
-        <Text style={styles.placeholderText}>
-          {(isUploading || loading) ?
-            'Uploading...' :
-            getPlaceholderText()
-          }
-        </Text>
+        {/* Only show placeholder text when no image */}
+        {!value && (
+          <Text style={styles.placeholderText}>
+            {(isUploading || loading) ?
+              'Uploading...' :
+              getPlaceholderText()
+            }
+          </Text>
+        )}
       </TouchableOpacity>
 
       {error && (

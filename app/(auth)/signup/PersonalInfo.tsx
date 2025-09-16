@@ -13,6 +13,7 @@ import UserProfileUploader from '@/components/common/UserProfileUploader';
 import { useSignupStore } from '@/store/signupStore';
 import useAuthStore from '@/store/authStore';
 import authService from '@/services/authService';
+import fileUploadService from '@/services/fileUploadService';
 
 const GENDER_OPTIONS = [
   { label: 'Female', value: 'F' },
@@ -120,23 +121,37 @@ export default function PersonalInfoScreen() {
     if (imageUri && file) {
       setIsUploading(true);
       try {
-        // Here you would typically upload the image to your server
-        // const uploadResponse = await uploadImage(file);
+        // Generate a temporary user ID for the upload path
+        // In a real app, you might want to use a temporary ID or the actual user ID
+        const tempUserId = `temp_${Date.now()}`;
         
-        // For now, just simulate upload delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Upload to Firebase Storage
+        const uploadResult = await fileUploadService.uploadProfileImage(
+          file,
+          tempUserId,
+          (progress) => {
+            console.log(`Upload progress: ${progress.percentage.toFixed(2)}%`);
+          }
+        );
         
-        signupStore.setPersonalInfo({ profileImage: imageUri });
+        // Store the Firebase Storage URL instead of the local URI
+        signupStore.setPersonalInfo({ profileImage: uploadResult.url });
         
         // Clear any existing error
         if (errors.profileImage) {
           setErrors(prev => ({ ...prev, profileImage: undefined }));
         }
         
-        console.log('Image uploaded successfully:', file);
+        console.log('Image uploaded successfully to Firebase:', uploadResult);
       } catch (error) {
         console.error('Image upload failed:', error);
         Alert.alert('Upload Failed', 'Failed to upload profile photo. Please try again.');
+        
+        // Set error state
+        setErrors(prev => ({ 
+          ...prev, 
+          profileImage: 'Failed to upload profile photo. Please try again.' 
+        }));
       } finally {
         setIsUploading(false);
       }

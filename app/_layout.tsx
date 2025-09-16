@@ -88,6 +88,7 @@ export default function RootLayout() {
           >
             <SidebarProvider
               userName={user?.displayName}
+              userImage={user?.profileImage}
               selectedCountry={user?.country}
             >
               <StatusBar style="auto" />
