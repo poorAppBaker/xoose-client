@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, SafeAreaView, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -19,9 +19,18 @@ export default function ChooseYourOptionScreen() {
   const params = useLocalSearchParams();
   const styles = createStyles(theme);
   
-  // Parse route parameters
-  const pickup: LocationItem = params.pickup ? JSON.parse(params.pickup as string) : null;
-  const destination: LocationItem = params.destination ? JSON.parse(params.destination as string) : null;
+  // Debug re-renders
+  console.log('🔄 ChooseYourOptionScreen re-rendered');
+  
+  // Parse route parameters and memoize them
+  const pickup: LocationItem = useMemo(() => 
+    params.pickup ? JSON.parse(params.pickup as string) : null, 
+    [params.pickup]
+  );
+  const destination: LocationItem = useMemo(() => 
+    params.destination ? JSON.parse(params.destination as string) : null, 
+    [params.destination]
+  );
   
   const [driverOptions, setDriverOptions] = useState<DriverOption[]>([]);
   const [loading, setLoading] = useState(false);
@@ -36,13 +45,17 @@ export default function ChooseYourOptionScreen() {
     order: 'asc'
   });
 
-  useEffect(() => {
-    if (pickup && destination) {
-      fetchDriverOptions();
-    }
-  }, [pickup, destination, filters, sort]);
+  // Memoize filters and sort to prevent unnecessary re-renders
+  const memoizedFilters = useMemo(() => filters, [filters.passengerCount, filters.verifiedOnly, filters.maxWaitTime]);
+  const memoizedSort = useMemo(() => sort, [sort.field, sort.order]);
 
-  const fetchDriverOptions = async () => {
+  useEffect(() => {
+    fetchDriverOptions();
+  }, [fetchDriverOptions]);
+
+  const fetchDriverOptions = useCallback(async () => {
+    if (!pickup || !destination) return;
+    
     setLoading(true);
     try {
       console.log('Fetching driver options with coordinates:', {
@@ -53,79 +66,26 @@ export default function ChooseYourOptionScreen() {
       const options = await driverService.getAvailableDrivers(
         pickup.coordinate,
         destination.coordinate,
-        filters,
-        sort
+        memoizedFilters,
+        memoizedSort
       );
       
       console.log(`Received ${options.length} driver options`);
       setDriverOptions(options);
       
-      // If no options found, show mock data for demonstration
+      // If no options found, show empty array (no mock data)
       if (options.length === 0) {
-        console.log('No real driver options found, showing mock data');
-        setDriverOptions(createMockDriverOptions());
+        console.log('No driver options found');
       }
     } catch (error) {
       console.error('Error fetching driver options:', error);
-      // For demo purposes, create mock data
-      setDriverOptions(createMockDriverOptions());
+      // Set empty array on error (no mock data)
+      setDriverOptions([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [pickup, destination, memoizedFilters, memoizedSort]);
 
-  // Mock data for demonstration
-  const createMockDriverOptions = (): DriverOption[] => {
-    return [
-      {
-        driver: {
-          id: '1',
-          name: 'Simon',
-          profileImage: 'https://via.placeholder.com/60x60/4A90E2/FFFFFF?text=S',
-          rating: 4.5,
-          languages: ['PT', 'EN'],
-          verificationStatus: 'verified',
-          tripsCompleted: 10000,
-          isAvailable: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        fare: {
-          id: '1',
-          driverId: '1',
-          vehicleId: '1',
-          vehicle: {
-            id: '1',
-            model: 'Opel Astra',
-            brand: 'Opel',
-            image: 'https://via.placeholder.com/80x60/4A90E2/FFFFFF?text=Car',
-            capacity: 4,
-            fuelType: 'Gasoline',
-            rating: 4.5
-          },
-          pickupAreaCoordinates: {
-            center: pickup.coordinate,
-            radius: 5000
-          },
-          destinationAreaCoordinates: {
-            center: destination.coordinate,
-            radius: 5000
-          },
-          basePrice: 14.12,
-          estimatedTime: 4,
-          discount: {
-            percentage: 20
-          },
-          finalPrice: 999.99,
-          currency: '€',
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        estimatedArrival: 4
-      }
-    ];
-  };
 
   const handleOptionSelect = (option: DriverOption) => {
     setSelectedOption(option);
@@ -276,6 +236,18 @@ export default function ChooseYourOptionScreen() {
         style={styles.optionsList}
         contentContainerStyle={styles.optionsListContent}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          !loading && driverOptions.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="car-outline" size={64} color={theme.colors.gray400} />
+              <Text style={styles.emptyTitle}>No Drivers Available</Text>
+              <Text style={styles.emptySubtitle}>
+                No drivers are currently available for this route.{'\n'}
+                Please try again later or contact support.
+              </Text>
+            </View>
+          ) : null
+        }
       />
 
       {/* Action Buttons */}
@@ -568,5 +540,26 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.white,
     fontSize: 16,
     fontWeight: '500',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.xl,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: theme.colors.gray600,
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: theme.colors.gray500,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

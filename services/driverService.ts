@@ -65,25 +65,22 @@ class DriverService {
         if (index < 3) { // Only log first 3 fares
           const fareData = doc.data();
           console.log(`Fare ${doc.id}:`, {
-            isActive: fareData.isActive,
-            pickupAreaCoordinates: fareData.pickupAreaCoordinates,
-            destinationAreaCoordinates: fareData.destinationAreaCoordinates,
-            driverId: fareData.driverId
+            title: fareData.title,
+            driverId: fareData.driverId,
+            pickupAreaEnabled: fareData.pickupAreaEnabled,
+            destinationAreaEnabled: fareData.destinationAreaEnabled,
+            pickupAreaCoordinates: fareData.pickupAreaCoordinates ? `${fareData.pickupAreaCoordinates.length} coordinates` : 'none',
+            destinationAreaCoordinates: fareData.destinationAreaCoordinates ? `${fareData.destinationAreaCoordinates.length} coordinates` : 'none',
+            minimumFare: fareData.minimumFare,
+            passengerCount: fareData.passengerCount
           });
         }
       });
 
-      // If no fares exist at all, create some test data
+      // If no fares exist, return empty array (don't create test data automatically)
       if (faresSnapshot.size === 0) {
-        console.log('No fares exist in Firebase, creating test data...');
-        await this.createTestData();
-        
-        // Try again after creating test data
-        const newFaresSnapshot = await this.faresCollection.get();
-        console.log(`After creating test data: Found ${newFaresSnapshot.size} total fares`);
-        
-        // Use the new snapshot for processing
-        return this.processFares(newFaresSnapshot, pickupCoordinate, destinationCoordinate, filters, sort);
+        console.log('No fares exist in Firebase, returning empty array');
+        return [];
       }
 
       return this.processFares(faresSnapshot, pickupCoordinate, destinationCoordinate, filters, sort);
@@ -94,22 +91,34 @@ class DriverService {
   }
 
   /**
+   * Convert flat coordinate array [lat, lng, lat, lng, ...] to nested array [[lng, lat], [lng, lat], ...]
+   * Note: We convert to [lng, lat] format to match the coordinate parameter format
+   */
+  private convertFlatToNestedCoordinates(flatArray: number[]): [number, number][] {
+    if (!flatArray || flatArray.length === 0) return [];
+    
+    const result: [number, number][] = [];
+    for (let i = 0; i < flatArray.length; i += 2) {
+      if (i + 1 < flatArray.length) {
+        const lat = flatArray[i];
+        const lng = flatArray[i + 1];
+        result.push([lng, lat]); // Convert to [lng, lat] format
+      }
+    }
+    return result;
+  }
+
+  /**
    * Check if a coordinate is within a polygon area
    */
-  private isCoordinateInPolygon(coordinate: [number, number], polygon: number[]): boolean {
+  private isCoordinateInPolygon(coordinate: [number, number], polygon: [number, number][]): boolean {
     const [lng, lat] = coordinate;
     let inside = false;
     
-    // Convert flat array to coordinate pairs
-    const coordinates: [number, number][] = [];
-    for (let i = 0; i < polygon.length; i += 2) {
-      coordinates.push([polygon[i + 1], polygon[i]]); // polygon is [lat, lng, lat, lng, ...]
-    }
-    
-    // Ray casting algorithm
-    for (let i = 0, j = coordinates.length - 1; i < coordinates.length; j = i++) {
-      const [xi, yi] = coordinates[i];
-      const [xj, yj] = coordinates[j];
+    // Ray casting algorithm - polygon is already in nested format [[lat, lng], [lat, lng], ...]
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const [xi, yi] = polygon[i]; // xi = lat, yi = lng
+      const [xj, yj] = polygon[j]; // xj = lat, yj = lng
       
       if (((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)) {
         inside = !inside;
@@ -135,54 +144,40 @@ class DriverService {
     faresSnapshot.forEach((doc: any) => {
       const fareData = doc.data();
       
-      // Skip inactive fares (treat undefined as inactive)
-      if (fareData.isActive === false) {
-        console.log(`Skipping inactive fare ${doc.id}`);
-        return;
-      }
-      
-      // Treat undefined isActive as active for backward compatibility
-      const isActive = fareData.isActive !== false;
-      if (!isActive) {
-        console.log(`Skipping inactive fare ${doc.id}`);
-        return;
-      }
-      
-      console.log(`Checking fare ${doc.id} (isActive: ${fareData.isActive}):`, {
-        pickupArea: fareData.pickupAreaCoordinates,
-        destinationArea: fareData.destinationAreaCoordinates
+      console.log(`Checking fare ${doc.id}:`, {
+        title: fareData.title,
+        driverId: fareData.driverId,
+        pickupAreaEnabled: fareData.pickupAreaEnabled,
+        destinationAreaEnabled: fareData.destinationAreaEnabled,
+        pickupAreaCoordinates: fareData.pickupAreaCoordinates ? `${fareData.pickupAreaCoordinates.length} coordinates` : 'none',
+        destinationAreaCoordinates: fareData.destinationAreaCoordinates ? `${fareData.destinationAreaCoordinates.length} coordinates` : 'none'
       });
       
       let pickupInArea = false;
       let destinationInArea = false;
       
-      // Check if coordinates are in polygon format (array of numbers) or circle format (object with center/radius)
-      if (Array.isArray(fareData.pickupAreaCoordinates)) {
-        // Polygon format
-        pickupInArea = this.isCoordinateInPolygon(pickupCoordinate, fareData.pickupAreaCoordinates);
+      // Check pickup area if enabled
+      if (fareData.pickupAreaEnabled && fareData.pickupAreaCoordinates) {
+        // Convert flat array to nested array format for polygon check
+        const pickupCoords = this.convertFlatToNestedCoordinates(fareData.pickupAreaCoordinates);
+        pickupInArea = this.isCoordinateInPolygon(pickupCoordinate, pickupCoords);
         console.log(`Fare ${doc.id} - Pickup polygon check: ${pickupInArea}`);
-      } else if (fareData.pickupAreaCoordinates && fareData.pickupAreaCoordinates.center && fareData.pickupAreaCoordinates.radius) {
-        // Circle format
-        pickupInArea = this.isCoordinateInArea(
-          pickupCoordinate,
-          fareData.pickupAreaCoordinates.center,
-          fareData.pickupAreaCoordinates.radius
-        );
-        console.log(`Fare ${doc.id} - Pickup circle check: ${pickupInArea}`);
+      } else if (!fareData.pickupAreaEnabled) {
+        // If pickup area is disabled, consider it as covering all areas
+        pickupInArea = true;
+        console.log(`Fare ${doc.id} - Pickup area disabled, allowing all pickup locations`);
       }
       
-      if (Array.isArray(fareData.destinationAreaCoordinates)) {
-        // Polygon format
-        destinationInArea = this.isCoordinateInPolygon(destinationCoordinate, fareData.destinationAreaCoordinates);
+      // Check destination area if enabled
+      if (fareData.destinationAreaEnabled && fareData.destinationAreaCoordinates) {
+        // Convert flat array to nested array format for polygon check
+        const destinationCoords = this.convertFlatToNestedCoordinates(fareData.destinationAreaCoordinates);
+        destinationInArea = this.isCoordinateInPolygon(destinationCoordinate, destinationCoords);
         console.log(`Fare ${doc.id} - Destination polygon check: ${destinationInArea}`);
-      } else if (fareData.destinationAreaCoordinates && fareData.destinationAreaCoordinates.center && fareData.destinationAreaCoordinates.radius) {
-        // Circle format
-        destinationInArea = this.isCoordinateInArea(
-          destinationCoordinate,
-          fareData.destinationAreaCoordinates.center,
-          fareData.destinationAreaCoordinates.radius
-        );
-        console.log(`Fare ${doc.id} - Destination circle check: ${destinationInArea}`);
+      } else if (!fareData.destinationAreaEnabled) {
+        // If destination area is disabled, consider it as covering all areas
+        destinationInArea = true;
+        console.log(`Fare ${doc.id} - Destination area disabled, allowing all destination locations`);
       }
       
       console.log(`Fare ${doc.id} - Pickup in area: ${pickupInArea}, Destination in area: ${destinationInArea}`);
@@ -193,25 +188,27 @@ class DriverService {
           id: doc.id,
           driverId: fareData.driverId,
           vehicleId: fareData.vehicleId || 'unknown',
-          vehicle: fareData.vehicle || {
+          vehicle: {
             id: fareData.vehicleId || 'unknown',
             model: fareData.vehicleModel || 'Opel Astra',
             brand: fareData.vehicleBrand || 'Opel',
             image: fareData.vehicleImage || 'https://via.placeholder.com/80x60/4A90E2/FFFFFF?text=Car',
-            capacity: fareData.vehicleCapacity || 4,
+            capacity: fareData.passengerCount === 'All' ? 8 : parseInt(fareData.passengerCount) || 4,
             fuelType: fareData.vehicleFuelType || 'Gasoline',
             rating: fareData.vehicleRating || 4.5
           },
           pickupAreaCoordinates: fareData.pickupAreaCoordinates,
           destinationAreaCoordinates: fareData.destinationAreaCoordinates,
-          basePrice: fareData.basePrice || fareData.price || 14.12,
-          estimatedTime: fareData.estimatedTime || fareData.eta || 4,
-          discount: fareData.discount || { percentage: 20 },
-          finalPrice: fareData.finalPrice || fareData.price || 999.99,
-          currency: fareData.currency || '€',
+          basePrice: parseFloat(fareData.minimumFare) || 14.12,
+          estimatedTime: 4, // Default estimated time
+          discount: fareData.percentageAdjustment ? { 
+            percentage: parseInt(fareData.percentageValue) || 0 
+          } : undefined,
+          finalPrice: parseFloat(fareData.minimumFare) || 14.12,
+          currency: '€', // Default currency
           isActive: true,
-          createdAt: fareData.createdAt || new Date().toISOString(),
-          updatedAt: fareData.updatedAt || new Date().toISOString()
+          createdAt: fareData.createdAt?.toDate ? fareData.createdAt.toDate().toISOString() : new Date().toISOString(),
+          updatedAt: fareData.updatedAt?.toDate ? fareData.updatedAt.toDate().toISOString() : new Date().toISOString()
         };
         
         matchingFares.push(fare);
@@ -230,12 +227,10 @@ class DriverService {
     const driverIds = [...new Set(matchingFares.map(fare => fare.driverId))];
     console.log(`Looking for drivers with IDs: ${driverIds.join(', ')}`);
     
-    // Get drivers data
-    const driversSnapshot = await this.driversCollection
-      .where('isAvailable', '==', true)
-      .get();
+    // Get drivers data (no isAvailable filter since you don't need this condition)
+    const driversSnapshot = await this.driversCollection.get();
 
-    console.log(`Found ${driversSnapshot.size} drivers with isAvailable: true`);
+    console.log(`Found ${driversSnapshot.size} total drivers`);
 
     // Log all available drivers to see what we have
     driversSnapshot.forEach((doc, index) => {
@@ -287,55 +282,9 @@ class DriverService {
 
     console.log(`Found ${availableDrivers.length} available drivers that match fare requirements`);
 
-    // If no drivers found, check if we can find the driver by ID (might not be available but exists)
+    // Log if no drivers found for matching fares
     if (availableDrivers.length === 0 && matchingFares.length > 0) {
-      console.log('No available drivers found, checking if drivers exist but are not available...');
-      
-      for (const fare of matchingFares) {
-        try {
-          const driverDoc = await this.driversCollection.doc(fare.driverId).get();
-          if (driverDoc.exists()) {
-            const driverData = driverDoc.data();
-            console.log(`Found driver ${fare.driverId} but isAvailable: ${driverData?.isAvailable}`);
-            
-            // If driver exists but is not available, make them available
-            if (driverData && driverData.isAvailable === false) {
-              console.log(`Making driver ${fare.driverId} available...`);
-              await this.driversCollection.doc(fare.driverId).update({
-                isAvailable: true
-              });
-              
-              // Extract name from various possible fields
-              const driverName = driverData.name || 
-                                driverData.displayName || 
-                                driverData.firstName || 
-                                `${driverData.firstName || ''} ${driverData.lastName || ''}`.trim() ||
-                                'Driver';
-              
-              // Add the driver to available drivers
-              const driver: Driver = {
-                id: driverDoc.id,
-                name: driverName,
-                profileImage: driverData.profileImage || driverData.photoURL || 'https://via.placeholder.com/60x60/4A90E2/FFFFFF?text=D',
-                rating: driverData.rating || 4.0,
-                languages: driverData.languages || ['EN'],
-                verificationStatus: driverData.verificationStatus || 'verified',
-                tripsCompleted: driverData.tripsCompleted || 100,
-                isAvailable: true,
-                createdAt: driverData.createdAt || new Date().toISOString(),
-                updatedAt: driverData.updatedAt || new Date().toISOString()
-              };
-              
-              availableDrivers.push(driver);
-              console.log(`Made driver ${fare.driverId} (${driver.name}) available and added to list`);
-            }
-          } else {
-            console.log(`Driver ${fare.driverId} does not exist in drivers collection`);
-          }
-        } catch (error) {
-          console.error(`Error checking driver ${fare.driverId}:`, error);
-        }
-      }
+      console.log('No drivers found for matching fares');
     }
 
     // Combine drivers with their fares
@@ -430,181 +379,6 @@ class DriverService {
       return doc.exists() ? { id: doc.id, ...doc.data() } as Fare : null;
     } catch (error) {
       console.error('Error fetching fare:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Create a new driver
-   */
-  async createDriver(driverData: Omit<Driver, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-    try {
-      const docRef = await this.driversCollection.add({
-        ...driverData,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
-      return docRef.id;
-    } catch (error) {
-      console.error('Error creating driver:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Create a new fare
-   */
-  async createFare(fareData: Omit<Fare, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-    try {
-      const docRef = await this.faresCollection.add({
-        ...fareData,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
-      return docRef.id;
-    } catch (error) {
-      console.error('Error creating fare:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Create a US-wide fare for testing
-   */
-  async createUSWideFare(driverId: string, vehicleId: string): Promise<string> {
-    const usCenter: [number, number] = [39.8283, -98.5795]; // Geographic center of US
-    const usRadius = 5000000; // 5000km radius to cover entire US
-
-    const fareData: Omit<Fare, 'id' | 'createdAt' | 'updatedAt'> = {
-      driverId,
-      vehicleId,
-      vehicle: {
-        id: vehicleId,
-        model: 'Opel Astra',
-        brand: 'Opel',
-        image: 'https://via.placeholder.com/80x60/4A90E2/FFFFFF?text=Car',
-        capacity: 4,
-        fuelType: 'Gasoline',
-        rating: 4.5
-      },
-      pickupAreaCoordinates: {
-        center: usCenter,
-        radius: usRadius
-      },
-      destinationAreaCoordinates: {
-        center: usCenter,
-        radius: usRadius
-      },
-      basePrice: 14.12,
-      estimatedTime: 4,
-      discount: {
-        percentage: 20
-      },
-      finalPrice: 999.99,
-      currency: '€',
-      isActive: true
-    };
-
-    return this.createFare(fareData);
-  }
-
-  /**
-   * Create test data for demonstration (public method)
-   */
-  async createTestDataPublic(): Promise<void> {
-    return this.createTestData();
-  }
-
-  /**
-   * Debug driver data in database
-   */
-  async debugDriverData(): Promise<void> {
-    try {
-      console.log('🔍 Debugging driver data...');
-      
-      const driversSnapshot = await this.driversCollection.get();
-      console.log(`Found ${driversSnapshot.size} drivers in database`);
-      
-      driversSnapshot.forEach((doc, index) => {
-        if (index < 10) { // Only show first 10 drivers
-          const driverData = doc.data();
-          console.log(`Driver ${doc.id}:`, {
-            name: driverData.name,
-            displayName: driverData.displayName,
-            firstName: driverData.firstName,
-            lastName: driverData.lastName,
-            email: driverData.email,
-            isAvailable: driverData.isAvailable,
-            allFields: Object.keys(driverData)
-          });
-        }
-      });
-      
-      console.log('✅ Driver data debug completed');
-    } catch (error) {
-      console.error('❌ Error debugging driver data:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update all fares to have isActive: true (for existing data)
-   */
-  async updateFaresToActive(): Promise<void> {
-    try {
-      console.log('Updating all fares to isActive: true...');
-      
-      const faresSnapshot = await this.faresCollection.get();
-      const batch = firestore().batch();
-      
-      faresSnapshot.forEach((doc) => {
-        const fareData = doc.data();
-        if (fareData.isActive === undefined) {
-          console.log(`Updating fare ${doc.id} to isActive: true`);
-          batch.update(doc.ref, { isActive: true });
-        }
-      });
-      
-      await batch.commit();
-      console.log('All fares updated successfully');
-    } catch (error) {
-      console.error('Error updating fares:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Create test data for demonstration
-   */
-  private async createTestData(): Promise<void> {
-    try {
-      console.log('Creating test drivers and fares...');
-      
-      // Create test drivers
-      const driverIds = [];
-      for (let i = 1; i <= 4; i++) {
-        const driverId = await this.createDriver({
-          name: 'Simon',
-          profileImage: 'https://via.placeholder.com/60x60/4A90E2/FFFFFF?text=S',
-          rating: 4.5,
-          languages: ['PT', 'EN'],
-          verificationStatus: 'verified',
-          tripsCompleted: 10000,
-          isAvailable: true
-        });
-        driverIds.push(driverId);
-        console.log(`Created test driver ${i}: ${driverId}`);
-      }
-
-      // Create US-wide fares for each driver
-      for (let i = 0; i < driverIds.length; i++) {
-        const fareId = await this.createUSWideFare(driverIds[i], `test-vehicle-${i + 1}`);
-        console.log(`Created test fare ${i + 1}: ${fareId}`);
-      }
-
-      console.log('Test data creation completed');
-    } catch (error) {
-      console.error('Error creating test data:', error);
       throw error;
     }
   }
