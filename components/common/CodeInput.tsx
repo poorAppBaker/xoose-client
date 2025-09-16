@@ -78,12 +78,12 @@ const CodeInput = forwardRef<CodeInputRef, CodeInputProps>(({
           ...theme.shadows.sm,
         },
         focusedPinCodeContainerStyle: {
-          borderColor: theme.colors.primary,
+          borderColor: theme.colors.gray200,
           backgroundColor: '#ffffff',
           ...theme.shadows.md,
         },
         filledPinCodeContainerStyle: {
-          borderColor: theme.colors.primary,
+          borderColor: theme.colors.gray200,
           backgroundColor: '#ffffff',
         },
         disabledPinCodeContainerStyle: {
@@ -102,9 +102,7 @@ const CodeInput = forwardRef<CodeInputRef, CodeInputProps>(({
           color: theme.colors.gray400,
         },
         focusStickStyle: {
-          backgroundColor: theme.colors.primary,
-          height: 2,
-          width: 24,
+          backgroundColor: theme.colors.gray200,
         },
       }}
       textInputProps={{

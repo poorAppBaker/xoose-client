@@ -25,6 +25,9 @@ export default function DashboardScreen() {
   const router = useRouter();
   const user = useAuthStore(state => state.user);
   const { toggleSidebar } = useSidebarContext();
+  
+  // Debug re-renders
+  console.log('🔄 DashboardScreen re-rendered');
   const [showWhereToGoModal, setShowWhereToGoModal] = useState(true);
   const [showInviteFriends, setShowInviteFriends] = useState(true);
   const [isWhereToGoFullScreen, setIsWhereToGoFullScreen] = useState(false);

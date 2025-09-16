@@ -100,7 +100,7 @@ export default function PickupModal({
         .forwardGeocode({
           query: query,
           limit: 10,
-          countries: ['us'], // You can modify this based on your target region
+          // Remove countries restriction to search globally
           types: ['place', 'poi', 'address', 'neighborhood', 'locality', 'district', 'postcode', 'region', 'country']
         })
         .send();
