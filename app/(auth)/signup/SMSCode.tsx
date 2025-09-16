@@ -166,11 +166,7 @@ export default function SMSCodeScreen() {
         <ContentHeader title='Enter SMS Code' />
 
         <Text style={styles.description}>
-          We sent a verification code to{' '}
-          <Text style={styles.phoneText}>
-            {formatPhoneNumber(signupStore.fullPhoneNumber)}
-          </Text>
-          {'. Enter the code below to continue.'}
+          Check your messages. We sent you a one-time code. Insert the code above to continue.
         </Text>
 
         <CodeInput
@@ -261,7 +257,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   timeoutText: {
     fontSize: 12,
     fontWeight: '400',
-    color: theme.colors.gray500,
+    color: theme.colors.gray800,
     flex: 1,
   },
   timerText: {

@@ -12,11 +12,11 @@ import { Country } from '@/components/common/PhoneNumberInput';
 import { useSignupStore } from '@/store/signupStore';
 
 const LANGUAGE_COUNTRIES = [
-  { name: 'Portugal', code: 'PT', dialCode: '+351', format: '### ### ###' },
-  { name: 'Spain', code: 'ES', dialCode: '+34', format: '### ### ###' },
-  { name: 'United States', code: 'US', dialCode: '+1', format: '(###) ###-####' },
-  { name: 'France', code: 'FR', dialCode: '+33', format: '## ## ## ## ##' },
-  { name: 'Germany', code: 'DE', dialCode: '+49', format: '#### #######' },
+  { name: 'Portuguese', code: 'PT', dialCode: '+351', format: '### ### ###' },
+  { name: 'English', code: 'US', dialCode: '+1', format: '(###) ###-####' },
+  { name: 'Spanish', code: 'ES', dialCode: '+34', format: '### ### ###' },
+  { name: 'French', code: 'FR', dialCode: '+33', format: '## ## ## ## ##' },
+  { name: 'German', code: 'DE', dialCode: '+49', format: '#### #######' },
 ];
 
 export default function LanguageScreen() {
@@ -117,6 +117,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   chooseText: {
     ...theme.typography.body,
     marginBottom: theme.spacing.lg,
+    color: theme.colors.gray800,
   },
   languageImage: {
     justifyContent: 'center',

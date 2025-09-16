@@ -102,16 +102,17 @@ export default function PhoneNumberScreen() {
 
         <View style={styles.bottomContainer}>
           <Button 
+            style={styles.cancelButton}
             variant="outline" 
-            title="Cancel" 
+            title="Back" 
             onPress={handleBack}
             disabled={signupStore.isSendingCode}
           />
-          <View style={{ flex: 1, marginLeft: theme.spacing.sm }}>
+          <View style={{ flex: 1, marginLeft: theme.spacing.md }}>
             <Button
               variant="primary"
               fullWidth
-              title={signupStore.isSendingCode ? "Sending..." : "Send Code"}
+              title={signupStore.isSendingCode ? "Sending..." : "Continue"}
               onPress={handleSendCode}
               disabled={!isValidPhone || signupStore.isSendingCode}
               loading={signupStore.isSendingCode}
@@ -134,5 +135,8 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   bottomContainer: {
     flexDirection: 'row',
+  },
+  cancelButton: {
+    paddingHorizontal: 45,
   }
 });
