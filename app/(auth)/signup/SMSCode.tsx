@@ -206,9 +206,10 @@ export default function SMSCodeScreen() {
         <View style={styles.bottomContainer}>
           <Button 
             variant="outline" 
-            title="Cancel" 
+            title="Back" 
             onPress={handleBack}
             disabled={signupStore.isVerifyingCode}
+            style={styles.cancelButton}
           />
           <View style={{ flex: 1, marginLeft: theme.spacing.sm }}>
             <Button
@@ -278,4 +279,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   bottomContainer: {
     flexDirection: 'row',
   },
+  cancelButton: {
+    paddingHorizontal: 45,
+  }
 });

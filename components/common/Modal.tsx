@@ -6,7 +6,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   ModalProps as RNModalProps,
-  ViewStyle
+  ViewStyle,
+  StatusBar
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -41,6 +42,7 @@ const Modal: React.FC<ModalProps> = ({
       animationType={animationType}
       visible={visible}
       onRequestClose={onClose}
+      statusBarTranslucent={true}
       {...props}
     >
       <View style={styles.modalOverlay}>
@@ -69,9 +71,18 @@ const createStyles = (theme: any, maxHeight: any, backdropOpacity: number) =>
     modalOverlay: {
       flex: 1,
       justifyContent: 'flex-end',
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
     },
     modalBackdrop: {
-      flex: 1,
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
       backgroundColor: `rgba(0, 0, 0, ${backdropOpacity})`,
     },
     modalContainer: {

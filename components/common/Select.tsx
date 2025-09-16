@@ -167,7 +167,7 @@ const Select: React.FC<SelectProps> = ({
         />
 
         <View style={styles.modalBottom}>
-          <Button variant="outline" title="Cancel" onPress={handleCancel} />
+          <Button style={styles.cancelButton} variant="outline" title="Cancel" onPress={handleCancel} />
           <View style={{ flex: 1, marginLeft: theme.spacing.sm }}>
             <Button
               variant="primary"
@@ -369,6 +369,9 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.primary,
     fontWeight: '600',
   },
+  cancelButton: {
+    paddingHorizontal: 45,
+  }
 });
 
 export default Select;
