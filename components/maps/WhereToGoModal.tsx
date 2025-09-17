@@ -196,6 +196,7 @@ export default function WhereToGoModal({
                  onFullScreenChange(false);
                }
                setSearchQuery('');
+               setActiveTab('recents');
              }}
            >
              <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
@@ -372,12 +373,12 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     position: 'absolute',
-    right: 42,
+    right: 22,
     top: 0,
     bottom: 0,
   },
   headerMapText: {
-    ...theme.typography.body,
+    fontSize: 16,
     color: theme.colors.blue500,
     marginLeft: theme.spacing.xs,
     fontWeight: '500',
@@ -424,7 +425,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: theme.colors.blue50,
+    backgroundColor: theme.colors.blue25,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: theme.spacing.md,

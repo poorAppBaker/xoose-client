@@ -7,6 +7,15 @@ import { DriverOption, DriverSelectionFilters, DriverSelectionSort } from '../..
 import { driverService } from '../../services/driverService';
 import BookTripModal from '../../components/maps/BookTripModal';
 
+// Import icon images
+const userIcon = require('../../assets/images/icons/user.png');
+const languageIcon = require('../../assets/images/icons/language.png');
+const positionIcon = require('../../assets/images/icons/position.png');
+const subtractIcon = require('../../assets/images/icons/subtract.png');
+const clockIcon = require('../../assets/images/icons/clock.png');
+const filterIcon = require('../../assets/images/icons/filter.png');
+const sortIcon = require('../../assets/images/icons/sort.png');
+
 interface LocationItem {
   coordinate: [number, number];
   title: string;
@@ -19,20 +28,20 @@ export default function ChooseYourOptionScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const styles = createStyles(theme);
-  
+
   // Debug re-renders
   console.log('🔄 ChooseYourOptionScreen re-rendered');
-  
+
   // Parse route parameters and memoize them
-  const pickup: LocationItem = useMemo(() => 
-    params.pickup ? JSON.parse(params.pickup as string) : null, 
+  const pickup: LocationItem = useMemo(() =>
+    params.pickup ? JSON.parse(params.pickup as string) : null,
     [params.pickup]
   );
-  const destination: LocationItem = useMemo(() => 
-    params.destination ? JSON.parse(params.destination as string) : null, 
+  const destination: LocationItem = useMemo(() =>
+    params.destination ? JSON.parse(params.destination as string) : null,
     [params.destination]
   );
-  
+
   const [driverOptions, setDriverOptions] = useState<DriverOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedOption, setSelectedOption] = useState<DriverOption | null>(null);
@@ -53,24 +62,24 @@ export default function ChooseYourOptionScreen() {
 
   const fetchDriverOptions = useCallback(async () => {
     if (!pickup || !destination) return;
-    
+
     setLoading(true);
     try {
       console.log('Fetching driver options with coordinates:', {
         pickup: pickup.coordinate,
         destination: destination.coordinate
       });
-      
+
       const options = await driverService.getAvailableDrivers(
         pickup.coordinate,
         destination.coordinate,
         memoizedFilters,
         memoizedSort
       );
-      
+
       console.log(`Received ${options.length} driver options`);
       setDriverOptions(options);
-      
+
       // If no options found, show empty array (no mock data)
       if (options.length === 0) {
         console.log('No driver options found');
@@ -120,7 +129,7 @@ export default function ChooseYourOptionScreen() {
 
   const renderDriverOption = ({ item }: { item: DriverOption }) => {
     const isSelected = selectedOption?.driver.id === item.driver.id;
-    
+
     return (
       <TouchableOpacity
         style={[styles.optionCard, isSelected && styles.selectedCard]}
@@ -220,34 +229,33 @@ export default function ChooseYourOptionScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={theme.colors.white} />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
         </TouchableOpacity>
         <Text style={styles.title}>Choose your Option</Text>
-        <View style={styles.placeholder} />
       </View>
 
       {/* Filter Chips */}
       <View style={styles.filterChips}>
         <TouchableOpacity style={styles.filterChip}>
-          <Ionicons name="person" size={16} color={theme.colors.gray600} />
+          <Image source={userIcon} style={styles.filterChipIcon} />
           <Text style={styles.filterChipText}>1</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.filterChip}>
-          <Ionicons name="language" size={16} color={theme.colors.gray600} />
+          <Image source={languageIcon} style={styles.filterChipIcon} />
           <Text style={styles.filterChipText}>A</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.filterChip}>
-          <Ionicons name="female" size={16} color={theme.colors.gray600} />
+          <Image source={positionIcon} style={styles.filterChipIcon} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.filterChip}>
-          <Ionicons name="checkmark" size={16} color={theme.colors.gray600} />
+          <Image source={subtractIcon} style={styles.filterChipIcon} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.filterChip}>
-          <Ionicons name="time" size={16} color={theme.colors.gray600} />
+          <Image source={clockIcon} style={styles.filterChipIcon} />
           <Text style={styles.filterChipText}>20'</Text>
         </TouchableOpacity>
       </View>
@@ -255,12 +263,12 @@ export default function ChooseYourOptionScreen() {
       {/* Filter and Sort Options */}
       <View style={styles.filterSortRow}>
         <TouchableOpacity style={styles.filterButton}>
-          <Ionicons name="filter" size={16} color={theme.colors.gray600} />
+          <Image source={filterIcon} style={styles.filterChipIcon} />
           <Text style={styles.filterButtonText}>More Filters</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.sortButton}>
-          <Ionicons name="swap-vertical" size={16} color={theme.colors.gray600} />
-          <Text style={styles.sortButtonText}>↑↓ Order</Text>
+          <Image source={sortIcon} style={styles.filterChipIcon} />
+          <Text style={styles.sortButtonText}>Order</Text>
         </TouchableOpacity>
       </View>
 
@@ -291,8 +299,8 @@ export default function ChooseYourOptionScreen() {
         <TouchableOpacity style={styles.backActionButton} onPress={handleBack}>
           <Text style={styles.backActionButtonText}>Back</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.continueButton, !selectedOption && styles.continueButtonDisabled]} 
+        <TouchableOpacity
+          style={[styles.continueButton, !selectedOption && styles.continueButtonDisabled]}
           onPress={handleContinue}
           disabled={!selectedOption}
         >
@@ -321,10 +329,8 @@ const createStyles = (theme: any) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.gray200,
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.xl,
   },
   backButton: {
     padding: theme.spacing.sm,
@@ -333,7 +339,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: 24,
     color: theme.colors.gray600,
     fontWeight: 'bold',
-    flex: 1,
     textAlign: 'center',
   },
   placeholder: {
@@ -341,6 +346,8 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   filterChips: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
     gap: theme.spacing.sm,
@@ -348,9 +355,11 @@ const createStyles = (theme: any) => StyleSheet.create({
   filterChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.gray100,
-    borderRadius: theme.borderRadius.lg,
-    paddingHorizontal: theme.spacing.sm,
+    justifyContent: 'center',
+    width: 64,
+    borderWidth: 1,
+    borderColor: theme.colors.gray300,
+    borderRadius: theme.borderRadius.full,
     paddingVertical: theme.spacing.xs,
     gap: theme.spacing.xs,
   },
@@ -359,10 +368,15 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.gray600,
     fontWeight: '500',
   },
+  filterChipIcon: {
+    width: 16,
+    height: 16,
+    resizeMode: 'contain',
+  },
   filterSortRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.xl,
     paddingBottom: theme.spacing.lg,
   },
   filterButton: {
@@ -372,8 +386,8 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   filterButtonText: {
     fontSize: 14,
-    color: theme.colors.gray600,
-    fontWeight: '500',
+    color: theme.colors.blue500,
+    fontWeight: '700',
   },
   sortButton: {
     flexDirection: 'row',
@@ -382,8 +396,8 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   sortButtonText: {
     fontSize: 14,
-    color: theme.colors.gray600,
-    fontWeight: '500',
+    color: theme.colors.blue500,
+    fontWeight: '700',
   },
   optionsList: {
     flex: 1,
@@ -395,19 +409,11 @@ const createStyles = (theme: any) => StyleSheet.create({
   optionCard: {
     flexDirection: 'row',
     backgroundColor: theme.colors.white,
-    borderRadius: 12,
+    borderRadius: theme.spacing.md,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.sm,
     borderWidth: 1,
-    borderColor: theme.colors.gray200,
-    shadowColor: theme.colors.gray400,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    borderColor: theme.colors.gray300,
   },
   selectedCard: {
     borderColor: theme.colors.primary,
@@ -452,6 +458,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginBottom: theme.spacing.sm,
   },
   ratingLanguagesContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   ratingContainer: {

@@ -6,7 +6,8 @@ import {
   TouchableOpacity,
   FlatList,
   Dimensions,
-  ActivityIndicator
+  ActivityIndicator,
+  Image
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -60,7 +61,7 @@ export default function PickupModal({
   // Fetch recent pickup locations from Firestore
   const fetchRecentLocations = async () => {
     if (!user?._id) return;
-    
+
     setIsLoadingRecents(true);
     try {
       const recentData = await recentLocationsService.getRecentPickupLocations(user._id, 3);
@@ -149,7 +150,7 @@ export default function PickupModal({
     if (item.latitude && item.longitude && onMapMove) {
       onMapMove([item.longitude, item.latitude]);
     }
-    
+
     if (onLocationSelect) {
       onLocationSelect(item);
     }
@@ -164,18 +165,12 @@ export default function PickupModal({
       onPress={() => handleLocationSelect(item)}
     >
       <View style={styles.locationIcon}>
-        <Ionicons name="location" size={20} color={theme.colors.blue500} />
+        {<Image source={require('@/assets/images/locationIcon.png')} />}
       </View>
       <View style={styles.locationText}>
         <Text style={styles.locationTitle}>{item.title}</Text>
         <Text style={styles.locationSubtitle}>{item.subtitle}</Text>
       </View>
-      <TouchableOpacity
-        style={styles.continueButton}
-        onPress={() => handleLocationSelect(item)}
-      >
-        <Ionicons name="arrow-forward" size={20} color={theme.colors.blue500} />
-      </TouchableOpacity>
     </TouchableOpacity>
   );
 
@@ -184,32 +179,37 @@ export default function PickupModal({
   return (
     <View style={[styles.container, isFullScreen && styles.fullScreenContainer]}>
       {/* Full Screen Header */}
-      {isFullScreen && (
-        <View style={styles.fullScreenHeader}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => {
+      <View style={styles.fullScreenHeader}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            if (isFullScreen) {
+              // If in fullscreen mode, just exit fullscreen
               if (onFullScreenChange) {
                 onFullScreenChange(false);
+                setActiveTab('recents');
               }
               setSearchQuery('');
-            }}
-          >
-            <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
-          </TouchableOpacity>
-          <Text style={styles.fullScreenTitle}>Where is the Pickup?</Text>
-          <View style={styles.placeholder} />
-        </View>
-      )}
+            } else {
+              // If not in fullscreen mode, navigate back to ConfirmDestinationModal
+              if (onClose) {
+                onClose();
+              }
+            }
+          }}
+        >
+          <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
+        </TouchableOpacity>
+        <Text style={styles.fullScreenTitle}>Where is the Pickup?</Text>
+        <View style={styles.placeholder} />
+      </View>
 
       {/* Search Input Section */}
       <View style={styles.searchSection}>
-        {isFullScreen && (
-          <Text style={styles.destinationLabel}>Pickup</Text>
-        )}
         <View style={styles.searchContainer}>
           <View style={styles.searchInputWrapper}>
             <Input
+              label='Pickup'
               placeholder="Enter your pickup point"
               placeholderTextColor="#999999"
               value={searchQuery}
@@ -224,16 +224,16 @@ export default function PickupModal({
                 }
               }}
               autoFocus={isFullScreen}
-              leftIcon={<Ionicons name="location" size={20} color="#999999" />}
+              leftIcon={<Image source={require('@/assets/images/locationIcon.png')} />}
               rightIcon={searchQuery.length > 0 ? (
                 <TouchableOpacity onPress={() => setSearchQuery('')}>
-                  <Ionicons name="close-circle" size={20} color="#999999" />
+                  <Ionicons name="close-circle" size={20} color="# 999999" />
                 </TouchableOpacity>
               ) : undefined}
               style={isFullScreen ? [styles.searchInput, styles.searchInputFullScreen] : styles.searchInput}
             />
             <View style={styles.headerRight}>
-              <Ionicons name="map" size={20} color={theme.colors.blue500} />
+              <Image source={require('@/assets/images/map.png')} />
               <Text style={styles.headerMapText}>Map</Text>
             </View>
           </View>
@@ -325,16 +325,16 @@ const createStyles = (theme: any) => StyleSheet.create({
   fullScreenHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.md,
   },
   backButton: {
     padding: theme.spacing.sm,
   },
   fullScreenTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: theme.colors.text,
+    fontSize: 20,
+    fontWeight: '700',
+    color: theme.colors.black,
   },
   placeholder: {
     width: 40, // Same width as back button for centering
@@ -350,7 +350,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: theme.spacing.lg,
   },
   searchInputWrapper: {
     flexDirection: 'row',
@@ -389,15 +388,15 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginRight: theme.spacing.sm,
   },
   activeTab: {
-    backgroundColor: theme.colors.blue100,
+    backgroundColor: theme.colors.blue300,
   },
   tabText: {
     ...theme.typography.body,
-    color: theme.colors.textSecondary,
+    color: theme.colors.black,
     fontWeight: '500',
   },
   activeTabText: {
-    color: theme.colors.blue500,
+    color: theme.colors.white,
   },
   listContainer: {
     flex: 1,
@@ -448,7 +447,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: theme.colors.blue50,
+    backgroundColor: theme.colors.blue25,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: theme.spacing.md,

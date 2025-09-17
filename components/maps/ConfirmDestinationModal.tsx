@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import Input from '@/components/common/Input';
 
 interface LocationItem {
   id: string;
@@ -20,11 +21,11 @@ interface ConfirmDestinationModalProps {
   onEdit?: () => void;
 }
 
-export default function ConfirmDestinationModal({ 
-  visible, 
-  destination, 
-  onBack, 
-  onContinue, 
+export default function ConfirmDestinationModal({
+  visible,
+  destination,
+  onBack,
+  onContinue,
   onClose,
   onEdit
 }: ConfirmDestinationModalProps) {
@@ -44,23 +45,24 @@ export default function ConfirmDestinationModal({
         <View style={styles.placeholder} />
       </View>
 
-      {/* Destination Input */}
-      <View style={styles.destinationSection}>
-        <Text style={styles.destinationLabel}>Destination</Text>
-        <View style={styles.destinationInputContainer}>
-          <TouchableOpacity 
-            style={styles.customDestinationInput}
-            onPress={onEdit}
-          >
-            <View style={styles.destinationInputContent}>
-              <Ionicons name="paper-plane-outline" size={20} color="#007AFF" />
-              <Text style={styles.destinationText}>{destination.title}</Text>
-              <View style={styles.mapSection}>
-                <Ionicons name="map-outline" size={20} color="#007AFF" />
-                <Text style={styles.mapText}>Map</Text>
-              </View>
+      {/* Search Input Section */}
+      <View style={styles.searchSection}>
+        <View style={styles.searchContainer}>
+          <View style={styles.searchInputWrapper}>
+            <Input
+              label={'Destination'}
+              placeholder="Where to Go?"
+              placeholderTextColor="#121212"
+              value={destination.title}
+              onFocus={onEdit}
+              leftIcon={<Image source={require('@/assets/images/paperPlane.png')} />}
+              style={styles.searchInput}
+            />
+            <View style={styles.headerRight}>
+              <Image source={require('@/assets/images/map.png')} />
+              <Text style={styles.headerMapText}>Map</Text>
             </View>
-          </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -160,13 +162,13 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   backActionButton: {
     paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
     borderRadius: theme.borderRadius.full,
     borderWidth: 1,
     borderColor: theme.colors.blue500,
     backgroundColor: '#FFFFFF',
     marginRight: theme.spacing.sm,
     alignItems: 'center',
+    paddingHorizontal: 45,
   },
   backActionButtonText: {
     fontSize: 16,
@@ -186,5 +188,38 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: 16,
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+  searchSection: {
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  searchInputWrapper: {
+    flex: 1,
+    marginRight: theme.spacing.md,
+    flexDirection: 'row',
+  },
+  searchInput: {
+    marginBottom: 0,
+    backgroundColor: '#FFFFFF',
+    flex: 1,
+    height: 48,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'absolute',
+    right: 22,
+    top: 0,
+    bottom: 0,
+  },
+  headerMapText: {
+    ...theme.typography.body,
+    color: theme.colors.blue500,
+    marginLeft: theme.spacing.xs,
+    fontWeight: '500',
   },
 });

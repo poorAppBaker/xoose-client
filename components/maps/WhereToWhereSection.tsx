@@ -35,12 +35,12 @@ export default function WhereToWhereSection({
           <View style={styles.pickupIcon} />
         </View>
         <View style={styles.inputContent}>
-          <Text style={styles.inputLabel}>From</Text>
+          {/* <Text style={styles.inputLabel}>From</Text> */}
           <Text style={styles.inputText}>
             {pickup ? pickup.title : 'Pickup location'}
           </Text>
         </View>
-        <Ionicons name="chevron-down" size={20} color={theme.colors.gray400} />
+        {/* <Ionicons name="chevron-down" size={20} color={theme.colors.gray400} /> */}
       </TouchableOpacity>
 
       {/* Destination Input */}
@@ -49,12 +49,12 @@ export default function WhereToWhereSection({
           <View style={styles.destinationIcon} />
         </View>
         <View style={styles.inputContent}>
-          <Text style={styles.inputLabel}>To</Text>
+          {/* <Text style={styles.inputLabel}>To</Text> */}
           <Text style={styles.inputText}>
             {destination ? destination.title : 'Destination'}
           </Text>
         </View>
-        <Ionicons name="chevron-down" size={20} color={theme.colors.gray400} />
+        {/* <Ionicons name="chevron-down" size={20} color={theme.colors.gray400} /> */}
       </TouchableOpacity>
 
       {/* Add Stop Button */}
@@ -81,9 +81,9 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: theme.colors.white,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: theme.borderRadius.full,
     paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
+    paddingVertical: theme.spacing.md,
     marginBottom: theme.spacing.sm,
     ...theme.shadows.sm,
   },
@@ -120,6 +120,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontWeight: '500',
   },
   addStopButtonContainer: {
+    alignItems: 'flex-end',
   },
   addStopButton: {
     width: 150,

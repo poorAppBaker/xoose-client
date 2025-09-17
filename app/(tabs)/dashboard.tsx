@@ -57,9 +57,18 @@ export default function DashboardScreen() {
   const [showWhereToWhereSection, setShowWhereToWhereSection] = useState(false);
   const [showProfilePaymentModal, setShowProfilePaymentModal] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<{
-    type: string;
+    id?: string;
+    stripePaymentMethodId?: string;
+    customerId?: string;
+    cardholderName?: string;
+    cardBrand: string;
     last4: string;
-    brand: string;
+    expMonth?: number;
+    expYear?: number;
+    tab: 'personal' | 'work' | 'other';
+    userId?: string;
+    createdAt?: string;
+    updatedAt?: string;
   } | null>(null);
   const [tripTaker, setTripTaker] = useState<{
     type: 'myself' | 'someone';
@@ -115,6 +124,11 @@ export default function DashboardScreen() {
   const handleConfirmContinue = () => {
     setShowConfirmDestination(false);
     setShowPickupModal(true);
+  };
+
+  const handlePickupModalBack = () => {
+    setShowPickupModal(false);
+    setShowConfirmDestination(true);
   };
 
   const handleDestinationSelect = (location: any) => {
@@ -218,10 +232,10 @@ export default function DashboardScreen() {
           phone: user.phoneNumber,
         },
         payment: {
-          methodId: 'unknown', // selectedPaymentMethod doesn't have id property
-          type: selectedPaymentMethod.type,
+          methodId: selectedPaymentMethod.stripePaymentMethodId || 'unknown',
+          type: selectedPaymentMethod.cardBrand,
           last4: selectedPaymentMethod.last4,
-          brand: selectedPaymentMethod.brand,
+          brand: selectedPaymentMethod.cardBrand,
         },
         tripTaker: tripTaker,
         // Add waypoints if available
@@ -340,7 +354,8 @@ export default function DashboardScreen() {
         onClose={() => setShowConfirmDestination(false)}
         onEdit={() => {
           setShowConfirmDestination(false);
-          setShowDestinationModal(true);
+          setShowWhereToGoModal(true);
+          setIsWhereToGoFullScreen(true);
         }}
       />
 
@@ -357,7 +372,7 @@ export default function DashboardScreen() {
       {/* Pickup Modal */}
       <PickupModal
         visible={showPickupModal}
-        onClose={() => setShowPickupModal(false)}
+        onClose={handlePickupModalBack}
         onLocationSelect={handlePickupSelect}
         isFullScreen={isPickupFullScreen}
         onFullScreenChange={setIsPickupFullScreen}
@@ -375,6 +390,7 @@ export default function DashboardScreen() {
         onEdit={() => {
           setShowConfirmPickup(false);
           setShowPickupModal(true);
+          setIsPickupFullScreen(true);
         }}
       />
 
@@ -398,6 +414,8 @@ export default function DashboardScreen() {
         onTripTakerPress={() => setShowWhoWillTakeTrip(true)}
         onPaymentPress={handlePaymentPress}
         onCouponPress={() => setShowCouponModal(true)}
+        onTripTakerSelect={handleTripTakerSelected}
+        onPaymentMethodSelect={handlePaymentMethodSelected}
       />
 
       {/* Who Will Take Trip Modal */}
