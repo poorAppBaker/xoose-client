@@ -207,12 +207,10 @@ export default function WhereToGoModal({
 
        {/* Search Input Section */}
        <View style={styles.searchSection}>
-         {isFullScreen && (
-           <Text style={styles.destinationLabel}>Destination</Text>
-         )}
          <View style={styles.searchContainer}>
            <View style={styles.searchInputWrapper}>
              <Input
+               label={isFullScreen ? 'Destination' : undefined}
                placeholder="Where to Go?"
                placeholderTextColor="#121212"
                value={searchQuery}
