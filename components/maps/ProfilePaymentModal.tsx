@@ -62,7 +62,7 @@ export default function ProfilePaymentModal({
           <TouchableOpacity onPress={onClose} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={theme.colors.blue500} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Profile & Payment</Text>
+          <Text style={styles.headerTitle}>Select Profile & Payment</Text>
           <View style={styles.placeholder} />
         </View>
 
@@ -122,8 +122,8 @@ export default function ProfilePaymentModal({
               <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.selectButton, !selectedPaymentMethod && styles.selectButtonDisabled]} 
+              <TouchableOpacity
+                style={[styles.selectButton, !selectedPaymentMethod && styles.selectButtonDisabled]}
                 onPress={handleSelect}
                 disabled={!selectedPaymentMethod}
               >
@@ -148,7 +148,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.md,
     paddingBottom: theme.spacing.md,
   },
   backButton: {
@@ -163,38 +163,41 @@ const createStyles = (theme: any) => StyleSheet.create({
     width: 40,
   },
   profileTypeContainer: {
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.sm,
     marginBottom: theme.spacing.md,
   },
   segmentedControl: {
+    marginTop: theme.spacing.md,
     flexDirection: 'row',
-    backgroundColor: theme.colors.gray100,
+    gap: theme.spacing.md,
     borderRadius: theme.borderRadius.lg,
     padding: 4,
   },
   segmentButton: {
     flex: 1,
-    paddingVertical: theme.spacing.sm,
+    paddingVertical: 4,
     paddingHorizontal: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.gray200,
+    borderRadius: theme.borderRadius.full,
     alignItems: 'center',
   },
   segmentButtonActive: {
-    backgroundColor: theme.colors.blue500,
+    backgroundColor: theme.colors.blue300,
   },
   segmentButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: theme.colors.gray600,
+    fontWeight: '400',
+    color: theme.colors.gray400,
   },
   segmentButtonTextActive: {
     color: theme.colors.white,
   },
   content: {
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.md,
   },
   bottomContainer: {
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.sm,
     paddingBottom: theme.spacing.lg,
   },
   backButtonBottom: {
@@ -216,7 +219,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     gap: theme.spacing.md,
   },
   cancelButton: {
-    flex: 1,
     backgroundColor: theme.colors.white,
     borderWidth: 2,
     borderColor: theme.colors.blue500,
@@ -224,6 +226,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     paddingVertical: theme.spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 45,
   },
   cancelButtonText: {
     fontSize: 16,
