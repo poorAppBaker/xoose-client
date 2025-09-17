@@ -272,10 +272,6 @@ const UserProfileUploader: React.FC<UserProfileUploaderProps> = ({
               </View>
             )}
           </View>
-          {/* EditBadge positioned outside the clipped area */}
-          <View style={styles.editBadge}>
-            <Ionicons name="camera" size={16} color="white" />
-          </View>
         </View>
       );
     }
@@ -298,10 +294,7 @@ const UserProfileUploader: React.FC<UserProfileUploaderProps> = ({
         {/* Camera badge with plus sign - only show when no image */}
         {!value && (
           <View style={styles.cameraBadge}>
-            <Ionicons name="camera" size={12} color="white" />
-            <View style={styles.plusSign}>
-              <Ionicons name="add" size={8} color="white" />
-            </View>
+            <Image source={require('../../assets/images/photo-plus.png')} style={styles.bdgCamera} />
           </View>
         )}
       </View>
@@ -494,9 +487,9 @@ const createStyles = (theme: any, size: number) => StyleSheet.create({
   cameraBadge: {
     position: 'absolute',
     bottom: -5,
-    right: -5,
-    width: 30,
-    height: 30,
+    right: -10,
+    width: 31,
+    height: 31,
     borderRadius: 15,
     backgroundColor: theme.colors.primary,
     justifyContent: 'center',
@@ -603,6 +596,10 @@ const createStyles = (theme: any, size: number) => StyleSheet.create({
   },
   modalFooter: {
   },
+  bdgCamera: {
+    width: 27,
+    height: 27,
+  }
 });
 
 export default UserProfileUploader;
