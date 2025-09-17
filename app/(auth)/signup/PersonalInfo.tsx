@@ -287,7 +287,6 @@ export default function PersonalInfoScreen() {
           value={signupStore.name}
           onChangeText={updateFormData('name')}
           error={errors.name}
-          required
           style={styles.input}
         />
 
@@ -297,7 +296,6 @@ export default function PersonalInfoScreen() {
           value={signupStore.surname}
           onChangeText={updateFormData('surname')}
           error={errors.surname}
-          required
           style={styles.input}
         />
 
@@ -308,7 +306,6 @@ export default function PersonalInfoScreen() {
           value={signupStore.dob}
           onDateTimeChange={updateFormData('dob')}
           error={errors.dob}
-          required
           maximumDate={new Date()}
           minimumDate={new Date('1900-01-01')}
           style={styles.input}
@@ -321,7 +318,6 @@ export default function PersonalInfoScreen() {
           value={signupStore.gender as string}
           onSelectionChange={updateFormData('gender')}
           error={errors.gender}
-          required
           style={styles.input}
         />
 
@@ -331,7 +327,6 @@ export default function PersonalInfoScreen() {
           value={signupStore.email}
           onChangeText={updateFormData('email')}
           error={errors.email}
-          required
           keyboardType='email-address'
           autoCapitalize='none'
           style={styles.input}
@@ -343,7 +338,6 @@ export default function PersonalInfoScreen() {
           value={signupStore.confirmEmail}
           onChangeText={updateFormData('confirmEmail')}
           error={errors.confirmEmail}
-          required
           keyboardType='email-address'
           autoCapitalize='none'
           style={styles.input}
@@ -367,7 +361,6 @@ export default function PersonalInfoScreen() {
               <TouchableOpacity onPress={handleTermsPress}>
                 <Text style={styles.linkText}>Terms & Conditions</Text>
               </TouchableOpacity>
-              <Text style={styles.requiredAsterisk}> *</Text>
             </View>
           </CheckBox>
 
@@ -385,7 +378,6 @@ export default function PersonalInfoScreen() {
               <TouchableOpacity onPress={handlePrivacyPress}>
                 <Text style={styles.linkText}>Privacy Policy</Text>
               </TouchableOpacity>
-              <Text style={styles.requiredAsterisk}> *</Text>
             </View>
           </CheckBox>
 

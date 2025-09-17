@@ -171,18 +171,13 @@ export default function WhereToGoModal({
       onPress={() => handleLocationSelect(item)}
     >
       <View style={styles.locationIcon}>
-        <Ionicons name="location" size={20} color={theme.colors.blue500} />
+        {/* <Ionicons name="location" size={20} color={theme.colors.blue500} /> */}
+        <Image source={require('../../assets/images/locationIcon.png')} />
       </View>
       <View style={styles.locationText}>
         <Text style={styles.locationTitle}>{item.title}</Text>
         <Text style={styles.locationSubtitle}>{item.subtitle}</Text>
       </View>
-      <TouchableOpacity
-        style={styles.continueButton}
-        onPress={() => handleLocationSelect(item)}
-      >
-        <Ionicons name="arrow-forward" size={20} color={theme.colors.blue500} />
-      </TouchableOpacity>
     </TouchableOpacity>
   );
 
@@ -394,18 +389,20 @@ const createStyles = (theme: any) => StyleSheet.create({
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.sm,
     borderRadius: 20,
+    borderColor: theme.colors.gray200,
+    borderWidth: 1,
     marginRight: theme.spacing.sm,
   },
   activeTab: {
-    backgroundColor: theme.colors.blue100,
+    backgroundColor: theme.colors.blue300,
   },
   tabText: {
     ...theme.typography.body,
-    color: theme.colors.textSecondary,
+    color: theme.colors.gray800,
     fontWeight: '500',
   },
   activeTabText: {
-    color: theme.colors.blue500,
+    color: theme.colors.white,
   },
   list: {
     flex: 1,
@@ -414,6 +411,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.gray200,
   },
