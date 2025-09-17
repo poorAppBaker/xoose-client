@@ -59,7 +59,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
-    color: theme.colors.text,
+    color: theme.colors.black,
     fontWeight: '400',
   },
   iconContainer: {

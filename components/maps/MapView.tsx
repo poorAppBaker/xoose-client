@@ -512,7 +512,7 @@ export default function MapViewComponent({
                   iconAnchor: 'bottom',
                   iconAllowOverlap: true,
                   iconIgnorePlacement: true,
-                  iconSize: 0.6,
+                  iconSize: 0.3,
                 }}
               />
             </Mapbox.ShapeSource>
@@ -565,7 +565,7 @@ export default function MapViewComponent({
                   iconAnchor: 'bottom',
                   iconAllowOverlap: true,
                   iconIgnorePlacement: true,
-                  iconSize: 0.6,
+                  iconSize: 0.3,
                 }}
               />
             </Mapbox.ShapeSource>

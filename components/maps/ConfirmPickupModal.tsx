@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import Input from '@/components/common/Input';
 
 interface LocationItem {
   id: string;
@@ -44,23 +45,24 @@ export default function ConfirmPickupModal({
         <View style={styles.placeholder} />
       </View>
 
-      {/* Pickup Input */}
-      <View style={styles.pickupSection}>
-        <Text style={styles.pickupLabel}>Pickup</Text>
-        <View style={styles.pickupInputContainer}>
-          <TouchableOpacity 
-            style={styles.pickupInput}
-            onPress={onEdit}
-          >
-            <View style={styles.pickupInputContent}>
-              <Ionicons name="location-outline" size={20} color="#007AFF" />
-              <Text style={styles.pickupText}>{pickup.title}</Text>
-              <View style={styles.mapSection}>
-                <Ionicons name="map-outline" size={20} color="#007AFF" />
-                <Text style={styles.mapText}>Map</Text>
-              </View>
+      {/* Search Input Section */}
+      <View style={styles.searchSection}>
+        <View style={styles.searchContainer}>
+          <View style={styles.searchInputWrapper}>
+            <Input
+              label={'Pickup'}
+              placeholder="Enter your pickup point"
+              placeholderTextColor="#121212"
+              value={pickup.title}
+              onFocus={onEdit}
+              leftIcon={<Image source={require('@/assets/images/locationIcon.png')} />}
+              style={styles.searchInput}
+            />
+            <View style={styles.headerRight}>
+              <Image source={require('@/assets/images/map.png')} />
+              <Text style={styles.headerMapText}>Map</Text>
             </View>
-          </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -107,50 +109,38 @@ const createStyles = (theme: any) => StyleSheet.create({
   placeholder: {
     width: 40, // Same width as back button for centering
   },
-  pickupSection: {
-    marginBottom: theme.spacing.xl,
+  searchSection: {
   },
-  pickupLabel: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.sm,
-    fontWeight: '500',
-  },
-  pickupInputContainer: {
+  searchContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-  },
-  pickupInput: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: theme.borderRadius.full,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    flex: 1,
-    ...theme.shadows.sm,
-  },
-  pickupInputContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
   },
-  pickupText: {
+  searchInputWrapper: {
     flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
-    marginLeft: 12,
+    marginRight: theme.spacing.md,
+    flexDirection: 'row',
   },
-  mapSection: {
+  searchInput: {
+    marginBottom: 0,
+    backgroundColor: '#FFFFFF',
+    flex: 1,
+    height: 48,
+  },
+  headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
+    position: 'absolute',
+    right: 22,
+    top: 0,
+    bottom: 0,
   },
-  mapText: {
-    fontSize: 16,
+  headerMapText: {
+    ...theme.typography.body,
+    color: theme.colors.blue500,
+    marginLeft: theme.spacing.xs,
     fontWeight: '500',
-    color: '#007AFF',
-    marginLeft: 6,
   },
   actionButtons: {
     flexDirection: 'row',
@@ -159,13 +149,13 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   backActionButton: {
     paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
     borderRadius: theme.borderRadius.full,
     borderWidth: 1,
     borderColor: theme.colors.blue500,
     backgroundColor: '#FFFFFF',
     marginRight: theme.spacing.sm,
     alignItems: 'center',
+    paddingHorizontal: 45,
   },
   backActionButtonText: {
     fontSize: 16,

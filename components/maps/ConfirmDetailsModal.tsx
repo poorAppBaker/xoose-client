@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import Input from '@/components/common/Input';
+import Select from '@/components/common/Select';
+import WhoWillTakeTripModal from './WhoWillTakeTripModal';
+import ProfilePaymentModal from './ProfilePaymentModal';
 
 interface LocationItem {
   coordinate: [number, number];
@@ -26,9 +30,18 @@ interface ConfirmDetailsModalProps {
   pickup?: LocationItem | null;
   destination?: LocationItem | null;
   selectedPaymentMethod?: {
-    type: string;
+    id?: string;
+    stripePaymentMethodId?: string;
+    customerId?: string;
+    cardholderName?: string;
+    cardBrand: string;
     last4: string;
-    brand: string;
+    expMonth?: number;
+    expYear?: number;
+    tab: 'personal' | 'work' | 'other';
+    userId?: string;
+    createdAt?: string;
+    updatedAt?: string;
   } | null;
   tripTaker?: {
     type: 'myself' | 'someone';
@@ -42,6 +55,8 @@ interface ConfirmDetailsModalProps {
   onTripTakerPress: () => void;
   onPaymentPress: () => void;
   onCouponPress: () => void;
+  onTripTakerSelect?: (tripTaker: 'myself' | 'someone', personDetails?: { name: string; phone?: string }) => void;
+  onPaymentMethodSelect?: (paymentMethod: any) => void;
 }
 
 export default function ConfirmDetailsModal({
@@ -56,21 +71,53 @@ export default function ConfirmDetailsModal({
   onClose,
   onTripTakerPress,
   onPaymentPress,
-  onCouponPress
+  onCouponPress,
+  onTripTakerSelect,
+  onPaymentMethodSelect
 }: ConfirmDetailsModalProps) {
   const { theme } = useTheme();
   const styles = createStyles(theme);
-  
+
   const [coupon, setCoupon] = useState('-20% Discount');
+  const [showWhoWillTakeTripModal, setShowWhoWillTakeTripModal] = useState(false);
+  const [showProfilePaymentModal, setShowProfilePaymentModal] = useState(false);
+  const [paymentType, setPaymentType] = useState('');
 
   // Get display values
-  const tripTakerDisplay = tripTaker?.type === 'myself' 
-    ? 'Myself' 
+  const tripTakerDisplay = tripTaker?.type === 'myself'
+    ? 'Myself'
     : tripTaker?.name || 'Select person';
-  
-  const paymentMethodDisplay = selectedPaymentMethod 
-    ? `${selectedPaymentMethod.type} | **** ${selectedPaymentMethod.last4}`
-    : 'Select payment method';
+
+  const getCardIcon = (brand: string) => {
+    switch (brand.toLowerCase()) {
+      case 'visa':
+        return require('@/assets/images/visa.png');
+      case 'mastercard':
+        return require('@/assets/images/mastercard.png');
+      case 'amex':
+        return require('@/assets/images/visa.png'); // Fallback to visa for now
+      default:
+        return require('@/assets/images/visa.png'); // Default to visa
+    }
+  };
+
+  const getPaymentMethodDisplay = () => {
+    if (!selectedPaymentMethod) return 'Select payment method';
+
+    return `**** ${selectedPaymentMethod.last4}`;
+  };
+
+  const paymentMethodDisplay = getPaymentMethodDisplay();
+
+  // Update paymentType when selectedPaymentMethod changes
+  useEffect(() => {
+    if (selectedPaymentMethod?.tab) {
+      const tabType = selectedPaymentMethod.tab.charAt(0).toUpperCase() + selectedPaymentMethod.tab.slice(1);
+      setPaymentType(tabType);
+    } else {
+      setPaymentType('');
+    }
+  }, [selectedPaymentMethod]);
 
   if (!visible) return null;
 
@@ -85,48 +132,111 @@ export default function ConfirmDetailsModal({
         <View style={styles.placeholder} />
       </View>
 
-        {/* Trip Taker Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Who Will Take the Trip?</Text>
-          <TouchableOpacity style={styles.sectionButton} onPress={onTripTakerPress}>
-            <Text style={styles.sectionText}>{tripTakerDisplay}</Text>
-            <Ionicons name="chevron-down" size={20} color={theme.colors.gray400} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Payment Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Invoice|Payment</Text>
-          <TouchableOpacity style={styles.sectionButton} onPress={onPaymentPress}>
-            <Text style={styles.sectionText}>{paymentMethodDisplay}</Text>
-            <Ionicons name="chevron-down" size={20} color={theme.colors.gray400} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Coupon Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Coupon</Text>
-          <TouchableOpacity style={styles.sectionButton} onPress={onCouponPress}>
-            <Text style={styles.sectionText}>{coupon}</Text>
-            <Ionicons name="chevron-down" size={20} color={theme.colors.gray400} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.backActionButton} onPress={onBack} disabled={isCreatingBooking}>
-            <Text style={styles.backActionButtonText}>Back</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.continueButton, isCreatingBooking && styles.continueButtonDisabled]} 
-            onPress={onContinue}
-            disabled={isCreatingBooking}
-          >
-            <Text style={styles.continueButtonText}>
-              {isCreatingBooking ? 'Creating Booking...' : 'Continue'}
+      {/* Trip Taker Section */}
+      <View style={styles.section}>
+        <View style={styles.selectContainer}>
+          <View style={styles.labelContainer}>
+            <View style={styles.labelBorderOverlay} />
+            <Text style={styles.label}>
+              Who Will Take the Trip?
+              {/* <Text style={styles.required}>*</Text> */}
             </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.selectButton}
+            onPress={() => setShowWhoWillTakeTripModal(true)}
+          >
+            <Text style={styles.selectText}>{tripTakerDisplay}</Text>
+            <Ionicons name="chevron-down" size={20} color={theme.colors.gray400} />
           </TouchableOpacity>
         </View>
+      </View>
+
+      {/* Payment Section */}
+      <View style={styles.section}>
+        <View style={styles.selectContainer}>
+          <View style={styles.labelContainer}>
+            <View style={styles.labelBorderOverlay} />
+            <Text style={styles.label}>
+              Invoice|Payment
+              {/* <Text style={styles.required}>*</Text> */}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.selectButton}
+            onPress={() => setShowProfilePaymentModal(true)}
+          >
+            {selectedPaymentMethod ? (
+              <View style={styles.paymentMethodContent}>
+                <Text style={styles.selectText}>{paymentType} | </Text>
+                <Image
+                  source={getCardIcon(selectedPaymentMethod.cardBrand)}
+                  style={styles.cardIcon}
+                  resizeMode="contain"
+                />
+                <Text style={styles.selectText}>{paymentMethodDisplay}</Text>
+              </View>
+            ) :
+              <View>
+                <Text style={styles.selectText}>Select payment method</Text>
+              </View>
+            }
+            <Ionicons name="chevron-down" size={20} color={theme.colors.gray400} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Coupon Section */}
+      <View style={styles.section}>
+        <Input
+          label="Coupon"
+          placeholder="Enter coupon code"
+          value={coupon}
+          onChangeText={setCoupon}
+          style={styles.textInput}
+        />
+      </View>
+
+      {/* Action Buttons */}
+      <View style={styles.actionButtons}>
+        <TouchableOpacity style={styles.backActionButton} onPress={onBack} disabled={isCreatingBooking}>
+          <Text style={styles.backActionButtonText}>Back</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.continueButton, isCreatingBooking && styles.continueButtonDisabled]}
+          onPress={onContinue}
+          disabled={isCreatingBooking}
+        >
+          <Text style={styles.continueButtonText}>
+            {isCreatingBooking ? 'Creating Booking...' : 'Continue'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Who Will Take Trip Modal */}
+      <WhoWillTakeTripModal
+        visible={showWhoWillTakeTripModal}
+        onClose={() => setShowWhoWillTakeTripModal(false)}
+        onSelect={(tripTakerType, personDetails) => {
+          if (onTripTakerSelect) {
+            onTripTakerSelect(tripTakerType, personDetails);
+          }
+          setShowWhoWillTakeTripModal(false);
+        }}
+      />
+
+      {/* Profile Payment Modal */}
+      <ProfilePaymentModal
+        visible={showProfilePaymentModal}
+        onClose={() => setShowProfilePaymentModal(false)}
+        isSelectionMode={true}
+        onPaymentMethodSelect={(paymentMethod) => {
+          if (onPaymentMethodSelect) {
+            onPaymentMethodSelect(paymentMethod);
+          }
+          setShowProfilePaymentModal(false);
+        }}
+      />
     </View>
   );
 }
@@ -142,7 +252,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderTopRightRadius: 20,
     paddingHorizontal: theme.spacing.md,
     paddingTop: theme.spacing.lg,
-    paddingBottom: 40, // Account for safe area
+    paddingBottom: 20, // Account for safe area
     ...theme.shadows.lg,
   },
   header: {
@@ -162,63 +272,80 @@ const createStyles = (theme: any) => StyleSheet.create({
     width: 40,
   },
   section: {
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
   },
-  sectionLabel: {
-    ...theme.typography.bodySmall,
+  selectContainer: {
+    position: 'relative',
+  },
+  labelContainer: {
+    position: 'absolute',
+    left: 18,
+    top: -8,
+    zIndex: 10,
+  },
+  label: {
+    fontSize: 12,
     color: theme.colors.gray500,
-    marginBottom: theme.spacing.sm,
-    fontWeight: '500',
+    paddingHorizontal: 2,
+    fontWeight: '700',
   },
-  sectionButton: {
+  labelBorderOverlay: {
+    width: '100%',
+    height: 2,
+    backgroundColor: theme.colors.white,
+    position: 'absolute',
+    top: 8,
+  },
+  required: {
+    color: theme.colors.error,
+  },
+  selectButton: {
+    width: '100%',
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: theme.colors.gray100,
-    borderRadius: theme.borderRadius.md,
-    paddingHorizontal: theme.spacing.md,
+    alignItems: 'center',
+    backgroundColor: theme.colors.gray50,
+    paddingHorizontal: theme.spacing.md + theme.spacing.xs,
+    borderWidth: 1,
+    borderColor: theme.colors.gray100,
+    borderRadius: 1000,
+    minHeight: 48,
+  },
+  selectText: {
+    fontSize: 16,
+    color: theme.colors.gray800,
     paddingVertical: theme.spacing.md,
   },
-  sectionText: {
-    ...theme.typography.body,
-    color: theme.colors.gray600,
-    fontWeight: '500',
-  },
-  paymentContent: {
+  paymentMethodContent: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-  cardInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: theme.spacing.sm,
-  },
   cardIcon: {
-    width: 20,
+    width: 30,
     height: 20,
-    borderRadius: 10,
-    backgroundColor: theme.colors.blue100,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: theme.spacing.xs,
+    marginLeft: theme.spacing.sm,
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.borderRadius.sm,
+    marginRight: theme.borderRadius.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.lightGray,
   },
-  cardText: {
-    ...theme.typography.body,
-    color: theme.colors.gray600,
-    fontWeight: '500',
+  selectInput: {
+    backgroundColor: '#FFFFFF',
+  },
+  textInput: {
+    backgroundColor: '#FFFFFF',
   },
   actionButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: theme.spacing.lg,
   },
   backActionButton: {
-    flex: 1,
     paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-    borderRadius: theme.borderRadius.md,
+    paddingHorizontal: 45,
+    borderRadius: theme.borderRadius.full,
     borderWidth: 1,
     borderColor: theme.colors.blue500,
     backgroundColor: theme.colors.white,
@@ -233,7 +360,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     flex: 1,
     paddingVertical: theme.spacing.md,
     paddingHorizontal: theme.spacing.lg,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: theme.borderRadius.full,
     backgroundColor: theme.colors.blue500,
     marginLeft: theme.spacing.sm,
     alignItems: 'center',
