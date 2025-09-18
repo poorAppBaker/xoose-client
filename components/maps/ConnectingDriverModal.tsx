@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { theme } from '../../constants/theme';
@@ -81,6 +83,20 @@ export default function ConnectingDriverModal({
     setIsExtended(false);
   };
 
+  const panGesture = Gesture.Pan()
+    .onEnd((event) => {
+      const { translationY } = event;
+      
+      // If user pulled up (negative translationY) and moved more than 50px
+      if (translationY < -50 && !isExtended) {
+        runOnJS(handlePullUp)();
+      }
+      // If user pulled down (positive translationY) and moved more than 50px
+      else if (translationY > 50 && isExtended) {
+        runOnJS(handlePullDown)();
+      }
+    });
+
   return (
     <View style={styles.container}>
       {/* Map Section - Only show when not extended */}
@@ -113,20 +129,21 @@ export default function ConnectingDriverModal({
       )}
 
       {/* Modal Content */}
-      <View style={isExtended ? styles.extendedModal : styles.modal}>
-        {/* Pull-up Handle - Only show when not extended */}
-        {!isExtended && (
-          <TouchableOpacity style={styles.pullUpHandle} onPress={handlePullUp}>
-            <View style={styles.pullUpIndicator} />
-          </TouchableOpacity>
-        )}
+      <GestureDetector gesture={panGesture}>
+        <View style={isExtended ? styles.extendedModal : styles.modal}>
+          {/* Pull-up Handle - Only show when not extended */}
+          {!isExtended && (
+            <View style={styles.pullUpHandle}>
+              <View style={styles.pullUpIndicator} />
+            </View>
+          )}
 
-        {/* Pull-down Handle - Only show when extended */}
-        {isExtended && (
-          <TouchableOpacity style={styles.pullDownHandle} onPress={handlePullDown}>
-            <View style={styles.pullDownIndicator} />
-          </TouchableOpacity>
-        )}
+          {/* Pull-down Handle - Only show when extended */}
+          {isExtended && (
+            <View style={styles.pullDownHandle}>
+              <View style={styles.pullDownIndicator} />
+            </View>
+          )}
 
         {/* Header */}
         <View style={styles.header}>
@@ -316,7 +333,8 @@ export default function ConnectingDriverModal({
         <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
           <Text style={styles.cancelButtonText}>Cancel Ride</Text>
         </TouchableOpacity>
-      </View>
+        </View>
+      </GestureDetector>
     </View>
   );
 }
