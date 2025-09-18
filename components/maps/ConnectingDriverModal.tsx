@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { theme } from '../../constants/theme';
@@ -81,6 +83,20 @@ export default function ConnectingDriverModal({
     setIsExtended(false);
   };
 
+  const panGesture = Gesture.Pan()
+    .onEnd((event) => {
+      const { translationY } = event;
+      
+      // If user pulled up (negative translationY) and moved more than 50px
+      if (translationY < -50 && !isExtended) {
+        runOnJS(handlePullUp)();
+      }
+      // If user pulled down (positive translationY) and moved more than 50px
+      else if (translationY > 50 && isExtended) {
+        runOnJS(handlePullDown)();
+      }
+    });
+
   return (
     <View style={styles.container}>
       {/* Map Section - Only show when not extended */}
@@ -113,20 +129,21 @@ export default function ConnectingDriverModal({
       )}
 
       {/* Modal Content */}
-      <View style={isExtended ? styles.extendedModal : styles.modal}>
-        {/* Pull-up Handle - Only show when not extended */}
-        {!isExtended && (
-          <TouchableOpacity style={styles.pullUpHandle} onPress={handlePullUp}>
-            <View style={styles.pullUpIndicator} />
-          </TouchableOpacity>
-        )}
+      <GestureDetector gesture={panGesture}>
+        <View style={isExtended ? styles.extendedModal : styles.modal}>
+          {/* Pull-up Handle - Only show when not extended */}
+          {!isExtended && (
+            <View style={styles.pullUpHandle}>
+              <View style={styles.pullUpIndicator} />
+            </View>
+          )}
 
-        {/* Pull-down Handle - Only show when extended */}
-        {isExtended && (
-          <TouchableOpacity style={styles.pullDownHandle} onPress={handlePullDown}>
-            <View style={styles.pullDownIndicator} />
-          </TouchableOpacity>
-        )}
+          {/* Pull-down Handle - Only show when extended */}
+          {isExtended && (
+            <View style={styles.pullDownHandle}>
+              <View style={styles.pullDownIndicator} />
+            </View>
+          )}
 
         {/* Header */}
         <View style={styles.header}>
@@ -212,7 +229,7 @@ export default function ConnectingDriverModal({
           </View>
         </View>
 
-        <View style={styles.pricingContainer}>
+        <View style={[styles.pricingContainer, isExtended && styles.pricingContainerExtended]}>
           {/* ETA Time Section */}
           <View style={styles.etatimeContainer}>
             <View style={styles.timeContainer}>
@@ -305,16 +322,19 @@ export default function ConnectingDriverModal({
         )}
 
         {/* Loading Section */}
-        <View style={styles.loadingSection}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Please wait for the driver's acceptance.</Text>
-        </View>
+        {!isExtended && (
+          <View style={styles.loadingSection}>
+            <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loadingSpinner} />
+            <Text style={styles.loadingText}>Please wait for the driver's acceptance.</Text>
+          </View>
+        )}
 
         {/* Cancel Button */}
         <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
           <Text style={styles.cancelButtonText}>Cancel Ride</Text>
         </TouchableOpacity>
-      </View>
+        </View>
+      </GestureDetector>
     </View>
   );
 }
@@ -542,12 +562,14 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   pricingContainer: {
     borderTopWidth: 1,
-    borderBottomWidth: 1,
     borderColor: theme.colors.gray200,
     paddingVertical: theme.spacing.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  pricingContainerExtended: {
+    borderBottomWidth: 1,
   },
   etatimeContainer: {
 
@@ -612,18 +634,24 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.black,
   },
   loadingSection: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.sm,
+  },
+  loadingSpinner: {
     position: 'absolute',
-    bottom: 0,
+    top: 0,
     left: 0,
     right: 0,
-    alignItems: 'center',
-    marginBottom: theme.spacing.xl,
+    bottom: 0,
+    transform: [{ scale: 3 }], // Make spinner 2x bigger
   },
   loadingText: {
-    fontSize: 16,
+    width: 300,
+    fontSize: 30,
     fontWeight: 'bold',
     color: theme.colors.black,
-    marginTop: theme.spacing.md,
     textAlign: 'center',
   },
   cancelButton: {

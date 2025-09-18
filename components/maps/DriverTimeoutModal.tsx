@@ -4,10 +4,13 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { theme } from '../../constants/theme';
+
+const errorIcon = require('../../assets/images/icons/Error.png');
 
 interface DriverTimeoutModalProps {
   visible: boolean;
@@ -29,7 +32,7 @@ export default function DriverTimeoutModal({
     <View style={styles.container}>
       {/* Error Icon */}
       <View style={styles.iconContainer}>
-        <Ionicons name="close" size={40} color="white" />
+        <Image source={errorIcon} style={styles.icon} />
       </View>
 
       {/* Message */}
@@ -60,13 +63,12 @@ const createStyles = (theme: any) => StyleSheet.create({
     ...theme.shadows.lg,
   },
   iconContainer: {
+  },
+  icon: {
     width: 80,
     height: 80,
-    borderRadius: 40,
-    backgroundColor: '#FF4444',
-    justifyContent: 'center',
-    alignItems: 'center',
     marginBottom: theme.spacing.lg,
+    resizeMode: 'contain',
   },
   message: {
     fontSize: 18,
@@ -84,11 +86,11 @@ const createStyles = (theme: any) => StyleSheet.create({
     lineHeight: 22,
   },
   continueButton: {
-    backgroundColor: '#00BFFF',
+    width: '100%',
+    backgroundColor: theme.colors.primary,
     paddingHorizontal: theme.spacing.xl,
     paddingVertical: theme.spacing.md,
-    borderRadius: 12,
-    minWidth: 200,
+    borderRadius: theme.borderRadius.full,
     alignItems: 'center',
   },
   continueButtonText: {

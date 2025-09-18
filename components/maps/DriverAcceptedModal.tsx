@@ -76,10 +76,11 @@ const createStyles = (theme: any) => StyleSheet.create({
     lineHeight: 24,
   },
   continueButton: {
+    width: '100%',
     backgroundColor: '#00BFFF',
     paddingHorizontal: theme.spacing.xl,
     paddingVertical: theme.spacing.md,
-    borderRadius: 12,
+    borderRadius: theme.borderRadius.full,
     minWidth: 200,
     alignItems: 'center',
   },

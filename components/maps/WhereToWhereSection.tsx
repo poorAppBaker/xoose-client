@@ -1,7 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+
+const pickupIcon = require('../../assets/images/icons/pickup-icon.png');
+const destinationIcon = require('../../assets/images/icons/destination-icon.png');
 
 interface LocationItem {
   coordinate: [number, number];
@@ -31,8 +34,9 @@ export default function WhereToWhereSection({
     <View style={styles.container}>
       {/* Pickup Input */}
       <TouchableOpacity style={styles.inputContainer} onPress={onPickupPress}>
-        <View style={styles.inputIcon}>
-          <View style={styles.pickupIcon} />
+        <View style={styles.pickupinputIcon}>
+          <Image source={pickupIcon} style={styles.icon} />
+          <View style={styles.pickbar}></View>
         </View>
         <View style={styles.inputContent}>
           {/* <Text style={styles.inputLabel}>From</Text> */}
@@ -45,8 +49,9 @@ export default function WhereToWhereSection({
 
       {/* Destination Input */}
       <TouchableOpacity style={styles.inputContainer} onPress={onDestinationPress}>
-        <View style={styles.inputIcon}>
-          <View style={styles.destinationIcon} />
+        <View style={styles.destinationinputIcon}>
+          <View style={styles.destinationbar}></View>
+          <Image source={destinationIcon} style={styles.icon} />
         </View>
         <View style={styles.inputContent}>
           {/* <Text style={styles.inputLabel}>To</Text> */}
@@ -79,7 +84,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   inputContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: theme.colors.white,
     borderRadius: theme.borderRadius.full,
     paddingHorizontal: theme.spacing.md,
@@ -87,18 +91,34 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginBottom: theme.spacing.sm,
     ...theme.shadows.sm,
   },
-  inputIcon: {
+  pickupinputIcon: {
+    marginRight: theme.spacing.sm,
+    marginTop: 2,
+  },
+  destinationinputIcon: {
+    marginRight: theme.spacing.sm,
+    marginTop: -2,
+  },
+  icon: {
     width: 20,
     height: 20,
-    marginRight: theme.spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
+    resizeMode: 'contain',
   },
-  pickupIcon: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#FF9800', // Orange for pickup
+  pickbar: {
+    width: 2,
+    height: 10,
+    backgroundColor: theme.colors.gray300,
+    position: 'absolute',
+    bottom: -15,
+    left: 9.3
+  },
+  destinationbar: {
+    width: 2,
+    height: 10,
+    backgroundColor: theme.colors.gray300,
+    position: 'absolute',
+    top: -15,
+    left: 9.3
   },
   destinationIcon: {
     width: 12,

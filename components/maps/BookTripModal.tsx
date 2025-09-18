@@ -8,6 +8,8 @@ import {
   Image,
   Dimensions,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { theme } from '../../constants/theme';
@@ -88,6 +90,20 @@ export default function BookTripModal({
     setIsExtended(false);
   };
 
+  const panGesture = Gesture.Pan()
+    .onEnd((event) => {
+      const { translationY } = event;
+      
+      // If user pulled up (negative translationY) and moved more than 50px
+      if (translationY < -50 && !isExtended) {
+        runOnJS(handlePullUp)();
+      }
+      // If user pulled down (positive translationY) and moved more than 50px
+      else if (translationY > 50 && isExtended) {
+        runOnJS(handlePullDown)();
+      }
+    });
+
   const handleCancelConnecting = () => {
     setShowConnecting(false);
   };
@@ -164,21 +180,22 @@ export default function BookTripModal({
 
       {/* Modal Content */}
       {!showDriverAccepted && !showDriverTimeout && (
-        <View style={isExtended ? styles.extendedModal : styles.modal}>
+        <GestureDetector gesture={panGesture}>
+          <View style={isExtended ? styles.extendedModal : styles.modal}>
 
-          {/* Pull-up Handle - Only show when not extended */}
-          {!isExtended && (
-            <TouchableOpacity style={styles.pullUpHandle} onPress={handlePullUp}>
-              <View style={styles.pullUpIndicator} />
-            </TouchableOpacity>
-          )}
+            {/* Pull-up Handle - Only show when not extended */}
+            {!isExtended && (
+              <View style={styles.pullUpHandle}>
+                <View style={styles.pullUpIndicator} />
+              </View>
+            )}
 
-          {/* Pull-down Handle - Only show when extended */}
-          {isExtended && (
-            <TouchableOpacity style={styles.pullDownHandle} onPress={handlePullDown}>
-              <View style={styles.pullDownIndicator} />
-            </TouchableOpacity>
-          )}
+            {/* Pull-down Handle - Only show when extended */}
+            {isExtended && (
+              <View style={styles.pullDownHandle}>
+                <View style={styles.pullDownIndicator} />
+              </View>
+            )}
 
           {/* Modal Header */}
           <View style={styles.header}>
@@ -267,7 +284,7 @@ export default function BookTripModal({
               </View>
             </View>
 
-            <View style={styles.pricingContainer}>
+            <View style={[styles.pricingContainer, isExtended && styles.pricingContainerExtended]}>
               {/* ETA Time Section */}
               <View style={styles.etatimeContainer}>
                 <View style={styles.timeContainer}>
@@ -412,7 +429,8 @@ export default function BookTripModal({
               <Text style={styles.bookButtonText}>Book Now</Text>
             </TouchableOpacity>
           </View>
-        </View>
+          </View>
+        </GestureDetector>
       )}
 
       {/* Connecting Driver Modal */}
@@ -671,12 +689,14 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   pricingContainer: {
     borderTopWidth: 1,
-    borderBottomWidth: 1,
     borderColor: theme.colors.gray200,
     paddingVertical: theme.spacing.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  pricingContainerExtended: {
+    borderBottomWidth: 1,
   },
   etatimeContainer: {
 
@@ -687,7 +707,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginBottom: theme.spacing.md,
   },
   companyName: {
-    fontSize: 12,
+    fontSize: 14,
     color: theme.colors.black,
   },
   estimateTimeIcon: {
