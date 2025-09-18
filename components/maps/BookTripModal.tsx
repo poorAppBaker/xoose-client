@@ -18,6 +18,20 @@ import ConnectingDriverModal from './ConnectingDriverModal';
 import DriverAcceptedModal from './DriverAcceptedModal';
 import DriverTimeoutModal from './DriverTimeoutModal';
 
+// Import icon images
+const subtractWhiteIcon = require('../../assets/images/icons/subtract-white.png');
+const starIcon = require('../../assets/images/icons/star.png');
+const languageBarIcon = require('../../assets/images/icons/language-bar.png');
+const userIcon = require('../../assets/images/icons/user.png');
+const petrolIcon = require('../../assets/images/icons/petrol.png');
+const clockIcon = require('../../assets/images/icons/clock.png');
+const babyIcon = require('../../assets/images/icons/baby.png');
+const petIcon = require('../../assets/images/icons/pet.png');
+const wheelchairIcon = require('../../assets/images/icons/wheel-chair.png');
+const editIcon = require('../../assets/images/editIcon.png');
+const pickupIcon = require('../../assets/images/icons/pickup-icon.png');
+const destinationIcon = require('../../assets/images/icons/destination-icon.png');
+
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 interface BookTripModalProps {
@@ -152,207 +166,253 @@ export default function BookTripModal({
       {!showDriverAccepted && !showDriverTimeout && (
         <View style={isExtended ? styles.extendedModal : styles.modal}>
 
-        {/* Pull-up Handle - Only show when not extended */}
-        {!isExtended && (
-          <TouchableOpacity style={styles.pullUpHandle} onPress={handlePullUp}>
-            <View style={styles.pullUpIndicator} />
-          </TouchableOpacity>
-        )}
+          {/* Pull-up Handle - Only show when not extended */}
+          {!isExtended && (
+            <TouchableOpacity style={styles.pullUpHandle} onPress={handlePullUp}>
+              <View style={styles.pullUpIndicator} />
+            </TouchableOpacity>
+          )}
 
-        {/* Pull-down Handle - Only show when extended */}
-        {isExtended && (
-          <TouchableOpacity style={styles.pullDownHandle} onPress={handlePullDown}>
-            <View style={styles.pullDownIndicator} />
-          </TouchableOpacity>
-        )}
-        
-        {/* Modal Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={onClose}>
-            <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Book the Trip</Text>
-          <View style={styles.popularityIndicator}>
-            <View style={styles.popularityDot} />
-            <Text style={styles.popularityText}>8 other persons have this driver on their list</Text>
+          {/* Pull-down Handle - Only show when extended */}
+          {isExtended && (
+            <TouchableOpacity style={styles.pullDownHandle} onPress={handlePullDown}>
+              <View style={styles.pullDownIndicator} />
+            </TouchableOpacity>
+          )}
+
+          {/* Modal Header */}
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <TouchableOpacity style={styles.backButton} onPress={onClose}>
+                <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
+              </TouchableOpacity>
+              <Text style={styles.title}>Book the Trip</Text>
+            </View>
+            <View style={styles.popularityIndicator}>
+              <View style={styles.popularityDot} />
+              <Text style={styles.popularityText}>8 other persons have this driver on their list</Text>
+            </View>
           </View>
-        </View>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Driver and Vehicle Section - Side by Side */}
-          <View style={styles.mainSection}>
-            {/* Driver Section */}
-            <View style={styles.driverSection}>
-              <View style={styles.driverImageContainer}>
-                <View style={styles.driverBadge}>
-                  <Ionicons name="checkmark" size={12} color="white" />
-                  <Text style={styles.badgeText}>10k+</Text>
-                </View>
-                <Image
-                  source={require('../../assets/images/profile-avatar.png')}
-                  style={styles.driverImage}
-                  resizeMode="contain"
-                />
-              </View>
-              <Text style={styles.driverName}>{driver.name}</Text>
-              <View style={styles.ratingContainer}>
-                <Ionicons name="star" size={12} color="#FFD700" />
-                <Text style={styles.rating}>{driver.rating}</Text>
-              </View>
-              <View style={styles.languages}>
-                {driver.languages?.map((lang, index) => (
-                  <View key={index} style={styles.languageTag}>
-                    <Text style={styles.languageText}>{lang}</Text>
+          <View style={styles.content}>
+            {/* Driver and Vehicle Section - Side by Side */}
+            <View style={styles.mainSection}>
+              {/* Driver Section */}
+              <View style={styles.driverSection}>
+                <View style={styles.profileImageContainer}>
+                  <View style={styles.verificationBadge}>
+                    <Image source={subtractWhiteIcon} style={styles.filterChipIcon} />
+                    <Text style={styles.verificationText}>10k+</Text>
                   </View>
-                )) || (
-                  <>
+                  <Image
+                    source={require('../../assets/images/profile-avatar.png')}
+                    style={styles.profileImage}
+                  />
+                </View>
+                <Text style={styles.driverName}>{driver.name}</Text>
+                <View style={styles.ratingLanguagesContainer}>
+                  <View style={styles.ratingContainer}>
+                    <Image source={starIcon} style={styles.filterChipIcon} />
+                    <Text style={styles.rating}>{driver.rating}</Text>
+                  </View>
+                  <View style={styles.languageTags}>
                     <View style={styles.languageTag}>
                       <Text style={styles.languageText}>PT</Text>
+                      <Image source={languageBarIcon} style={styles.filterChipIcon} />
                     </View>
                     <View style={styles.languageTag}>
                       <Text style={styles.languageText}>EN</Text>
+                      <Image source={languageBarIcon} style={styles.filterChipIcon} />
                     </View>
-                  </>
-                )}
+                  </View>
+                </View>
+              </View>
+
+              {/* Vehicle Section */}
+              <View style={styles.vehicleSection}>
+                <View style={styles.vehicleImageContainer}>
+                  <Image
+                    source={require('../../assets/images/car.png')}
+                    style={styles.vehicleImage}
+                  />
+                </View>
+                <Text style={styles.vehicleModel}>{fare.vehicle.model}</Text>
+                <View style={styles.vehicleRatingContainer}>
+                  <View style={styles.vehicleRatingContainer}>
+                    <Image source={starIcon} style={styles.filterChipIcon} />
+                    <Text style={styles.vehicleRating}>{fare.vehicle.rating}</Text>
+                  </View>
+                  <View style={styles.vehicleFeatures}>
+                    <View style={styles.feature}>
+                      <Image source={userIcon} style={[styles.filterChipIcon, { tintColor: theme.colors.blue500 }]} />
+                      <Text style={styles.featureText}>{fare.vehicle.capacity}</Text>
+                    </View>
+                    <View style={styles.feature}>
+                      <Image source={petrolIcon} style={styles.filterChipIcon} />
+                    </View>
+                  </View>
+                </View>
+                <View style={styles.additionalFeatures}>
+                  <View style={styles.feature}>
+                    <Image source={babyIcon} style={[styles.filterChipIcon, { tintColor: theme.colors.blue500 }]} />
+                    <Text style={styles.featureText}>1</Text>
+                  </View>
+                  <View style={styles.feature}>
+                    <Image source={petIcon} style={[styles.filterChipIcon, { tintColor: theme.colors.blue500 }]} />
+                  </View>
+                  <View style={styles.feature}>
+                    <Image source={wheelchairIcon} style={[styles.filterChipIcon, { tintColor: theme.colors.blue500 }]} />
+                  </View>
+                </View>
               </View>
             </View>
 
-            {/* Vehicle Section */}
-            <View style={styles.vehicleSection}>
-              <View style={styles.vehicleImageContainer}>
-                <Image
-                  source={require('../../assets/images/car.png')}
-                  style={styles.vehicleImage}
-                  resizeMode="contain"
-                />
+            <View style={styles.pricingContainer}>
+              {/* ETA Time Section */}
+              <View style={styles.etatimeContainer}>
+                <View style={styles.timeContainer}>
+                  <Image source={clockIcon} style={[styles.estimateTimeIcon, { tintColor: theme.colors.blue500 }]} />
+                  <Text style={styles.estimatedTime}>{fare.estimatedTime} min</Text>
+                </View>
+                <Text style={styles.companyName}>Company Name</Text>
               </View>
-              <Text style={styles.vehicleModel}>{fare.vehicle.model}</Text>
-              <View style={styles.vehicleRatingContainer}>
-                <Ionicons name="star" size={12} color="#FFD700" />
-                <Text style={styles.vehicleRating}>{fare.vehicle.rating}</Text>
-              </View>
-              <View style={styles.vehicleFeatures}>
-                <View style={styles.feature}>
-                  <Ionicons name="person" size={14} color={theme.colors.primary} />
-                  <Text style={styles.featureText}>{fare.vehicle.capacity}</Text>
-                </View>
-                <View style={styles.feature}>
-                  <Ionicons name="car" size={14} color={theme.colors.primary} />
-                  <Text style={styles.featureText}>{fare.vehicle.fuelType}</Text>
-                </View>
-                <View style={styles.feature}>
-                  <Ionicons name="paw" size={14} color={theme.colors.primary} />
-                </View>
-                <View style={styles.feature}>
-                  <Ionicons name="accessibility" size={14} color={theme.colors.primary} />
+
+              {/* Pricing Section */}
+              <View style={styles.pricingSection}>
+                <View style={styles.priceContainer}>
+                  {fare.discount && fare.discount.percentage > 0 && (
+                    <View style={styles.discountContainer}>
+                      <Text style={styles.originalPrice}>€{fare.basePrice.toFixed(2)}</Text>
+                      <Text style={styles.discountText}>-{fare.discount.percentage}%</Text>
+                    </View>
+                  )}
+                  <View style={styles.finalPriceContainer}>
+                    <Text style={styles.finalPriceMain}>€{Math.floor(fare.finalPrice)}</Text>
+                    <Text style={styles.finalPriceDecimal}>.{((fare.finalPrice % 1) * 100).toFixed(0).padStart(2, '0')}</Text>
+                  </View>
                 </View>
               </View>
             </View>
           </View>
 
-          {/* Trip Summary */}
-          <View style={styles.tripSummary}>
-            <View style={styles.summaryItem}>
-              <Ionicons name="time" size={16} color={theme.colors.gray600} />
-              <Text style={styles.summaryText}>{fare.estimatedTime} Min</Text>
-            </View>
-            <Text style={styles.companyName}>Company Name</Text>
-          </View>
-
-          {/* Pricing */}
-          <View style={styles.pricingSection}>
-            {fare.discount && fare.discount.percentage > 0 && (
-              <View style={styles.discountContainer}>
-                <Text style={styles.originalPrice}>€{fare.basePrice.toFixed(2)}</Text>
-                <Text style={styles.discountText}>-{fare.discount.percentage}%</Text>
+          {/* Trip Details Section - Only show when extended */}
+          {isExtended && (
+            <View style={styles.tripDetailsSection}>
+              <View style={styles.tripDetailsHeader}>
+                <Text style={styles.tripDetailsTitle}>Trip Details</Text>
+                <TouchableOpacity style={styles.editDestinationsButton}>
+                  <Image source={editIcon} style={styles.filterChipIcon} />
+                  <Text style={styles.editDestinationsText}>Edit Destinations</Text>
+                </TouchableOpacity>
               </View>
-            )}
-            <Text style={styles.finalPrice}>€{fare.finalPrice.toFixed(2)}</Text>
-          </View>
-        </ScrollView>
 
-        {/* Trip Details Section - Only show when extended */}
-        {isExtended && (
-          <View style={styles.tripDetailsSection}>
-          <View style={styles.tripDetailsHeader}>
-            <Text style={styles.tripDetailsTitle}>Trip Details</Text>
-            <TouchableOpacity style={styles.editDestinationsButton}>
-              <Ionicons name="pencil" size={16} color={theme.colors.primary} />
-              <Text style={styles.editDestinationsText}>Edit Destinations</Text>
+              <View style={styles.locationPoints}>
+                <View style={styles.locationPoint}>
+                  <Image source={pickupIcon} style={styles.filterChipIcon} />
+                  <View style={styles.locationInfo}>
+                    <Text style={styles.locationText}>Rio Jardim de Botanico, 18</Text>
+                    {/* <TouchableOpacity style={styles.saveButton}>
+                      <Ionicons name="location" size={14} color={theme.colors.primary} />
+                      <Text style={styles.saveButtonText}>Save</Text>
+                    </TouchableOpacity> */}
+                  </View>
+                </View>
+
+                <View style={styles.locationPoint}>
+                  <Image source={destinationIcon} style={styles.filterChipIcon} />
+                  <View style={styles.locationInfo}>
+                    <Text style={styles.locationText}>Loyal Heights</Text>
+                    {/* <TouchableOpacity style={styles.saveButton}>
+                      <Ionicons name="location" size={14} color={theme.colors.primary} />
+                      <Text style={styles.saveButtonText}>Save</Text>
+                    </TouchableOpacity> */}
+                  </View>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* Details Section - Only show when extended */}
+          {isExtended && (
+            <View style={styles.detailsSection}>
+              <Text style={styles.detailsTitle}>Details</Text>
+              {/* Trip Taker Section */}
+              <View style={styles.section}>
+                <View style={styles.selectContainer}>
+                  <View style={styles.labelContainer}>
+                    <View style={styles.labelBorderOverlay} />
+                    <Text style={styles.label}>
+                      Who Will Take the Trip?
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.selectButton}
+                    onPress={() => {}}
+                  >
+                    <Text style={styles.selectText}>This trip is for myself</Text>
+                    <Ionicons name="chevron-down" size={20} color={theme.colors.gray400} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Payment Section */}
+              <View style={styles.section}>
+                <View style={styles.selectContainer}>
+                  <View style={styles.labelContainer}>
+                    <View style={styles.labelBorderOverlay} />
+                    <Text style={styles.label}>
+                      Invoice|Payment
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.selectButton}
+                    onPress={() => {}}
+                  >
+                    <View style={styles.paymentMethodContent}>
+                      <Text style={styles.selectText}>Personal | </Text>
+                      <Image
+                        source={require('../../assets/images/mastercard.png')}
+                        style={styles.cardIcon}
+                        resizeMode="contain"
+                      />
+                      <Text style={styles.selectText}>**** 3956</Text>
+                    </View>
+                    <Ionicons name="chevron-down" size={20} color={theme.colors.gray400} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Coupon Section */}
+              <View style={styles.section}>
+                <View style={styles.selectContainer}>
+                  <View style={styles.labelContainer}>
+                    <View style={styles.labelBorderOverlay} />
+                    <Text style={styles.label}>
+                      Coupon
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.selectButton}
+                    onPress={() => {}}
+                  >
+                    <Text style={styles.selectText}>-20% Discount</Text>
+                    <Ionicons name="chevron-down" size={20} color={theme.colors.gray400} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* Action Buttons */}
+          <View style={styles.actionButtons}>
+            <TouchableOpacity style={styles.backActionButton} onPress={onClose}>
+              <Text style={styles.backButtonText}>Back</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.bookButton} onPress={handleBookNow}>
+              <Text style={styles.bookButtonText}>Book Now</Text>
             </TouchableOpacity>
           </View>
-          
-          <View style={styles.locationPoints}>
-            <View style={styles.locationPoint}>
-              <View style={styles.pickupMarker} />
-              <View style={styles.locationInfo}>
-                <Text style={styles.locationText}>Rio Jardim de Botanico, 18</Text>
-                <TouchableOpacity style={styles.saveButton}>
-                  <Ionicons name="location" size={14} color={theme.colors.primary} />
-                  <Text style={styles.saveButtonText}>Save</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-            
-            <View style={styles.locationConnector} />
-            
-            <View style={styles.locationPoint}>
-              <View style={styles.destinationMarker} />
-              <View style={styles.locationInfo}>
-                <Text style={styles.locationText}>Loyal Heights</Text>
-                <TouchableOpacity style={styles.saveButton}>
-                  <Ionicons name="location" size={14} color={theme.colors.primary} />
-                  <Text style={styles.saveButtonText}>Save</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
         </View>
-        )}
-
-        {/* Details Section - Only show when extended */}
-        {isExtended && (
-          <View style={styles.detailsSection}>
-          <Text style={styles.detailsTitle}>Details</Text>
-          
-          <View style={styles.detailField}>
-            <Text style={styles.fieldLabel}>Who Will Take the Trip?</Text>
-            <View style={styles.inputField}>
-              <Text style={styles.inputText}>This trip is for myself</Text>
-              <Ionicons name="chevron-down" size={20} color={theme.colors.gray500} />
-            </View>
-          </View>
-          
-          <View style={styles.detailField}>
-            <Text style={styles.fieldLabel}>Invoice|Payment</Text>
-            <View style={styles.inputField}>
-              <Text style={styles.inputText}>Personal |</Text>
-              <Image source={require('../../assets/images/mastercard.png')} style={styles.cardIcon} />
-              <Text style={styles.inputText}>**** 3956</Text>
-              <Ionicons name="chevron-down" size={20} color={theme.colors.gray500} />
-            </View>
-          </View>
-          
-          <View style={styles.detailField}>
-            <Text style={styles.fieldLabel}>Coupon</Text>
-            <View style={styles.inputField}>
-              <Text style={styles.inputText}>-20% Discount</Text>
-              <Ionicons name="chevron-down" size={20} color={theme.colors.gray500} />
-            </View>
-          </View>
-        </View>
-        )}
-
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.backActionButton} onPress={onClose}>
-            <Text style={styles.backButtonText}>Back</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.bookButton} onPress={handleBookNow}>
-            <Text style={styles.bookButtonText}>Book Now</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
       )}
 
       {/* Connecting Driver Modal */}
@@ -441,6 +501,10 @@ const createStyles = (theme: any) => StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: theme.spacing.md,
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   backButton: {
     padding: theme.spacing.sm,
   },
@@ -448,24 +512,23 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: theme.colors.black,
-    flex: 1,
     textAlign: 'center',
   },
   popularityIndicator: {
     width: 150,
     flexDirection: 'row',
-    alignItems: 'center',
     gap: theme.spacing.xs,
   },
   popularityDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#FF4444',
+    marginTop: theme.spacing.xs,
+    backgroundColor: '#B3261E',
   },
   popularityText: {
     fontSize: 12,
-    color: theme.colors.gray500,
+    color: '#B3261E',
   },
   content: {
     flex: 1,
@@ -473,42 +536,40 @@ const createStyles = (theme: any) => StyleSheet.create({
   mainSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.md,
   },
   driverSection: {
     flex: 1,
     alignItems: 'center',
+    paddingRight: theme.spacing.sm,
   },
-  driverImageContainer: {
+  profileImageContainer: {
     position: 'relative',
     marginBottom: theme.spacing.sm,
-    paddingTop: theme.spacing.sm,
-    paddingLeft: theme.spacing.sm,
-    paddingRight: theme.spacing.xs,
-    paddingBottom: theme.spacing.xs,
+    paddingLeft: 10,
   },
-  driverBadge: {
+  profileImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  verificationBadge: {
     position: 'absolute',
     top: 0,
-    left: 0,
+    left: -15,
     backgroundColor: theme.colors.black,
     borderRadius: theme.borderRadius.full,
     paddingHorizontal: theme.spacing.xs,
-    paddingVertical: 2,
+    paddingVertical: theme.spacing.xs,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
     zIndex: 1,
   },
-  badgeText: {
+  verificationText: {
     color: 'white',
-    fontSize: 10,
+    fontSize: 14,
     fontWeight: 'bold',
-  },
-  driverImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
   },
   driverName: {
     fontSize: 16,
@@ -516,68 +577,81 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.black,
     marginBottom: theme.spacing.sm,
   },
+  ratingLanguagesContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.xs,
-    marginBottom: theme.spacing.sm,
+    gap: 2,
   },
   rating: {
-    fontSize: 12,
-    color: theme.colors.gray600,
-  },
-  languages: {
-    flexDirection: 'row',
-    gap: theme.spacing.sm,
-  },
-  languageTag: {
-    backgroundColor: theme.colors.gray100,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 2,
-    borderRadius: theme.borderRadius.sm,
-  },
-  languageText: {
-    fontSize: 10,
-    color: theme.colors.gray500,
+    fontSize: 14,
+    fontWeight: '700',
+    color: theme.colors.black,
   },
   languageTags: {
     flexDirection: 'row',
     gap: theme.spacing.sm,
   },
+  languageTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 2,
+    borderRadius: theme.borderRadius.sm,
+  },
+  languageText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: theme.colors.black,
+  },
+  filterChipIcon: {
+    width: 16,
+    height: 16,
+    resizeMode: 'contain',
+  },
   vehicleSection: {
     flex: 1,
     alignItems: 'center',
+    paddingHorizontal: theme.spacing.sm,
   },
   vehicleImageContainer: {
-    padding: theme.spacing.xs,
+    paddingVertical: theme.spacing.sm,
     marginBottom: theme.spacing.sm,
   },
   vehicleImage: {
-    width: 90,
-    height: 70,
+    width: 100,
+    height: 60,
     borderRadius: theme.borderRadius.sm,
   },
   vehicleModel: {
     fontSize: 14,
     fontWeight: 'bold',
     color: theme.colors.black,
-    marginBottom: theme.spacing.sm,
+    marginTop: 4,
+    marginBottom: 11,
   },
   vehicleRatingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.spacing.sm,
+    gap: theme.spacing.xs,
   },
   vehicleRating: {
-    fontSize: 12,
-    color: theme.colors.gray500,
-    marginLeft: theme.spacing.xs,
+    fontSize: 14,
+    fontWeight: '700',
+    color: theme.colors.black,
   },
   vehicleFeatures: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: theme.spacing.md,
+    gap: theme.spacing.sm,
+  },
+  additionalFeatures: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.sm,
   },
   feature: {
     flexDirection: 'row',
@@ -585,50 +659,79 @@ const createStyles = (theme: any) => StyleSheet.create({
     gap: theme.spacing.xs,
   },
   featureText: {
-    fontSize: 12,
-    color: theme.colors.gray600,
+    fontSize: 14,
+    fontWeight: '700',
+    color: theme.colors.black,
   },
-  tripSummary: {
+  pricingSection: {
+    flex: 1,
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    paddingLeft: theme.spacing.sm,
+  },
+  pricingContainer: {
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: theme.colors.gray200,
+    paddingVertical: theme.spacing.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  summaryItem: {
+  etatimeContainer: {
+
+  },
+  timeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.sm,
-  },
-  summaryText: {
-    fontSize: 16,
-    color: theme.colors.black,
-    fontWeight: '500',
+    marginBottom: theme.spacing.md,
   },
   companyName: {
     fontSize: 12,
-    color: theme.colors.gray500,
+    color: theme.colors.black,
   },
-  pricingSection: {
-    alignItems: 'flex-end',
+  estimateTimeIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
+  estimatedTime: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: theme.colors.black,
+    marginLeft: theme.spacing.xs,
+  },
+  priceContainer: {
+    justifyContent: 'space-between',
   },
   discountContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-end',
     gap: theme.spacing.sm,
     marginBottom: theme.spacing.xs,
   },
   originalPrice: {
-    fontSize: 16,
-    color: theme.colors.gray500,
+    fontSize: 12,
+    color: '#B3261E',
     textDecorationLine: 'line-through',
   },
   discountText: {
-    fontSize: 14,
-    color: theme.colors.green500,
-    fontWeight: 'bold',
+    fontSize: 12,
+    color: theme.colors.black,
+    fontWeight: '700',
   },
-  finalPrice: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  finalPriceContainer: {
+    flexDirection: 'row',
+  },
+  finalPriceMain: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: theme.colors.black,
+  },
+  finalPriceDecimal: {
+    fontSize: 12,
+    fontWeight: '700',
     color: theme.colors.black,
   },
   actionButtons: {
@@ -637,12 +740,12 @@ const createStyles = (theme: any) => StyleSheet.create({
     gap: theme.spacing.md,
   },
   backActionButton: {
-    flex: 1,
     backgroundColor: 'white',
     borderWidth: 1,
     borderColor: theme.colors.primary,
     paddingVertical: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
+    paddingHorizontal: 45,
+    borderRadius: theme.borderRadius.full,
     alignItems: 'center',
   },
   backButtonText: {
@@ -654,7 +757,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     flex: 2,
     backgroundColor: theme.colors.primary,
     paddingVertical: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: theme.borderRadius.full,
     alignItems: 'center',
   },
   bookButtonText: {
@@ -664,8 +767,10 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   // Trip Details Section
   tripDetailsSection: {
-    marginTop: theme.spacing.lg,
-    marginBottom: theme.spacing.lg,
+    paddingTop: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderColor: theme.colors.gray200,
+    paddingBottom: theme.spacing.md,
   },
   tripDetailsHeader: {
     flexDirection: 'row',
@@ -688,12 +793,12 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.primary,
   },
   locationPoints: {
-    paddingLeft: theme.spacing.md,
+    gap: theme.spacing.xs,
   },
   locationPoint: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.spacing.sm,
+    gap: theme.spacing.xs,
   },
   pickupMarker: {
     width: 12,
@@ -735,15 +840,14 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   locationConnector: {
     width: 2,
-    height: 20,
+    height: 10,
     backgroundColor: theme.colors.gray300,
-    marginLeft: theme.spacing.md + 5, // Align with marker center
-    marginBottom: theme.spacing.sm,
+    marginLeft: theme.spacing.xs + 1, // Align with marker center
   },
   // Details Section
   detailsSection: {
-    marginTop: theme.spacing.lg,
-    marginBottom: theme.spacing.lg,
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.md,
   },
   detailsTitle: {
     fontSize: 18,
@@ -751,35 +855,62 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.black,
     marginBottom: theme.spacing.md,
   },
-  detailField: {
+  section: {
     marginBottom: theme.spacing.md,
   },
-  fieldLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.colors.black,
-    marginBottom: theme.spacing.sm,
+  selectContainer: {
+    position: 'relative',
   },
-  inputField: {
+  labelContainer: {
+    position: 'absolute',
+    left: 18,
+    top: -8,
+    zIndex: 10,
+  },
+  label: {
+    fontSize: 12,
+    color: theme.colors.gray500,
+    paddingHorizontal: 2,
+    fontWeight: '700',
+  },
+  labelBorderOverlay: {
+    width: '100%',
+    height: 2,
+    backgroundColor: theme.colors.white,
+    position: 'absolute',
+    top: 8,
+  },
+  selectButton: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: theme.colors.gray50,
+    paddingHorizontal: theme.spacing.md + theme.spacing.xs,
+    borderWidth: 1,
+    borderColor: theme.colors.gray100,
+    borderRadius: 1000,
+    minHeight: 48,
+  },
+  selectText: {
+    fontSize: 16,
+    color: theme.colors.gray800,
+    paddingVertical: theme.spacing.md,
+  },
+  paymentMethodContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: theme.colors.gray200,
-    borderRadius: theme.borderRadius.md,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    gap: theme.spacing.sm,
-  },
-  inputText: {
     flex: 1,
-    fontSize: 14,
-    color: theme.colors.black,
   },
   cardIcon: {
-    width: 24,
-    height: 16,
-    resizeMode: 'contain',
+    width: 30,
+    height: 20,
+    marginLeft: theme.spacing.sm,
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.borderRadius.sm,
+    marginRight: theme.borderRadius.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.lightGray,
   },
 });
 
