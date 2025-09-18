@@ -452,6 +452,22 @@ export default function MapViewComponent({
           </Mapbox.PointAnnotation>
         )}
 
+        {/* Driver Location Marker */}
+        {driverLocation && (
+          <Mapbox.PointAnnotation
+            id="driverLocation"
+            coordinate={driverLocation}
+          >
+            <View style={styles.driverLocationContainer}>
+              <Image
+                source={require('../../assets/images/icons/car-inject.png')}
+                style={styles.driverLocationCar}
+                resizeMode="contain"
+              />
+            </View>
+          </Mapbox.PointAnnotation>
+        )}
+
         {/* Selected Location Marker */}
         {selectedLocation && (
           <Mapbox.PointAnnotation
@@ -665,6 +681,14 @@ const styles = StyleSheet.create({
   locationPointer: {
     width: 60,
     height: 60,
+  },
+  driverLocationContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  driverLocationCar: {
+    width: 48,
+    height: 48,
   },
   selectedLocationContainer: {
     alignItems: 'center',
