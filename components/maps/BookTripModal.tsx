@@ -18,6 +18,7 @@ import MapView from './MapView';
 import WhereToWhereSection from './WhereToWhereSection';
 import ConnectingDriverModal from './ConnectingDriverModal';
 import DriverAcceptedModal from './DriverAcceptedModal';
+import DriverArrivingModal from './DriverArrivingModal';
 import DriverTimeoutModal from './DriverTimeoutModal';
 
 // Import icon images
@@ -56,6 +57,7 @@ export default function BookTripModal({
   const { theme } = useTheme();
   const [showConnecting, setShowConnecting] = useState(false);
   const [showDriverAccepted, setShowDriverAccepted] = useState(false);
+  const [showDriverArriving, setShowDriverArriving] = useState(false);
   const [showDriverTimeout, setShowDriverTimeout] = useState(false);
   const [isExtended, setIsExtended] = useState(false);
   const timeoutRef = useRef<number | null>(null);
@@ -127,7 +129,17 @@ export default function BookTripModal({
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-    // Here you would typically navigate to the next screen or close the modal
+    // Show the DriverArrivingModal
+    setShowDriverArriving(true);
+  };
+
+  const handleDriverArrivingClose = () => {
+    setShowDriverArriving(false);
+    onClose();
+  };
+
+  const handleCancelRide = () => {
+    setShowDriverArriving(false);
     onClose();
   };
 
@@ -447,6 +459,17 @@ export default function BookTripModal({
       <DriverAcceptedModal
         visible={showDriverAccepted}
         onContinue={handleDriverAcceptedContinue}
+        onShowDriverArriving={handleDriverAcceptedContinue}
+      />
+
+      {/* Driver Arriving Modal */}
+      <DriverArrivingModal
+        visible={showDriverArriving}
+        selectedOption={selectedOption}
+        pickup={pickup}
+        destination={destination}
+        onClose={handleDriverArrivingClose}
+        onCancelRide={handleCancelRide}
       />
 
       {/* Driver Timeout Modal */}

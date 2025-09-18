@@ -12,11 +12,13 @@ import { theme } from '../../constants/theme';
 interface DriverAcceptedModalProps {
   visible: boolean;
   onContinue: () => void;
+  onShowDriverArriving: () => void;
 }
 
 export default function DriverAcceptedModal({
   visible,
   onContinue,
+  onShowDriverArriving,
 }: DriverAcceptedModalProps) {
   const { theme } = useTheme();
   const styles = createStyles(theme);
@@ -36,7 +38,7 @@ export default function DriverAcceptedModal({
       <Text style={styles.message}>The driver accepted your trip request.</Text>
 
       {/* Continue Button */}
-      <TouchableOpacity style={styles.continueButton} onPress={onContinue}>
+      <TouchableOpacity style={styles.continueButton} onPress={onShowDriverArriving}>
         <Text style={styles.continueButtonText}>Continue</Text>
       </TouchableOpacity>
     </View>
