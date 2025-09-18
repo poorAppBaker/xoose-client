@@ -212,7 +212,7 @@ export default function ConnectingDriverModal({
           </View>
         </View>
 
-        <View style={styles.pricingContainer}>
+        <View style={[styles.pricingContainer, isExtended && styles.pricingContainerExtended]}>
           {/* ETA Time Section */}
           <View style={styles.etatimeContainer}>
             <View style={styles.timeContainer}>
@@ -305,10 +305,12 @@ export default function ConnectingDriverModal({
         )}
 
         {/* Loading Section */}
-        <View style={styles.loadingSection}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Please wait for the driver's acceptance.</Text>
-        </View>
+        {!isExtended && (
+          <View style={styles.loadingSection}>
+            <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loadingSpinner} />
+            <Text style={styles.loadingText}>Please wait for the driver's acceptance.</Text>
+          </View>
+        )}
 
         {/* Cancel Button */}
         <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
@@ -542,12 +544,14 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   pricingContainer: {
     borderTopWidth: 1,
-    borderBottomWidth: 1,
     borderColor: theme.colors.gray200,
     paddingVertical: theme.spacing.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  pricingContainerExtended: {
+    borderBottomWidth: 1,
   },
   etatimeContainer: {
 
@@ -612,18 +616,24 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.black,
   },
   loadingSection: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.sm,
+  },
+  loadingSpinner: {
     position: 'absolute',
-    bottom: 0,
+    top: 0,
     left: 0,
     right: 0,
-    alignItems: 'center',
-    marginBottom: theme.spacing.xl,
+    bottom: 0,
+    transform: [{ scale: 3 }], // Make spinner 2x bigger
   },
   loadingText: {
-    fontSize: 16,
+    width: 300,
+    fontSize: 30,
     fontWeight: 'bold',
     color: theme.colors.black,
-    marginTop: theme.spacing.md,
     textAlign: 'center',
   },
   cancelButton: {

@@ -267,7 +267,7 @@ export default function BookTripModal({
               </View>
             </View>
 
-            <View style={styles.pricingContainer}>
+            <View style={[styles.pricingContainer, isExtended && styles.pricingContainerExtended]}>
               {/* ETA Time Section */}
               <View style={styles.etatimeContainer}>
                 <View style={styles.timeContainer}>
@@ -671,12 +671,14 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   pricingContainer: {
     borderTopWidth: 1,
-    borderBottomWidth: 1,
     borderColor: theme.colors.gray200,
     paddingVertical: theme.spacing.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  pricingContainerExtended: {
+    borderBottomWidth: 1,
   },
   etatimeContainer: {
 
@@ -687,7 +689,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginBottom: theme.spacing.md,
   },
   companyName: {
-    fontSize: 12,
+    fontSize: 14,
     color: theme.colors.black,
   },
   estimateTimeIcon: {
