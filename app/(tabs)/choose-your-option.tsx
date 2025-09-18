@@ -345,7 +345,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.xl,
+    paddingTop: theme.spacing.xxl,
   },
   backButton: {
     padding: theme.spacing.sm,

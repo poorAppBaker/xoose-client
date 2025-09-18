@@ -496,12 +496,13 @@ export default function MapViewComponent({
             <Mapbox.PointAnnotation
               id="destinationETA"
               coordinate={destination.coordinate}
+              anchor={{ x: 0.5, y: 0.9 }}
             >
               <View style={styles.etaLabelContainer}>
                 <View style={[styles.etaLabel, styles.destinationETALabel]}>
                   <Text style={styles.etaLabelText}>{calculatedDestinationETA || destinationETA}</Text>
                 </View>
-                <View style={[styles.etaPointer, styles.destinationETAPointer]} />
+                <Image source={require('../../assets/images/destination-cursor.png')} />
               </View>
             </Mapbox.PointAnnotation>
           ) : (
@@ -549,12 +550,13 @@ export default function MapViewComponent({
             <Mapbox.PointAnnotation
               id="pickupETA"
               coordinate={pickup.coordinate}
+              anchor={{ x: 0.5, y: 0.9 }}
             >
               <View style={styles.etaLabelContainer}>
                 <View style={[styles.etaLabel, styles.pickupETALabel]}>
                   <Text style={styles.etaLabelText}>{calculatedPickupETA || pickupETA}</Text>
                 </View>
-                <View style={[styles.etaPointer, styles.pickupETAPointer]} />
+                <Image source={require('../../assets/images/pickup-cursor.png')} />
               </View>
             </Mapbox.PointAnnotation>
           ) : (
@@ -869,6 +871,7 @@ const styles = StyleSheet.create({
   etaLabelContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#00000000'
   },
   etaLabel: {
     paddingHorizontal: 12,
