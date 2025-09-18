@@ -12,9 +12,13 @@ const userIcon = require('../../assets/images/icons/user.png');
 const languageIcon = require('../../assets/images/icons/language.png');
 const positionIcon = require('../../assets/images/icons/position.png');
 const subtractIcon = require('../../assets/images/icons/subtract.png');
+const subtractWhiteIcon = require('../../assets/images/icons/subtract-white.png');
 const clockIcon = require('../../assets/images/icons/clock.png');
 const filterIcon = require('../../assets/images/icons/filter.png');
 const sortIcon = require('../../assets/images/icons/sort.png');
+const languageBarIcon = require('../../assets/images/icons/language-bar.png');
+const petrolIcon = require('../../assets/images/icons/petrol.png');
+const starIcon = require('../../assets/images/icons/star.png');
 
 interface LocationItem {
   coordinate: [number, number];
@@ -139,7 +143,7 @@ export default function ChooseYourOptionScreen() {
         <View style={styles.driverSection}>
           <View style={styles.profileImageContainer}>
             <View style={styles.verificationBadge}>
-              <Ionicons name="checkmark" size={8} color="white" />
+              <Image source={subtractWhiteIcon} style={styles.filterChipIcon} />
               <Text style={styles.verificationText}>10k+</Text>
             </View>
             <Image
@@ -150,15 +154,17 @@ export default function ChooseYourOptionScreen() {
           <Text style={styles.driverName}>{item.driver.name}</Text>
           <View style={styles.ratingLanguagesContainer}>
             <View style={styles.ratingContainer}>
-              <Ionicons name="star" size={12} color="#FFD700" />
+              <Image source={starIcon} style={styles.filterChipIcon} />
               <Text style={styles.rating}>{item.driver.rating}</Text>
             </View>
             <View style={styles.languageTags}>
               <View style={styles.languageTag}>
                 <Text style={styles.languageText}>PT</Text>
+                <Image source={languageBarIcon} style={styles.filterChipIcon} />
               </View>
               <View style={styles.languageTag}>
                 <Text style={styles.languageText}>EN</Text>
+                <Image source={languageBarIcon} style={styles.filterChipIcon} />
               </View>
             </View>
           </View>
@@ -166,22 +172,26 @@ export default function ChooseYourOptionScreen() {
 
         {/* Vehicle Info Section */}
         <View style={styles.vehicleSection}>
-          <Image
-            source={require('../../assets/images/car.png')}
-            style={styles.vehicleImage}
-          />
+          <View style={styles.vehicleImageContainer}>
+            <Image
+              source={require('../../assets/images/car.png')}
+              style={styles.vehicleImage}
+            />
+          </View>
           <Text style={styles.vehicleModel}>{item.fare.vehicle.model}</Text>
           <View style={styles.vehicleRatingContainer}>
-            <Ionicons name="star" size={12} color="#FFD700" />
-            <Text style={styles.vehicleRating}>{item.fare.vehicle.rating}</Text>
-          </View>
-          <View style={styles.vehicleFeatures}>
-            <View style={styles.feature}>
-              <Ionicons name="person" size={12} color={theme.colors.primary} />
-              <Text style={styles.featureText}>{item.fare.vehicle.capacity}</Text>
+            <View style={styles.vehicleRatingContainer}>
+              <Image source={starIcon} style={styles.filterChipIcon} />
+              <Text style={styles.vehicleRating}>{item.fare.vehicle.rating}</Text>
             </View>
-            <View style={styles.feature}>
-              <Ionicons name="car" size={12} color={theme.colors.primary} />
+            <View style={styles.vehicleFeatures}>
+              <View style={styles.feature}>
+                <Image source={userIcon} style={[styles.filterChipIcon, { tintColor: theme.colors.blue500 }]} />
+                <Text style={styles.featureText}>{item.fare.vehicle.capacity}</Text>
+              </View>
+              <View style={styles.feature}>
+                <Image source={petrolIcon} style={styles.filterChipIcon} />
+              </View>
             </View>
           </View>
         </View>
@@ -189,16 +199,21 @@ export default function ChooseYourOptionScreen() {
         {/* Pricing Section */}
         <View style={styles.pricingSection}>
           <View style={styles.timeContainer}>
-            <Ionicons name="time" size={16} color={theme.colors.primary} />
+            <Image source={clockIcon} style={[styles.estimateTimeIcon, { tintColor: theme.colors.blue500 }]} />
             <Text style={styles.estimatedTime}>{item.estimatedArrival} min</Text>
           </View>
-          {item.fare.discount && item.fare.discount.percentage > 0 && (
-            <View style={styles.discountContainer}>
-              <Text style={styles.originalPrice}>€{item.fare.basePrice.toFixed(2)}</Text>
-              <Text style={styles.discountText}>-{item.fare.discount.percentage}%</Text>
-            </View>
-          )}
-          <Text style={styles.finalPrice}>€{item.fare.finalPrice.toFixed(2)}</Text>
+          <View style={styles.priceContainer}>
+            {item.fare.discount && item.fare.discount.percentage > 0 && (
+              <View style={styles.discountContainer}>
+                <Text style={styles.originalPrice}>€{item.fare.basePrice.toFixed(2)}</Text>
+                <Text style={styles.discountText}>-{item.fare.discount.percentage}%</Text>
+              </View>
+            )}
+             <View style={styles.finalPriceContainer}>
+               <Text style={styles.finalPriceMain}>€{Math.floor(item.fare.finalPrice)}</Text>
+               <Text style={styles.finalPriceDecimal}>.{((item.fare.finalPrice % 1) * 100).toFixed(0).padStart(2, '0')}</Text>
+             </View>
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -416,8 +431,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderColor: theme.colors.gray300,
   },
   selectedCard: {
+    borderWidth: 3,
     borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.blue50,
   },
   driverSection: {
     flex: 1,
@@ -436,11 +451,11 @@ const createStyles = (theme: any) => StyleSheet.create({
   verificationBadge: {
     position: 'absolute',
     top: -5,
-    left: -5,
+    left: -20,
     backgroundColor: theme.colors.black,
     borderRadius: theme.borderRadius.full,
     paddingHorizontal: theme.spacing.xs,
-    paddingVertical: 2,
+    paddingVertical: theme.spacing.xs,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
@@ -448,7 +463,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   verificationText: {
     color: 'white',
-    fontSize: 10,
+    fontSize: 14,
     fontWeight: 'bold',
   },
   driverName: {
@@ -461,57 +476,63 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    gap: theme.spacing.sm,
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.spacing.sm,
+    gap: 2,
   },
   rating: {
-    fontSize: 12,
-    color: theme.colors.gray500,
-    marginLeft: theme.spacing.xs,
+    fontSize: 14,
+    fontWeight: '700',
+    color: theme.colors.black,
   },
   languageTags: {
     flexDirection: 'row',
     gap: theme.spacing.sm,
   },
   languageTag: {
-    backgroundColor: theme.colors.gray100,
-    paddingHorizontal: theme.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 2,
     borderRadius: theme.borderRadius.sm,
   },
   languageText: {
-    fontSize: 10,
-    color: theme.colors.gray500,
+    fontSize: 14,
+    fontWeight: '700',
+    color: theme.colors.black,
   },
   vehicleSection: {
     flex: 1,
     alignItems: 'center',
     paddingHorizontal: theme.spacing.sm,
   },
-  vehicleImage: {
-    width: 130,
-    height: 80,
-    borderRadius: theme.borderRadius.sm,
+  vehicleImageContainer: {
+    paddingVertical: theme.spacing.sm,
     marginBottom: theme.spacing.sm,
+  },
+  vehicleImage: {
+    width: 100,
+    height: 60,
+    borderRadius: theme.borderRadius.sm,
   },
   vehicleModel: {
     fontSize: 14,
     fontWeight: 'bold',
     color: theme.colors.black,
-    marginBottom: theme.spacing.sm,
+    marginTop: 4,
+    marginBottom: 11,
   },
   vehicleRatingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.spacing.sm,
+    gap: theme.spacing.xs,
   },
   vehicleRating: {
-    fontSize: 12,
-    color: theme.colors.gray500,
-    marginLeft: theme.spacing.xs,
+    fontSize: 14,
+    fontWeight: '700',
+    color: theme.colors.black,
   },
   vehicleFeatures: {
     flexDirection: 'row',
@@ -523,12 +544,14 @@ const createStyles = (theme: any) => StyleSheet.create({
     gap: theme.spacing.xs,
   },
   featureText: {
-    fontSize: 12,
-    color: theme.colors.gray600,
+    fontSize: 14,
+    fontWeight: '700',
+    color: theme.colors.black,
   },
   pricingSection: {
     flex: 1,
     alignItems: 'flex-end',
+    justifyContent: 'space-between',
     paddingLeft: theme.spacing.sm,
   },
   timeContainer: {
@@ -536,31 +559,47 @@ const createStyles = (theme: any) => StyleSheet.create({
     alignItems: 'center',
     marginBottom: theme.spacing.md,
   },
+  estimateTimeIcon: {
+    width: 24,
+    height: 24,
+  },
   estimatedTime: {
     fontSize: 16,
     color: theme.colors.black,
     fontWeight: '500',
     marginLeft: theme.spacing.sm,
   },
+  priceContainer: {
+    justifyContent: 'space-between',
+  },
   discountContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-end',
     gap: theme.spacing.sm,
     marginBottom: theme.spacing.xs,
   },
   originalPrice: {
-    fontSize: 16,
-    color: '#FF6B6B',
+    fontSize: 12,
+    color: '#B3261E',
     textDecorationLine: 'line-through',
   },
   discountText: {
-    fontSize: 14,
-    color: theme.colors.green500,
-    fontWeight: 'bold',
+    fontSize: 12,
+    color: theme.colors.black,
+    fontWeight: '700',
   },
-  finalPrice: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  finalPriceContainer: {
+    flexDirection: 'row',
+  },
+  finalPriceMain: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: theme.colors.black,
+  },
+  finalPriceDecimal: {
+    fontSize: 12,
+    fontWeight: '700',
     color: theme.colors.black,
   },
   actionButtons: {
@@ -569,15 +608,12 @@ const createStyles = (theme: any) => StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.gray200,
     backgroundColor: theme.colors.white,
   },
   backActionButton: {
-    flex: 1,
     paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-    borderRadius: theme.borderRadius.md,
+    paddingHorizontal: 45,
+    borderRadius: theme.borderRadius.full,
     borderWidth: 1,
     borderColor: theme.colors.blue500,
     backgroundColor: theme.colors.white,
@@ -593,7 +629,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     flex: 1,
     paddingVertical: theme.spacing.md,
     paddingHorizontal: theme.spacing.lg,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: theme.borderRadius.full,
     backgroundColor: theme.colors.blue500,
     marginLeft: theme.spacing.sm,
     alignItems: 'center',
