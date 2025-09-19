@@ -109,7 +109,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginBottom: theme.spacing.md,
   },
   taglineText: {
-    fontWeight: 'bold',
+    fontWeight: '800',
     fontSize: 20,
     color: theme.colors.gray800,
     marginBottom: theme.spacing.md,
