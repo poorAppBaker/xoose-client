@@ -109,7 +109,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginBottom: theme.spacing.md,
   },
   taglineText: {
-    fontWeight: '800',
+    fontWeight: 'bold',
     fontSize: 20,
     color: theme.colors.gray800,
     marginBottom: theme.spacing.md,
@@ -118,6 +118,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     ...theme.typography.body,
     marginBottom: theme.spacing.lg,
     color: theme.colors.gray800,
+    fontWeight: '400',
   },
   languageImage: {
     justifyContent: 'center',
