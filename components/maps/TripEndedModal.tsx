@@ -89,8 +89,8 @@ export default function TripEndedScreen({
     };
 
     console.log('Trip ended data:', tripData);
-    // Navigate back to dashboard
-    router.replace('/(tabs)/dashboard');
+    // Navigate to trip history screen
+    router.push('/trip-history');
   };
 
   const renderStars = (rating: number, onPress: (rating: number) => void, size: number = 20) => {
