@@ -28,6 +28,8 @@ export const theme = {
 
     green500: '#9FD456',
 
+    orange600: '#FF8B3E',
+
     error: '#FF4D4F',
   },
 

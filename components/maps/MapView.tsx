@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Mapbox from '@rnmapbox/maps';
 import * as Location from 'expo-location';
 import MapboxDirections from '@mapbox/mapbox-sdk/services/directions';
+import { theme } from '@/constants/theme';
 
 // Set your Mapbox access token
 Mapbox.setAccessToken('pk.eyJ1IjoiYWJ3ZWhyMTIyNSIsImEiOiJjbWZmYmNtNW0wNHc1MnFvdDkybmdzNWdlIn0.B0AntzGDfY-3brsMbfM4Sw');
@@ -102,18 +103,18 @@ export default function MapViewComponent({
   // Calculate bounds for pickup and destination
   const calculateBounds = () => {
     if (!pickup || !destination) return undefined;
-    
+
     const pickupCoord = pickup.coordinate;
     const destCoord = destination.coordinate;
-    
+
     const minLng = Math.min(pickupCoord[0], destCoord[0]);
     const maxLng = Math.max(pickupCoord[0], destCoord[0]);
     const minLat = Math.min(pickupCoord[1], destCoord[1]);
     const maxLat = Math.max(pickupCoord[1], destCoord[1]);
-    
+
     // Add padding to bounds
     const padding = 0.01; // Adjust this value for more/less padding
-    
+
     return {
       ne: [maxLng + padding, maxLat + padding] as [number, number],
       sw: [minLng - padding, minLat - padding] as [number, number]
@@ -125,9 +126,9 @@ export default function MapViewComponent({
     const R = 6371; // Earth's radius in kilometers
     const dLat = (coord2[1] - coord1[1]) * Math.PI / 180;
     const dLon = (coord2[0] - coord1[0]) * Math.PI / 180;
-    const a = 
+    const a =
       Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(coord1[1] * Math.PI / 180) * Math.cos(coord2[1] * Math.PI / 180) * 
+      Math.cos(coord1[1] * Math.PI / 180) * Math.cos(coord2[1] * Math.PI / 180) *
       Math.sin(dLon/2) * Math.sin(dLon/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     return R * c; // Distance in kilometers
@@ -157,7 +158,7 @@ export default function MapViewComponent({
     } catch (error) {
       console.error('Error getting driving distance:', error);
     }
-    
+
     // Fallback to Haversine distance
     return calculateHaversineDistance(from, to);
   };
@@ -168,16 +169,16 @@ export default function MapViewComponent({
     const minSpeed = 10; // km/h
     const maxSpeed = 110; // km/h
     const clampedSpeed = Math.max(minSpeed, Math.min(maxSpeed, speedKmH));
-    
+
     // If distance is very small, show "Arriving"
     if (distanceKm < 0.05) { // 50 meters
       return "Arriving";
     }
-    
+
     // Calculate time in hours
     const timeHours = distanceKm / clampedSpeed;
     const etaMinutes = Math.ceil(timeHours * 60);
-    
+
     // Format ETA
     if (etaMinutes < 1) {
       return "<1 min";
@@ -194,10 +195,10 @@ export default function MapViewComponent({
   const calculateArrivalTime = (etaMinutes: number): string => {
     const now = new Date();
     const arrivalTime = new Date(now.getTime() + etaMinutes * 60000);
-    return arrivalTime.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
+    return arrivalTime.toLocaleTimeString('en-US', {
+      hour: 'numeric',
       minute: '2-digit',
-      hour12: true 
+      hour12: true
     });
   };
 
@@ -214,34 +215,34 @@ export default function MapViewComponent({
         pickup: pickup?.coordinate,
         destination: destination?.coordinate
       });
-      
+
       try {
         // Get distances
         const driverToPickupDist = await getDrivingDistance(driverLocation, pickup.coordinate);
         const pickupToDestDist = await getDrivingDistance(pickup.coordinate, destination.coordinate);
-        
+
         console.log('📏 Calculated distances:', {
           driverToPickupDist,
           pickupToDestDist
         });
-        
+
         setDriverToPickupDistance(driverToPickupDist);
         setPickupToDestinationDistance(pickupToDestDist);
-        
+
         // Calculate ETAs
         const pickupETA = calculateETA(driverToPickupDist, driverSpeed);
         const destinationETA = calculateETA(pickupToDestDist, driverSpeed);
-        
+
         console.log('⏰ Calculated ETAs:', {
           pickupETA,
           destinationETA
         });
-        
+
         setCalculatedPickupETA(pickupETA);
         setCalculatedDestinationETA(`Arriving by ${calculateArrivalTime(Math.ceil((driverToPickupDist + pickupToDestDist) / driverSpeed * 60))}`);
-        
+
         console.log('✅ ETA calculation completed successfully');
-        
+
       } catch (error) {
         console.error('❌ Error calculating ETAs:', error);
         // Fallback to default values
@@ -502,7 +503,8 @@ export default function MapViewComponent({
                 <View style={[styles.etaLabel, styles.destinationETALabel]}>
                   <Text style={styles.etaLabelText}>{calculatedDestinationETA || destinationETA}</Text>
                 </View>
-                <Image source={require('../../assets/images/destination-cursor.png')} />
+                <View style={styles.destinationETaPointer}></View>
+                <View style={styles.destinationETaCircle}></View>
               </View>
             </Mapbox.PointAnnotation>
           ) : (
@@ -556,7 +558,8 @@ export default function MapViewComponent({
                 <View style={[styles.etaLabel, styles.pickupETALabel]}>
                   <Text style={styles.etaLabelText}>{calculatedPickupETA || pickupETA}</Text>
                 </View>
-                <Image source={require('../../assets/images/pickup-cursor.png')} />
+                <View style={styles.pickupEtaPointer}></View>
+                <View style={styles.pickupEtaCircle}></View>
               </View>
             </Mapbox.PointAnnotation>
           ) : (
@@ -874,9 +877,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#00000000'
   },
   etaLabel: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -887,10 +890,10 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   pickupETALabel: {
-    backgroundColor: '#FF9800', // Orange for pickup
+    backgroundColor: theme.colors.orange600,
   },
   destinationETALabel: {
-    backgroundColor: '#4CAF50', // Green for destination
+    backgroundColor: theme.colors.green500,
   },
   etaLabelText: {
     color: '#FFFFFF',
@@ -909,4 +912,30 @@ const styles = StyleSheet.create({
   destinationETAPointer: {
     backgroundColor: '#4CAF50', // Green for destination
   },
+  destinationETaPointer: {
+    width: 3,
+    height: 20,
+    backgroundColor: theme.colors.green500,
+  },
+  destinationETaCircle: {
+    width: 14,
+    height: 14,
+    backgroundColor: 'white',
+    borderColor: theme.colors.green500,
+    borderWidth: 3,
+    borderRadius: 10,
+  },
+  pickupEtaPointer: {
+    width: 3,
+    height: 20,
+    backgroundColor: theme.colors.orange600,
+  },
+  pickupEtaCircle: {
+    width: 14,
+    height: 14,
+    backgroundColor: 'white',
+    borderColor: theme.colors.orange600,
+    borderWidth: 3,
+    borderRadius: 10,
+  }
 });
