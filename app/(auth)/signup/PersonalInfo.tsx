@@ -37,7 +37,7 @@ export default function PersonalInfoScreen() {
   const router = useRouter();
   const signupStore = useSignupStore();
   const authStore = useAuthStore();
-  
+
   // Form states
   const [errors, setErrors] = useState<FormErrors>({});
   const [isUploading, setIsUploading] = useState(false);
@@ -82,7 +82,7 @@ export default function PersonalInfoScreen() {
       const birthDate = new Date(signupStore.dob);
       const age = today.getFullYear() - birthDate.getFullYear();
       const monthDiff = today.getMonth() - birthDate.getMonth();
-      
+
       if (age < 13 || (age === 13 && monthDiff < 0)) {
         newErrors.dob = 'You must be at least 13 years old';
       }
@@ -124,7 +124,7 @@ export default function PersonalInfoScreen() {
         // Generate a temporary user ID for the upload path
         // In a real app, you might want to use a temporary ID or the actual user ID
         const tempUserId = `temp_${Date.now()}`;
-        
+
         // Upload to Firebase Storage
         const uploadResult = await fileUploadService.uploadProfileImage(
           file,
@@ -133,24 +133,24 @@ export default function PersonalInfoScreen() {
             console.log(`Upload progress: ${progress.percentage.toFixed(2)}%`);
           }
         );
-        
+
         // Store the Firebase Storage URL instead of the local URI
         signupStore.setPersonalInfo({ profileImage: uploadResult.url });
-        
+
         // Clear any existing error
         if (errors.profileImage) {
           setErrors(prev => ({ ...prev, profileImage: undefined }));
         }
-        
+
         console.log('Image uploaded successfully to Firebase:', uploadResult);
       } catch (error) {
         console.error('Image upload failed:', error);
         Alert.alert('Upload Failed', 'Failed to upload profile photo. Please try again.');
-        
+
         // Set error state
-        setErrors(prev => ({ 
-          ...prev, 
-          profileImage: 'Failed to upload profile photo. Please try again.' 
+        setErrors(prev => ({
+          ...prev,
+          profileImage: 'Failed to upload profile photo. Please try again.'
         }));
       } finally {
         setIsUploading(false);
@@ -163,7 +163,7 @@ export default function PersonalInfoScreen() {
 
   const updateFormData = (field: keyof typeof signupStore) => (value: any) => {
     signupStore.setPersonalInfo({ [field]: value });
-    
+
     // Clear error when user starts typing/selecting
     if (errors[field as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
@@ -172,7 +172,7 @@ export default function PersonalInfoScreen() {
 
   const updateAgreement = (field: 'agreeTerms' | 'agreePrivacy' | 'agreeMarketing') => (value: boolean) => {
     signupStore.setAgreements({ [field]: value });
-    
+
     // Clear agreement errors
     if (errors.agreements && (field === 'agreeTerms' || field === 'agreePrivacy')) {
       setErrors(prev => ({ ...prev, agreements: undefined }));
@@ -228,7 +228,7 @@ export default function PersonalInfoScreen() {
       );
 
       console.log('Signup completed successfully');
-      
+
       // Clear signup data
       signupStore.reset();
 
@@ -237,9 +237,9 @@ export default function PersonalInfoScreen() {
 
     } catch (error: any) {
       console.error('Signup completion failed:', error);
-      
+
       let errorMessage = 'Failed to complete signup. Please try again.';
-      
+
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = 'This email is already registered. Please use a different email.';
       } else if (error.code === 'auth/weak-password') {
@@ -247,7 +247,7 @@ export default function PersonalInfoScreen() {
       } else if (error.code === 'auth/network-request-failed') {
         errorMessage = 'Network error. Please check your connection and try again.';
       }
-      
+
       signupStore.setError(errorMessage);
       Alert.alert('Signup Failed', errorMessage);
     } finally {
@@ -268,9 +268,9 @@ export default function PersonalInfoScreen() {
   return (
     <DefaultLayout scrollable>
       <View style={styles.container}>
-        <ContentHeader 
-          title='Fill in Personal Info' 
-          style={{ marginBottom: theme.spacing.md }} 
+        <ContentHeader
+          title='Fill in Personal Info'
+          style={{ marginBottom: theme.spacing.md }}
         />
 
         <UserProfileUploader
@@ -301,7 +301,7 @@ export default function PersonalInfoScreen() {
 
         <Input
           label='Date of Birth'
-          placeholder='Select Date of Birth'
+          placeholder='Select date of birth'
           type='date'
           value={signupStore.dob}
           onDateTimeChange={updateFormData('dob')}
@@ -309,16 +309,18 @@ export default function PersonalInfoScreen() {
           maximumDate={new Date()}
           minimumDate={new Date('1900-01-01')}
           style={styles.input}
+          height={48}
         />
 
         <Select
           label="Gender"
-          placeholder='Select Gender'
+          placeholder='Select gender'
           options={GENDER_OPTIONS}
           value={signupStore.gender as string}
           onSelectionChange={updateFormData('gender')}
           error={errors.gender}
           style={styles.input}
+          height={48}
         />
 
         <Input
@@ -330,6 +332,7 @@ export default function PersonalInfoScreen() {
           keyboardType='email-address'
           autoCapitalize='none'
           style={styles.input}
+          height={48}
         />
 
         <Input
@@ -341,9 +344,8 @@ export default function PersonalInfoScreen() {
           keyboardType='email-address'
           autoCapitalize='none'
           style={styles.input}
+          height={48}
         />
-
-        <View style={styles.spacer} />
 
         {/* CheckBox Section */}
         <View style={styles.checkboxSection}>
@@ -401,12 +403,14 @@ export default function PersonalInfoScreen() {
           )}
         </View>
 
+        <View style={styles.spacer} />
+
         {/* Footer Buttons */}
         <View style={styles.bottomContainer}>
-          <Button 
-            variant="outline" 
-            title="Back" 
-            onPress={handleBack} 
+          <Button
+            variant="outline"
+            title="Back"
+            onPress={handleBack}
             disabled={signupStore.isSubmitting || isUploading}
             style={styles.cancelButton}
           />
@@ -433,22 +437,22 @@ const createStyles = (theme: any) => StyleSheet.create({
     padding: theme.spacing.md,
   },
   profileUploader: {
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.sm + 5,
   },
   input: {
     marginBottom: theme.spacing.md,
+    height: 45,
   },
   spacer: {
     flex: 1,
   },
   checkboxSection: {
     paddingHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.lg,
   },
   checkboxItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.spacing.md,
+    paddingVertical: theme.spacing.sm + 4,
   },
   checkboxLabelWrap: {
     flexDirection: 'row',
@@ -457,7 +461,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   checkboxLabel: {
     fontSize: 14,
-    color: theme.colors.gray700 || '#374151',
+    color: theme.colors.gray800 || '#374151',
     lineHeight: 20,
   },
   linkText: {

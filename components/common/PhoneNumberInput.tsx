@@ -283,8 +283,9 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
 
   const renderCountryItem = ({ item }: { item: any }) => {
     if (item.type === 'header') {
+      const isAllSection = item.title === 'All';
       return (
-        <View style={styles.sectionHeader}>
+        <View style={isAllSection ? styles.sectionHeaderAll : styles.sectionHeader}>
           <Text style={styles.sectionHeaderText}>{item.title}</Text>
         </View>
       );
@@ -321,25 +322,28 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
         {/* Header */}
         <ContentHeader title="Select Country" />
 
-        {/* Search Input */}
-        <Input
-          leftIcon={<Ionicons name="search" size={24} color={theme.colors.gray500} />}
-          placeholder='Search by title'
-          value={searchText}
-          onChangeText={setSearchText}
-          style={styles.searchInput}
-        />
-
-        {/* Country List */}
-        <View style={styles.listContainer}>
-          <FlatList
-            data={modalData}
-            keyExtractor={(item, index) => (item as any).code || `header-${index}`}
-            renderItem={renderCountryItem}
-            showsVerticalScrollIndicator={false}
-            style={styles.flatList}
-            contentContainerStyle={styles.flatListContent}
+        {/* Search Input and Country List Container */}
+        <View style={styles.searchAndListContainer}>
+          <Input
+            leftIcon={<Ionicons name="search" size={24} color={theme.colors.gray500} />}
+            placeholder='Search by title'
+            value={searchText}
+            onChangeText={setSearchText}
+            style={styles.searchInput}
+            height={40}
           />
+
+          {/* Country List */}
+          <View style={styles.listContainer}>
+            <FlatList
+              data={modalData}
+              keyExtractor={(item, index) => (item as any).code || `header-${index}`}
+              renderItem={renderCountryItem}
+              showsVerticalScrollIndicator={false}
+              style={styles.flatList}
+              contentContainerStyle={styles.flatListContent}
+            />
+          </View>
         </View>
 
         {/* Footer Buttons */}
@@ -488,8 +492,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     ...(theme.typography?.body || {}),
     fontSize: 16,
     color: theme.colors.gray800,
-    paddingVertical: theme.spacing.md,
-    minHeight: 48,
+    paddingVertical: theme.spacing.sm,
+    minHeight: 46,
   },
   textDisabled: {
     color: theme.colors.gray400,
@@ -509,6 +513,9 @@ const createStyles = (theme: any) => StyleSheet.create({
 
   // Modal styles
   searchContainer: {
+  },
+  searchAndListContainer: {
+    // gap: theme.spacing.xs, // Tight spacing between search and list
   },
   searchInputWrapper: {
     flexDirection: 'row',
@@ -538,6 +545,10 @@ const createStyles = (theme: any) => StyleSheet.create({
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.sm,
   },
+  sectionHeaderAll: {
+    paddingHorizontal: theme.spacing.sm + 2,
+    paddingVertical: theme.spacing.md + 3,
+  },
   sectionHeaderText: {
     ...theme.typography.caption,
     fontSize: 16,
@@ -549,8 +560,9 @@ const createStyles = (theme: any) => StyleSheet.create({
     alignItems: 'center',
     gap: theme.spacing.sm,
     paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.sm,
-    marginBottom: theme.spacing.sm,
+    paddingVertical: theme.spacing.sm + 1,
+    marginTop: theme.spacing.xs,
+    marginBottom: 2,
     borderRadius: theme.borderRadius?.full || 8,
     borderWidth: 1,
     borderColor: 'transparent',

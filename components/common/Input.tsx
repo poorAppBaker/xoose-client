@@ -26,6 +26,7 @@ interface InputProps extends BaseInputProps {
   minimumDate?: Date;
   maximumDate?: Date;
   loading?: boolean;
+  height?: number;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -36,6 +37,7 @@ const Input: React.FC<InputProps> = ({
   secureTextEntry,
   required = false,
   type = 'text',
+  height = 45,
   value,
   placeholder = "",
   onDateTimeChange,
@@ -53,7 +55,7 @@ const Input: React.FC<InputProps> = ({
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState<Date>(new Date());
 
-  const styles = createStyles(theme);
+  const styles = createStyles(theme, height, !!error);
 
   const togglePasswordVisibility = () => {
     setIsPasswordVisible(!isPasswordVisible);
@@ -193,7 +195,7 @@ const Input: React.FC<InputProps> = ({
             maximumDate={maximumDate}
             style={styles.wheelDatePicker}
             textColor={theme.colors.gray600}
-            textSize={24}
+            textSize={20}
           />
         </View>
 
@@ -318,10 +320,11 @@ const Input: React.FC<InputProps> = ({
   );
 };
 
-const createStyles = (theme: any) => StyleSheet.create({
+const createStyles = (theme: any, height: number, hasError: boolean) => StyleSheet.create({
   container: {
     position: 'relative',
     marginBottom: theme.spacing.md,
+    minHeight: hasError ? height + 25 : height, // Only reserve space when error exists
   },
   labelContainer: {
     position: 'absolute',
@@ -353,10 +356,12 @@ const createStyles = (theme: any) => StyleSheet.create({
     paddingHorizontal: 20,
     borderWidth: 1,
     borderColor: theme.colors.gray100,
-    borderRadius: 1000,
+    borderRadius: theme.borderRadius.full,
+    height: height, // Fixed height for input
   },
   inputContainerMultiline: {
     alignItems: 'flex-start',
+    height: 'auto', // Allow multiline to grow
     minHeight: 100,
     paddingVertical: theme.spacing.sm,
   },
@@ -379,8 +384,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.gray800,
     paddingLeft: 0,
     paddingRight: 0,
-    paddingVertical: theme.spacing.md,
-    minHeight: 48,
+    minHeight: height,
   },
   inputMultiline: {
     textAlignVertical: 'top',
@@ -414,7 +418,8 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   dateTimeTextContainer: {
     flex: 1,
-    paddingVertical: theme.spacing.md,
+    height: height,
+    justifyContent: 'center',
   },
   dateTimeText: {
     ...(theme.typography?.body || {}),
@@ -428,6 +433,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: theme.spacing.xs,
+    marginLeft: theme.spacing.sm,
+    height: 20, // Fixed height for error text
   },
   errorText: {
     ...theme.typography.caption,
@@ -440,6 +447,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   // DatePicker container styles
   datePickerContainer: {
     paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.xl,
     alignItems: 'center',
   },
   wheelDatePicker: {

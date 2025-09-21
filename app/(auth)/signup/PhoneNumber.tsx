@@ -94,7 +94,7 @@ export default function PhoneNumberScreen() {
           defaultCountry={selectedCountry?.code || "US"}
           value={phone}
           onChangeText={handlePhoneChange}
-          style={{ marginTop: theme.spacing.lg + theme.spacing.xs }}
+          style={{ marginTop: theme.spacing.lg + 2 }}
           error={signupStore.error || undefined}
         />
 

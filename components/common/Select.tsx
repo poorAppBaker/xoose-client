@@ -25,12 +25,14 @@ interface SelectProps {
   options: SelectOption[];
   multiple?: boolean;
   disabled?: boolean;
+  height?: number;
 }
 
 const Select: React.FC<SelectProps> = ({
   label,
   error,
   leftIcon,
+  height = 45,
   required = false,
   value,
   onSelectionChange,
@@ -46,7 +48,7 @@ const Select: React.FC<SelectProps> = ({
   const [showModal, setShowModal] = useState(false);
   const [tempSelection, setTempSelection] = useState<(string | number)[]>([]);
 
-  const styles = createStyles(theme);
+  const styles = createStyles(theme, height, !!error);
 
   const handlePress = useCallback(() => {
     if (disabled) return;
@@ -242,9 +244,11 @@ const Select: React.FC<SelectProps> = ({
   );
 };
 
-const createStyles = (theme: any) => StyleSheet.create({
+const createStyles = (theme: any, height: number, hasError: boolean) => StyleSheet.create({
   container: {
     position: 'relative',
+    marginBottom: theme.spacing.md,
+    minHeight: hasError ? height + 25 : height, // Only reserve space when error exists
   },
   labelContainer: {
     position: 'absolute',
@@ -276,8 +280,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     paddingHorizontal: theme.spacing.md + theme.spacing.xs,
     borderWidth: 1,
     borderColor: theme.colors.gray100,
-    borderRadius: 1000,
-    minHeight: 48,
+    borderRadius: theme.borderRadius.full,
+    minHeight: height,
   },
   selectContainerFocused: {
     borderColor: theme.colors.blue500,
@@ -297,7 +301,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   textContainer: {
     flex: 1,
-    paddingVertical: theme.spacing.md,
   },
   text: {
     ...(theme.typography?.body || {}),
@@ -315,6 +318,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: theme.spacing.xs,
+    marginLeft: theme.spacing.sm,
+    height: 20, // Fixed height for error text
   },
   errorText: {
     ...theme.typography.caption,

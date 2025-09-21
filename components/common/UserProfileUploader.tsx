@@ -284,8 +284,8 @@ const UserProfileUploader: React.FC<UserProfileUploaderProps> = ({
           <Image
             source={personImage}
             style={{
-              width: 60,
-              height: 60,
+              width: 48,
+              height: 48,
               tintColor: theme.colors.gray800,
             }}
             resizeMode="contain"
@@ -293,9 +293,7 @@ const UserProfileUploader: React.FC<UserProfileUploaderProps> = ({
         )}
         {/* Camera badge with plus sign - only show when no image */}
         {!value && (
-          <View style={styles.cameraBadge}>
-            <Image source={require('../../assets/images/photo-plus.png')} style={styles.bdgCamera} />
-          </View>
+          <Image source={require('../../assets/images/icons/camera.png')} style={styles.cameraBadge} />
         )}
       </View>
     );
@@ -481,22 +479,15 @@ const createStyles = (theme: any, size: number) => StyleSheet.create({
     fontSize: 18,
     color: theme.colors.gray500,
     textAlign: 'center',
-    marginTop: theme.spacing.md,
+    marginTop: theme.spacing.xs,
     fontWeight: '400',
   },
   cameraBadge: {
     position: 'absolute',
-    bottom: -5,
-    right: -10,
-    width: 31,
-    height: 31,
-    borderRadius: 15,
-    backgroundColor: theme.colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'white',
-    ...theme.shadows.sm,
+    width: 20,
+    height: 20,
+    bottom: 5,
+    right: 0,
   },
   plusSign: {
     position: 'absolute',
@@ -597,8 +588,8 @@ const createStyles = (theme: any, size: number) => StyleSheet.create({
   modalFooter: {
   },
   bdgCamera: {
-    width: 27,
-    height: 27,
+    width: 14,
+    height: 14,
   }
 });
 

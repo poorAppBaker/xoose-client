@@ -16,7 +16,7 @@ const CheckBox: React.FC<CheckBoxProps> = ({
   checked, 
   onPress, 
   theme,
-  size = 20,
+  size = 16,
   children,
   disabled = false,
   style,
@@ -71,7 +71,7 @@ const createStyles = (theme: any, size: number) => StyleSheet.create({
     opacity: 0.5,
   },
   checkmark: {
-    width: size * 0.8,
+    width: size * 0.7,
     height: size * 0.4,
     borderLeftWidth: 2,
     borderBottomWidth: 2,
