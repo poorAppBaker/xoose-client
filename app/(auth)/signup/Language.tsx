@@ -67,10 +67,10 @@ export default function LanguageScreen() {
             >
               <CountryFlag
                 isoCode={country.code}
-                size={24}
+                size={19}
                 style={{
                   borderRadius: 100,
-                  width: 24,
+                  width: 19,
                 }}
               />
               <Text style={[
@@ -106,7 +106,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     padding: theme.spacing.md,
   },
   textContainer: {
-    marginBottom: theme.spacing.md,
+    // marginBottom: theme.spacing.md,
   },
   taglineText: {
     fontWeight: '800',
@@ -131,8 +131,8 @@ const createStyles = (theme: any) => StyleSheet.create({
   languageItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.md,
-    padding: theme.spacing.sm,
+    gap: theme.spacing.sm,
+    padding: theme.spacing.sm + 0.3,
     borderWidth: 1,
     borderColor: 'transparent',
     borderRadius: theme.borderRadius.full,
@@ -143,6 +143,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   languageItemText: {
     ...theme.typography.body,
     color: theme.colors.gray800,
+    fontWeight: '400',
     flex: 1,
   },
   languageItemTextSelected: {

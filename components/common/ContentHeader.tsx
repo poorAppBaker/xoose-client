@@ -43,6 +43,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing.sm,
+    paddingTop: theme.spacing.sm,
   },
   title: {
     ...theme.typography.h3,

@@ -69,7 +69,7 @@ const CodeInput = forwardRef<CodeInputRef, CodeInputProps>(({
           ...style,
         },
         pinCodeContainerStyle: {
-          height: 56,
+          height: 64,
           width: 48,
           borderRadius: theme.borderRadius.lg,
           borderWidth: 1,
