@@ -259,6 +259,14 @@ export default function MapViewComponent({
     console.log('userLocation changed:', userLocation);
   }, [userLocation]);
 
+  // Handle selectedLocation changes - animate to selected location
+  useEffect(() => {
+    if (selectedLocation) {
+      console.log('📍 Selected location changed, animating to:', selectedLocation);
+      // The camera will automatically animate due to the centerCoordinate prop change
+    }
+  }, [selectedLocation]);
+
   const getCurrentLocation = async () => {
     try {
       setIsLoadingLocation(true);
@@ -422,9 +430,9 @@ export default function MapViewComponent({
             animationDuration: 1000
           } : {
             centerCoordinate: selectedLocation || userLocation || centerCoordinate || [0, 0],
-            zoomLevel: userLocation ? zoomLevel : 2,
-            animationMode: userLocation ? "flyTo" : "none",
-            animationDuration: userLocation ? 1000 : 0
+            zoomLevel: (selectedLocation || userLocation) ? zoomLevel : 2,
+            animationMode: (selectedLocation || userLocation) ? "flyTo" : "none",
+            animationDuration: (selectedLocation || userLocation) ? 1000 : 0
           })}
         />
 
