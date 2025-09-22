@@ -10,6 +10,7 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Rating } from 'react-native-elements';
 import { useTheme } from '../../contexts/ThemeContext';
 import { theme } from '@/constants/theme';
 import { useRouter } from 'expo-router';
@@ -93,23 +94,19 @@ export default function TripEndedScreen({
     router.push('/trip-history');
   };
 
-  const renderStars = (rating: number, onPress: (rating: number) => void, size: number = 20) => {
+  const renderStars = (rating: number, onPress: (rating: number) => void, size: number = 24) => {
     return (
-      <View style={styles.starsContainer}>
-        {[1, 2, 3, 4, 5].map((star) => (
-          <TouchableOpacity
-            key={star}
-            onPress={() => onPress(star)}
-            style={styles.starButton}
-          >
-            <Ionicons
-              name={star <= rating ? 'star' : 'star-outline'}
-              size={size}
-              color={star <= rating ? '#FFD700' : '#D0D0D0'}
-            />
-          </TouchableOpacity>
-        ))}
-      </View>
+      <Rating
+        type="star"
+        ratingCount={5}
+        imageSize={size}
+        startingValue={rating}
+        readonly={false}
+        onFinishRating={onPress}
+        ratingColor="#FFFF00"
+        ratingBackgroundColor="#FFFF00"
+        style={styles.ratingComponent}
+      />
     );
   };
 
@@ -143,12 +140,31 @@ export default function TripEndedScreen({
                 ]}
                 onPress={() => handleTipSelect(tip.amount)}
               >
-                <Text style={[
-                  styles.tipAmount,
-                  selectedTip === tip.amount && styles.tipAmountSelected
-                ]}>
-                  {tip.amount === 0 ? 'No Tip' : `€${tip.amount.toFixed(2)}`}
-                </Text>
+                {tip.amount === 0 ? (
+                  <View style={styles.tipAmountContainer}>
+                    <Text style={[
+                      styles.tipAmount,
+                      selectedTip === tip.amount && styles.tipAmountSelected
+                    ]}>
+                      No Tip
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={styles.tipAmountContainer}>
+                    <Text style={[
+                      styles.tipAmount,
+                      selectedTip === tip.amount && styles.tipAmountSelected
+                    ]}>
+                      €{Math.floor(tip.amount)}
+                    </Text>
+                    <Text style={[
+                      styles.tipAmountDecimal,
+                      selectedTip === tip.amount && styles.tipAmountDecimalSelected
+                    ]}>
+                      .{tip.amount.toFixed(2).split('.')[1]}
+                    </Text>
+                  </View>
+                )}
                 {tip.percentage !== 'No Tip' && (
                   <Text style={[
                     styles.tipPercentage,
@@ -163,7 +179,7 @@ export default function TripEndedScreen({
         </View>
 
         {/* Trip Rating Section */}
-        <View style={styles.section}>
+        <View style={styles.ratingSection}>
           <Text style={styles.sectionTitle}>Please rate your trip</Text>
 
           <View style={styles.ratingItem}>
@@ -186,73 +202,82 @@ export default function TripEndedScreen({
         {/* Driver's Languages Rating Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Please rate the driver's languages:</Text>
+          <View style={styles.languageSection}>
+            <View style={styles.languageItem}>
+              <Text style={styles.languageLabel}>Portuguese</Text>
+              <View style={styles.languageControls}>
+                <TouchableOpacity
+                  style={[
+                    styles.customSwitch,
+                    portugueseEnabled && styles.customSwitchActive
+                  ]}
+                  onPress={() => handleLanguageToggle('portuguese')}
+                >
+                  <View style={[
+                    styles.switchThumb,
+                    portugueseEnabled && styles.switchThumbActive
+                  ]} />
+                  <Text style={[
+                    styles.switchText,
+                    portugueseEnabled && styles.switchTextActive
+                  ]}>
+                    {portugueseEnabled ? 'Yes' : 'No'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              {renderStars(portugueseRating, (rating) => handleRating('portuguese', rating))}
+            </View>
 
-           <View style={styles.languageItem}>
-             <Text style={styles.languageLabel}>Portuguese</Text>
-             <View style={styles.languageControls}>
-               <TouchableOpacity
-                 style={[
-                   styles.customSwitch,
-                   portugueseEnabled && styles.customSwitchActive
-                 ]}
-                 onPress={() => handleLanguageToggle('portuguese')}
-               >
-                 <View style={[
-                   styles.switchThumb,
-                   portugueseEnabled && styles.switchThumbActive
-                 ]} />
-                 <Text style={[
-                   styles.switchText,
-                   portugueseEnabled && styles.switchTextActive
-                 ]}>
-                   {portugueseEnabled ? 'Yes' : 'No'}
-                 </Text>
-               </TouchableOpacity>
-               {portugueseEnabled && renderStars(portugueseRating, (rating) => handleRating('portuguese', rating))}
-             </View>
-           </View>
-
-           <View style={styles.languageItem}>
-             <Text style={styles.languageLabel}>English</Text>
-             <View style={styles.languageControls}>
-               <TouchableOpacity
-                 style={[
-                   styles.customSwitch,
-                   englishEnabled && styles.customSwitchActive
-                 ]}
-                 onPress={() => handleLanguageToggle('english')}
-               >
-                 <View style={[
-                   styles.switchThumb,
-                   englishEnabled && styles.switchThumbActive
-                 ]} />
-                 <Text style={[
-                   styles.switchText,
-                   englishEnabled && styles.switchTextActive
-                 ]}>
-                   {englishEnabled ? 'Yes' : 'No'}
-                 </Text>
-               </TouchableOpacity>
-               {englishEnabled && renderStars(englishRating, (rating) => handleRating('english', rating))}
-             </View>
-           </View>
+            <View style={styles.languageItem}>
+              <Text style={styles.languageLabel}>English</Text>
+              <View style={styles.languageControls}>
+                <TouchableOpacity
+                  style={[
+                    styles.customSwitch,
+                    englishEnabled && styles.customSwitchActive
+                  ]}
+                  onPress={() => handleLanguageToggle('english')}
+                >
+                  <View style={[
+                    styles.switchThumb,
+                    englishEnabled && styles.switchThumbActive
+                  ]} />
+                  <Text style={[
+                    styles.switchText,
+                    englishEnabled && styles.switchTextActive
+                  ]}>
+                    {englishEnabled ? 'Yes' : 'No'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              {renderStars(englishRating, (rating) => handleRating('english', rating))}
+            </View>
+          </View>
         </View>
 
         {/* Add to Trusted Drivers Button */}
-        <TouchableOpacity
-          style={[
-            styles.trustedDriverButton,
-            isTrustedDriver && styles.trustedDriverButtonSelected
-          ]}
-          onPress={() => setIsTrustedDriver(!isTrustedDriver)}
-        >
-          <Image source={require('../../assets/images/icons/subtrack-blue.png')} style={styles.checkmarkCircleIcon} />
-          <Text style={styles.trustedDriverText}>Add to My Trusted Drivers</Text>
-        </TouchableOpacity>
+        <View style={styles.trustedDriverSection}>
+          <TouchableOpacity
+            style={[
+              styles.trustedDriverButton,
+              isTrustedDriver && styles.trustedDriverButtonSelected
+            ]}
+            onPress={() => setIsTrustedDriver(!isTrustedDriver)}
+          >
+            <Image source={require('../../assets/images/icons/subtrack-blue.png')} style={styles.checkmarkCircleIcon} />
+            <Text style={styles.trustedDriverText}>Add to My Trusted Drivers</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Comments Section */}
-        <View style={styles.section}>
-          <Input label='comment' value={comment} onChangeText={setComment} placeholder='Enter the comment' />
+        <View style={styles.comentSection}>
+          <Input 
+            label='Comments'
+            height={48}
+            value={comment}
+            onChangeText={setComment}
+            placeholder='Enter the comment'
+          />
         </View>
       </ScrollView>
 
@@ -284,25 +309,25 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.sm,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333333',
+    color: theme.colors.gray800,
   },
   completionIndicator: {
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: theme.spacing.md,
   },
   routeLine: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   locationConfirmIcon: {
-    width: 80,
-    height: 80,
+    width: 70,
+    height: 70,
   },
   startPin: {
     width: 24,
@@ -331,22 +356,24 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.md,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: theme.spacing.sm + 6,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.gray100,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '800',
     color: theme.colors.blue500,
-    marginBottom: 8,
   },
   tipSubtitle: {
-    fontSize: 14,
-    color: '#666666',
-    marginBottom: 16,
+    fontSize: 12,
+    color: theme.colors.gray800,
+    marginBottom: theme.spacing.sm + 2,
   },
   tipOptions: {
     flexDirection: 'row',
@@ -359,7 +386,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E0E0E0',
     borderRadius: 8,
-    paddingVertical: 12,
+    paddingVertical: theme.spacing.sm,
     paddingHorizontal: 8,
     alignItems: 'center',
   },
@@ -368,11 +395,25 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.blue500,
   },
   tipAmount: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#333333',
+    color: theme.colors.gray800,
   },
   tipAmountSelected: {
+    color: '#FFFFFF',
+  },
+  tipAmountContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tipAmountDecimal: {
+    fontSize: 8,
+    fontWeight: '600',
+    color: theme.colors.gray800,
+  },
+  tipAmountDecimalSelected: {
     color: '#FFFFFF',
   },
   tipPercentage: {
@@ -383,57 +424,64 @@ const styles = StyleSheet.create({
   tipPercentageSelected: {
     color: '#FFFFFF',
   },
+  ratingSection: {
+    marginBottom: theme.spacing.sm + 6,
+    paddingBottom: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.gray100,
+  },
   ratingItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginTop: theme.spacing.sm + 4,
   },
   ratingInfo: {
     flex: 1,
   },
   ratingLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333333',
+    fontSize: 14,
+    fontWeight: '800',
+    color: theme.colors.gray800,
   },
   ratingSubtext: {
-    fontSize: 14,
-    color: '#666666',
-    marginTop: 2,
+    fontSize: 12,
+    color: theme.colors.gray800,
   },
-  starsContainer: {
-    flexDirection: 'row',
+  ratingComponent: {
     alignItems: 'center',
-    gap: 4,
-  },
-  starButton: {
-    padding: 2,
+    justifyContent: 'center',
   },
   rateText: {
     fontSize: 12,
     color: '#666666',
     marginLeft: 8,
   },
+  languageSection: {
+    marginTop: theme.spacing.sm - 2,
+    paddingBottom: theme.spacing.sm,
+  },
   languageItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginVertical: theme.spacing.sm + 4,
   },
   languageLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333333',
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '800',
+    color: theme.colors.gray800,
   },
   languageControls: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
   customSwitch: {
-    width: 60,
-    height: 30,
+    width: 45,
+    height: 19,
     backgroundColor: '#D0D0D0',
     borderRadius: 15,
     padding: 2,
@@ -446,10 +494,10 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.blue500,
   },
   switchThumb: {
-    width: 26,
-    height: 26,
+    width: 12,
+    height: 12,
     backgroundColor: '#FFFFFF',
-    borderRadius: 13,
+    borderRadius: theme.borderRadius.full,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -474,6 +522,11 @@ const styles = StyleSheet.create({
     right: 'auto',
     color: '#FFFFFF',
   },
+  trustedDriverSection: {
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.gray100,
+    paddingBottom: theme.spacing.md,
+  },
   trustedDriverButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -481,9 +534,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.blue500,
     borderRadius: theme.borderRadius.full,
-    paddingVertical: theme.spacing.md,
+    paddingVertical: theme.spacing.sm + 2,
     paddingHorizontal: 20,
-    marginBottom: 24,
+    marginTop: 2,
     gap: 8,
   },
   trustedDriverButtonSelected: {
@@ -494,12 +547,15 @@ const styles = StyleSheet.create({
   },
   trustedDriverText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: theme.colors.blue500,
   },
+  comentSection: {
+    marginTop: theme.spacing.md + 6,
+  },
   commentsLabel: {
-    fontSize: 14,
-    color: '#666666',
+    fontSize: 16,
+    color: theme.colors.gray800,
     marginBottom: 8,
   },
   commentsInput: {
