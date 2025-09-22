@@ -143,7 +143,7 @@ export default function ChooseYourOptionScreen() {
         <View style={styles.driverSection}>
           <View style={styles.profileImageContainer}>
             <View style={styles.verificationBadge}>
-              <Image source={subtractWhiteIcon} style={styles.filterChipIcon} />
+              <Image source={subtractWhiteIcon} style={styles.badgeIcon} />
               <Text style={styles.verificationText}>10k+</Text>
             </View>
             <Image
@@ -154,17 +154,17 @@ export default function ChooseYourOptionScreen() {
           <Text style={styles.driverName}>{item.driver.name}</Text>
           <View style={styles.ratingLanguagesContainer}>
             <View style={styles.ratingContainer}>
-              <Image source={starIcon} style={styles.filterChipIcon} />
+              <Image source={starIcon} style={styles.statusIcon} />
               <Text style={styles.rating}>{item.driver.rating}</Text>
             </View>
             <View style={styles.languageTags}>
               <View style={styles.languageTag}>
                 <Text style={styles.languageText}>PT</Text>
-                <Image source={languageBarIcon} style={styles.filterChipIcon} />
+                <Image source={languageBarIcon} style={styles.statusIcon} />
               </View>
               <View style={styles.languageTag}>
                 <Text style={styles.languageText}>EN</Text>
-                <Image source={languageBarIcon} style={styles.filterChipIcon} />
+                <Image source={languageBarIcon} style={styles.statusIcon} />
               </View>
             </View>
           </View>
@@ -181,16 +181,16 @@ export default function ChooseYourOptionScreen() {
           <Text style={styles.vehicleModel}>{item.fare.vehicle.model}</Text>
           <View style={styles.vehicleRatingContainer}>
             <View style={styles.vehicleRatingContainer}>
-              <Image source={starIcon} style={styles.filterChipIcon} />
+              <Image source={starIcon} style={styles.statusIcon} />
               <Text style={styles.vehicleRating}>{item.fare.vehicle.rating}</Text>
             </View>
             <View style={styles.vehicleFeatures}>
               <View style={styles.feature}>
-                <Image source={userIcon} style={[styles.filterChipIcon, { tintColor: theme.colors.blue500 }]} />
+                <Image source={userIcon} style={[styles.statusIcon, { tintColor: theme.colors.blue500 }]} />
                 <Text style={styles.featureText}>{item.fare.vehicle.capacity}</Text>
               </View>
               <View style={styles.feature}>
-                <Image source={petrolIcon} style={styles.filterChipIcon} />
+                <Image source={petrolIcon} style={styles.statusIcon} />
               </View>
             </View>
           </View>
@@ -392,7 +392,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: theme.spacing.xl,
-    paddingBottom: theme.spacing.lg,
+    paddingBottom: theme.spacing.md,
   },
   filterButton: {
     flexDirection: 'row',
@@ -425,7 +425,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: theme.colors.white,
     borderRadius: theme.spacing.md,
-    padding: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
     marginBottom: theme.spacing.sm,
     borderWidth: 1,
     borderColor: theme.colors.gray300,
@@ -441,36 +442,37 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   profileImageContainer: {
     position: 'relative',
-    marginBottom: theme.spacing.sm,
   },
   profileImage: {
-    width: 80,
-    height: 80,
+    width: 58,
+    height: 58,
     borderRadius: 40,
   },
   verificationBadge: {
     position: 'absolute',
-    top: -5,
+    top: 0,
     left: -20,
     backgroundColor: theme.colors.black,
     borderRadius: theme.borderRadius.full,
     paddingHorizontal: theme.spacing.xs,
-    paddingVertical: theme.spacing.xs,
+    paddingVertical: 2,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
     zIndex: 1,
   },
+  badgeIcon: {
+    width: 12,
+    height: 12,
+    resizeMode: 'contain',
+  },
   verificationText: {
     color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 10,
   },
   driverName: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 12,
     color: theme.colors.black,
-    marginBottom: theme.spacing.sm,
   },
   ratingLanguagesContainer: {
     flexDirection: 'row',
@@ -478,14 +480,18 @@ const createStyles = (theme: any) => StyleSheet.create({
     alignItems: 'center',
     gap: theme.spacing.sm,
   },
+  statusIcon: {
+    width: 12,
+    height: 12,
+    resizeMode: 'contain',
+  },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
   },
   rating: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 12,
     color: theme.colors.black,
   },
   languageTags: {
@@ -499,8 +505,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderRadius: theme.borderRadius.sm,
   },
   languageText: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 12,
     color: theme.colors.black,
   },
   vehicleSection: {
@@ -509,29 +514,25 @@ const createStyles = (theme: any) => StyleSheet.create({
     paddingHorizontal: theme.spacing.sm,
   },
   vehicleImageContainer: {
-    paddingVertical: theme.spacing.sm,
-    marginBottom: theme.spacing.sm,
+    paddingTop: theme.spacing.sm,
+    paddingBottom: 1,
   },
   vehicleImage: {
-    width: 100,
-    height: 60,
-    borderRadius: theme.borderRadius.sm,
+    width: 93,
+    height: 50,
   },
   vehicleModel: {
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 12,
     color: theme.colors.black,
-    marginTop: 4,
-    marginBottom: 11,
   },
   vehicleRatingContainer: {
+    paddingTop: 0.5,
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing.xs,
   },
   vehicleRating: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 12,
     color: theme.colors.black,
   },
   vehicleFeatures: {
@@ -544,8 +545,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     gap: theme.spacing.xs,
   },
   featureText: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 12,
     color: theme.colors.black,
   },
   pricingSection: {
@@ -560,11 +560,11 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginBottom: theme.spacing.md,
   },
   estimateTimeIcon: {
-    width: 24,
-    height: 24,
+    width: 16,
+    height: 16,
   },
   estimatedTime: {
-    fontSize: 16,
+    fontSize: 12,
     color: theme.colors.black,
     fontWeight: '500',
     marginLeft: theme.spacing.sm,
@@ -577,7 +577,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
     gap: theme.spacing.sm,
-    marginBottom: theme.spacing.xs,
   },
   originalPrice: {
     fontSize: 12,
@@ -598,6 +597,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.black,
   },
   finalPriceDecimal: {
+    paddingTop: theme.spacing.xs + 2,
     fontSize: 12,
     fontWeight: '700',
     color: theme.colors.black,

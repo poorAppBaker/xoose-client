@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import Input from '@/components/common/Input';
 import Select from '@/components/common/Select';
+import Modal from '@/components/common/Modal';
 import WhoWillTakeTripModal from './WhoWillTakeTripModal';
 import ProfilePaymentModal from './ProfilePaymentModal';
 
@@ -119,10 +120,15 @@ export default function ConfirmDetailsModal({
     }
   }, [selectedPaymentMethod]);
 
-  if (!visible) return null;
-
   return (
-    <View style={styles.container}>
+    <Modal
+      visible={visible}
+      onClose={onClose}
+      maxHeight="70%"
+      showTopBar={true}
+      backdropOpacity={0}
+      containerStyle={{ gap: theme.spacing.sm }}
+    >
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
@@ -237,24 +243,11 @@ export default function ConfirmDetailsModal({
           setShowProfilePaymentModal(false);
         }}
       />
-    </View>
+    </Modal>
   );
 }
 
 const createStyles = (theme: any) => StyleSheet.create({
-  container: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.lg,
-    paddingBottom: 20, // Account for safe area
-    ...theme.shadows.lg,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

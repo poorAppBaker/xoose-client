@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import Input from '@/components/common/Input';
+import Modal from '@/components/common/Modal';
 
 interface LocationItem {
   id: string;
@@ -32,10 +33,17 @@ export default function ConfirmDestinationModal({
   const { theme } = useTheme();
   const styles = createStyles(theme);
 
-  if (!visible || !destination) return null;
+  if (!destination) return null;
 
   return (
-    <View style={styles.container}>
+    <Modal
+      visible={visible}
+      onClose={onClose}
+      maxHeight="70%"
+      showTopBar={true}
+      backdropOpacity={0}
+      containerStyle={{ gap: theme.spacing.md }}
+    >
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
@@ -54,6 +62,7 @@ export default function ConfirmDestinationModal({
               placeholder="Where to Go?"
               placeholderTextColor="#121212"
               value={destination.title}
+              height={48}
               onFocus={onEdit}
               leftIcon={<Image source={require('@/assets/images/paperPlane.png')} />}
               style={styles.searchInput}
@@ -75,28 +84,15 @@ export default function ConfirmDestinationModal({
           <Text style={styles.continueButtonText}>Continue</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </Modal>
   );
 }
 
 const createStyles = (theme: any) => StyleSheet.create({
-  container: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.lg,
-    paddingBottom: 40, // Account for safe area
-    ...theme.shadows.lg,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.sm,
   },
   backButton: {
     padding: theme.spacing.sm,

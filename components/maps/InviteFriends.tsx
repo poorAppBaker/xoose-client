@@ -32,15 +32,14 @@ export default function InviteFriends({ visible, onClose }: InviteFriendsProps) 
 const createStyles = (theme: any) => StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: '44%',
+    bottom: '48%', // Increased from 44% to add spacing with WhereToGoModal
     left: '3%',
     right: '3%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
+    borderRadius: 8,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
     maxWidth: '94%',
-    ...theme.shadows.sm,
   },
   content: {
     flexDirection: 'row',
@@ -67,10 +66,11 @@ const createStyles = (theme: any) => StyleSheet.create({
     height: 50,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingRight: theme.spacing.xl,
   },
   icon: {
-    width: 100,
-    height: 100,
+    width: 110,
+    height: 110,
     resizeMode: 'contain',
   },
 });

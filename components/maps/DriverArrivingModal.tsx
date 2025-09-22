@@ -56,11 +56,75 @@ export default function DriverArrivingModal({
   const router = useRouter();
   const [isExtended, setIsExtended] = useState(false);
   const [animatedDriverLocation, setAnimatedDriverLocation] = useState<[number, number] | null>(null);
-  const animationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const animationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [driverHasArrived, setDriverHasArrived] = useState(false);
   const [waitingTime, setWaitingTime] = useState(0); // in seconds
   const [driverMovingToDestination, setDriverMovingToDestination] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  
+  // ETA calculation states
+  const [calculatedPickupETA, setCalculatedPickupETA] = useState<string>('');
+  const [calculatedDestinationETA, setCalculatedDestinationETA] = useState<string>('');
+
+  // Calculate distance between two coordinates using Haversine formula
+  const calculateHaversineDistance = (coord1: [number, number], coord2: [number, number]): number => {
+    const R = 6371; // Earth's radius in kilometers
+    const [lat1, lon1] = coord1;
+    const [lat2, lon2] = coord2;
+    
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in kilometers
+  };
+
+  // Calculate ETA based on distance and speed
+  const calculateETA = (distanceKm: number, speedKmH: number): string => {
+    const minSpeed = 10; // km/h
+    const maxSpeed = 110; // km/h
+    const clampedSpeed = Math.max(minSpeed, Math.min(maxSpeed, speedKmH));
+    
+    const timeHours = distanceKm / clampedSpeed;
+    const timeMinutes = Math.ceil(timeHours * 60);
+    
+    if (timeMinutes < 1) {
+      return '< 1 min';
+    } else if (timeMinutes < 60) {
+      return `${timeMinutes} min`;
+    } else {
+      const hours = Math.floor(timeMinutes / 60);
+      const minutes = timeMinutes % 60;
+      return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+    }
+  };
+
+  // Calculate arrival time
+  const calculateArrivalTime = (minutesFromNow: number): string => {
+    const now = new Date();
+    const arrivalTime = new Date(now.getTime() + minutesFromNow * 60000);
+    return arrivalTime.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
+
+  // Helper function to calculate distance between two coordinates (in km)
+  const calculateDistance = (coord1: [number, number], coord2: [number, number]): number => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (coord2[1] - coord1[1]) * Math.PI / 180;
+    const dLon = (coord2[0] - coord1[0]) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(coord1[1] * Math.PI / 180) * Math.cos(coord2[1] * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
 
   // Driver animation effect
   useEffect(() => {
@@ -69,25 +133,24 @@ export default function DriverArrivingModal({
     }
 
     const { driver } = selectedOption;
-    // Georgetown, Texas coordinates
-    const georgetownTexas: [number, number] = [-97.6778, 30.6333];
-    const startLocation: [number, number] = georgetownTexas;
+    // Use driver's actual current location or fallback to a location near pickup
+    const startLocation: [number, number] = driver.currentLocation?.coordinate || [
+      pickup.coordinate[0] - 0.0025, // Mock location ~0.29km west of pickup (30 sec at 35km/h)
+      pickup.coordinate[1] + 0.0025  // Mock location ~0.29km north of pickup (30 sec at 35km/h)
+    ];
 
     // Set initial driver location
     setAnimatedDriverLocation(startLocation);
 
-    // Create animation path (simplified linear interpolation)
+    // Calculate actual distance and animation duration
     const endLocation: [number, number] = pickup.coordinate;
-    const totalDistance = Math.sqrt(
-      Math.pow(endLocation[0] - startLocation[0], 2) +
-      Math.pow(endLocation[1] - startLocation[1], 2)
-    );
-
-    // Animation duration: 4 minutes (240 seconds) as shown in the modal
-    const animationDuration = 240000; // 4 minutes in milliseconds
+    const distanceKm = calculateDistance(startLocation, endLocation);
+    const speedKmh = 35; // Default city speed
+    const timeHours = distanceKm / speedKmh;
+    const animationDuration = timeHours * 60 * 60 * 1000; // Convert to milliseconds
     const updateInterval = 2000; // Update every 2 seconds
     const totalSteps = animationDuration / updateInterval;
-    const stepDistance = totalDistance / totalSteps;
+    const stepDistance = distanceKm / totalSteps;
 
     let currentStep = 0;
     const startTime = Date.now();
@@ -136,8 +199,8 @@ export default function DriverArrivingModal({
     const waitingTimer = setInterval(() => {
       setWaitingTime(prev => {
         const newTime = prev + 1;
-        // If waiting time exceeds 5 minutes (300 seconds), start moving to destination
-        if (newTime > 300 && !driverMovingToDestination) {
+        // If waiting time exceeds 15 seconds, start moving to destination
+        if (newTime > 15 && !driverMovingToDestination) {
           setDriverMovingToDestination(true);
           startDestinationAnimation();
         }
@@ -157,8 +220,11 @@ export default function DriverArrivingModal({
     const startLocation: [number, number] = pickup.coordinate;
     const endLocation: [number, number] = destination.coordinate;
 
-    // Animation duration: 10 minutes (600 seconds) for destination
-    const animationDuration = 600000; // 10 minutes in milliseconds
+    // Calculate actual distance and animation duration
+    const distanceKm = calculateDistance(startLocation, endLocation);
+    const speedKmh = 35; // Default city speed
+    const timeHours = distanceKm / speedKmh;
+    const animationDuration = timeHours * 60 * 60 * 1000; // Convert to milliseconds
     const updateInterval = 2000; // Update every 2 seconds
     const startTime = Date.now();
 
@@ -190,6 +256,39 @@ export default function DriverArrivingModal({
     // Start animation
     animationIntervalRef.current = setInterval(animateToDestination, updateInterval);
   };
+
+  // Calculate ETAs when driver location or speed changes - MUST be before early return
+  useEffect(() => {
+    if (!visible || !selectedOption) {
+      return;
+    }
+
+    const { driver } = selectedOption;
+    if (!animatedDriverLocation || !pickup || !destination) {
+      return;
+    }
+
+    const driverLocation = animatedDriverLocation; // Use animated location for real-time ETA
+    const driverSpeed = 35; // Default city speed in km/h
+
+    // Calculate distances
+    const driverToPickupDist = calculateHaversineDistance(driverLocation, pickup.coordinate);
+    const pickupToDestDist = calculateHaversineDistance(pickup.coordinate, destination.coordinate);
+
+    // Calculate ETAs
+    const pickupETA = calculateETA(driverToPickupDist, driverSpeed);
+    const destinationETA = calculateETA(pickupToDestDist, driverSpeed);
+
+    setCalculatedPickupETA(pickupETA);
+    setCalculatedDestinationETA(`Arriving by ${calculateArrivalTime(Math.ceil((driverToPickupDist + pickupToDestDist) / driverSpeed * 60))}`);
+
+    console.log('⏰ DriverArrivingModal calculated ETAs:', {
+      driverToPickupDist: `${driverToPickupDist.toFixed(2)} km`,
+      pickupToDestDist: `${pickupToDestDist.toFixed(2)} km`,
+      pickupETA,
+      destinationETA
+    });
+  }, [visible, selectedOption, animatedDriverLocation, pickup, destination]);
 
   if (!visible || !selectedOption) {
     return null;
@@ -255,11 +354,17 @@ export default function DriverArrivingModal({
             destination={destination}
             selectedLocation={undefined}
             showETALabels={true}
+            showLocationTitles={true}
             calculateETAs={true}
-            driverLocation={animatedDriverLocation || driver.currentLocation?.coordinate || [-97.6778, 30.6333]} // Georgetown, Texas
+            showDestinationMarker={driverMovingToDestination}
+            showPickupMarker={!driverMovingToDestination}
+            driverLocation={animatedDriverLocation || driver.currentLocation?.coordinate || [
+              pickup.coordinate[0] - 0.0025, // Mock location ~0.29km west of pickup (30 sec at 35km/h)
+              pickup.coordinate[1] + 0.0025  // Mock location ~0.29km north of pickup (30 sec at 35km/h)
+            ]}
             driverSpeed={35} // Default city speed in km/h
-            pickupETA="2 min"
-            destinationETA="Arriving by 9:20 AM"
+            enableCarAnimation={false} // Disable MapView animation since DriverArrivingModal handles its own
+            // pickupETA and destinationETA will be calculated automatically by MapView
           />
         </View>
       )}
@@ -269,7 +374,7 @@ export default function DriverArrivingModal({
       {driverHasArrived && !isExtended && !driverMovingToDestination && (
         <View style={styles.waitingTimeCard}>
           <Text style={styles.waitingTimeText}>
-            {waitingTime > 180 ? "Extra-waiting fee: $5" : "Free waiting time: 3 min"}
+            {waitingTime > 10 ? "Extra-waiting fee: $5" : "Free waiting time: 10s"}
           </Text>
           <View style={styles.progressBarContainer}>
             <View style={styles.progressBar}>
@@ -277,8 +382,8 @@ export default function DriverArrivingModal({
                 style={[
                   styles.progressBarFill,
                   {
-                    width: `${Math.min((waitingTime / 180) * 100, 100)}%`,
-                    backgroundColor: waitingTime > 180 ? '#FF4444' : theme.colors.blue500
+                    width: `${Math.min((waitingTime / 10) * 100, 100)}%`,
+                    backgroundColor: waitingTime > 10 ? '#FF4444' : theme.colors.blue500
                   }
                 ]}
               />
@@ -334,7 +439,7 @@ export default function DriverArrivingModal({
             {driverHasArrived && !driverMovingToDestination && (
               <View>
                 <Text style={styles.waitingTimeText}>
-                  {waitingTime > 180 ? "Extra-waiting fee: $5" : "Free waiting time: 3 min"}
+                  {waitingTime > 10 ? "Extra-waiting fee: $5" : "Free waiting time: 10s"}
                 </Text>
                 <View style={styles.progressBarContainer}>
                   <View style={styles.progressBar}>
@@ -342,8 +447,8 @@ export default function DriverArrivingModal({
                       style={[
                         styles.progressBarFill,
                         {
-                          width: `${Math.min((waitingTime / 180) * 100, 100)}%`,
-                          backgroundColor: waitingTime > 180 ? '#FF4444' : theme.colors.blue500
+                          width: `${Math.min((waitingTime / 10) * 100, 100)}%`,
+                          backgroundColor: waitingTime > 10 ? '#FF4444' : theme.colors.blue500
                         }
                       ]}
                     />
@@ -433,7 +538,7 @@ export default function DriverArrivingModal({
               <View style={styles.etatimeContainer}>
                 <View style={styles.timeContainer}>
                   <Image source={clockIcon} style={[styles.estimateTimeIcon, { tintColor: theme.colors.blue500 }]} />
-                  <Text style={styles.estimatedTime}>{fare.estimatedTime} min</Text>
+                  <Text style={styles.estimatedTime}>{calculatedPickupETA || `${fare.estimatedTime} min`}</Text>
                 </View>
                 <Text style={styles.companyName}>Company Name</Text>
               </View>
@@ -482,9 +587,9 @@ export default function DriverArrivingModal({
             </View>
 
             {/* Invite Friends Section - Show when waiting time exceeds 5 minutes */}
-            {waitingTime > 300 && (
-              <InviteFriends />
-            )}
+            {/* {waitingTime > 15 && (
+              <InviteFriends visible={true} />
+            )} */}
 
             {/* Trip Details Section - Only show when extended */}
             {isExtended && (
@@ -641,7 +746,7 @@ export default function DriverArrivingModal({
               <View style={styles.etatimeContainer}>
                 <View style={styles.timeContainer}>
                   <Image source={clockIcon} style={[styles.estimateTimeIcon, { tintColor: theme.colors.blue500 }]} />
-                  <Text style={styles.estimatedTime}>{fare.estimatedTime} min</Text>
+                  <Text style={styles.estimatedTime}>{calculatedPickupETA || `${fare.estimatedTime} min`}</Text>
                 </View>
                 <Text style={styles.companyName}>Company Name</Text>
               </View>
@@ -712,12 +817,13 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   waitingTimeCard: {
     position: 'absolute',
-    top: 60,
-    left: theme.spacing.lg,
-    right: theme.spacing.lg,
+    bottom: '56%',
+    left: theme.spacing.sm,
+    right: theme.spacing.sm,
     backgroundColor: theme.colors.white,
     borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
     zIndex: 3,
     ...theme.shadows.md,
   },
@@ -764,6 +870,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: theme.colors.white,
+    paddingTop: theme.spacing.sm + 4,
+    paddingBottom: theme.spacing.md, // Account for safe area
     borderTopLeftRadius: theme.borderRadius.xl,
     borderTopRightRadius: theme.borderRadius.xl,
     maxHeight: screenHeight * 0.6,
@@ -776,6 +884,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     right: 0,
     zIndex: 2,
     backgroundColor: theme.colors.white,
+    paddingTop: theme.spacing.sm + 4,
+    paddingBottom: theme.spacing.md, // Account for safe area
     borderTopLeftRadius: theme.borderRadius.xl,
     borderTopRightRadius: theme.borderRadius.xl,
     maxHeight: screenHeight * 0.9,
@@ -783,21 +893,21 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   pullUpHandle: {
     alignItems: 'center',
-    paddingVertical: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
   },
   pullUpIndicator: {
-    width: 40,
-    height: 4,
+    width: 100,
+    height: 5,
     backgroundColor: theme.colors.gray300,
     borderRadius: 2,
   },
   pullDownHandle: {
     alignItems: 'center',
-    paddingVertical: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
   },
   pullDownIndicator: {
-    width: 40,
-    height: 4,
+    width: 100,
+    height: 5,
     backgroundColor: theme.colors.gray300,
     borderRadius: 2,
   },
@@ -838,48 +948,44 @@ const createStyles = (theme: any) => StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.md,
   },
   mainSection: {
     flexDirection: 'row',
-    paddingVertical: theme.spacing.md,
+    justifyContent: 'space-between',
+    paddingBottom: theme.spacing.md,
   },
   driverSection: {
     flex: 1,
-    paddingRight: theme.spacing.sm,
+    alignItems: 'center',
   },
   profileImageContainer: {
-    alignItems: 'center',
-    paddingLeft: 10,
+    position: 'relative',
   },
   verificationBadge: {
     position: 'absolute',
     top: 0,
-    left: 40,
+    left: -10,
     backgroundColor: theme.colors.black,
-    paddingHorizontal: theme.spacing.xs,
-    paddingVertical: theme.spacing.xs,
     borderRadius: theme.borderRadius.full,
+    paddingHorizontal: theme.spacing.xs,
+    paddingVertical: 2,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
     zIndex: 1,
   },
   verificationText: {
-    color: theme.colors.white,
-    fontSize: 14,
-    fontWeight: 'bold',
+    color: 'white',
+    fontSize: 12,
   },
   profileImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 70,
+    height: 70,
   },
   driverName: {
     fontSize: 16,
-    fontWeight: 'bold',
     color: theme.colors.black,
-    textAlign: 'center',
-    marginBottom: theme.spacing.sm,
   },
   ratingLanguagesContainer: {
     flexDirection: 'row',
@@ -894,7 +1000,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   rating: {
     fontSize: 14,
-    fontWeight: '700',
     color: theme.colors.black,
   },
   languageTags: {
@@ -908,29 +1013,23 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   languageText: {
     fontSize: 14,
-    fontWeight: '700',
     color: theme.colors.black,
   },
   vehicleSection: {
     flex: 1,
-    paddingLeft: theme.spacing.sm,
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.sm,
   },
   vehicleImageContainer: {
-    alignItems: 'center',
-    paddingVertical: theme.spacing.sm,
   },
   vehicleImage: {
-    width: 100,
-    height: 60,
-    resizeMode: 'contain',
+    width: 133,
+    height: 70,
   },
   vehicleModel: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 14,
+    marginBottom: theme.spacing.xs,
     color: theme.colors.black,
-    textAlign: 'center',
-    marginTop: 4,
-    marginBottom: 11,
   },
   vehicleRatingContainer: {
     flexDirection: 'row',
@@ -940,7 +1039,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   vehicleRating: {
     fontSize: 14,
-    fontWeight: '700',
     color: theme.colors.black,
   },
   vehicleFeatures: {
@@ -983,8 +1081,9 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginBottom: theme.spacing.md,
   },
   estimateTimeIcon: {
-    width: 24,
-    height: 24,
+    width: 16,
+    height: 16,
+    resizeMode: 'contain',
   },
   estimatedTime: {
     fontSize: 16,
@@ -995,7 +1094,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   companyName: {
     fontSize: 16,
     color: theme.colors.black,
-    textDecorationLine: 'underline',
   },
   pricingSection: {
     flex: 1,

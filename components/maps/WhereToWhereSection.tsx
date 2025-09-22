@@ -76,7 +76,7 @@ export default function WhereToWhereSection({
 const createStyles = (theme: any) => StyleSheet.create({
   container: {
     position: 'absolute',
-    top: 60, // Below the header
+    top: 40, // Below the header
     left: 0,
     right: 0,
     paddingHorizontal: theme.spacing.lg,
@@ -84,10 +84,11 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   inputContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: theme.colors.white,
     borderRadius: theme.borderRadius.full,
     paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.md,
+    height: 48,
     marginBottom: theme.spacing.sm,
     ...theme.shadows.sm,
   },
@@ -143,7 +144,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     alignItems: 'flex-end',
   },
   addStopButton: {
-    width: 150,
+    width: 116,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -154,7 +155,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     ...theme.shadows.sm,
   },
   addStopText: {
-    ...theme.typography.body,
+    fontSize: 14,
     color: theme.colors.white,
     fontWeight: '600',
     marginLeft: theme.spacing.xs,
