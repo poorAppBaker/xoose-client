@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, Dimensions, Alert, Image, Text, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Mapbox from '@rnmapbox/maps';
 import * as Location from 'expo-location';
+// @ts-ignore
 import MapboxDirections from '@mapbox/mapbox-sdk/services/directions';
 import { theme } from '@/constants/theme';
 
@@ -12,9 +13,10 @@ Mapbox.setAccessToken('pk.eyJ1IjoiYWJ3ZWhyMTIyNSIsImEiOiJjbWZmYmNtNW0wNHc1MnFvdD
 const { width, height } = Dimensions.get('window');
 
 // Use static imports to ensure Metro resolves assets reliably
-const USER_POINTER_IMG = require('../../assets/images/pointer.png');
-const DESTINATION_POINTER_IMG = require('../../assets/images/destination-pointer.png');
-const PICKUP_POINTER_IMG = require('../../assets/images/pickup-pointer.png');
+const USER_POINTER_IMG = require('../../assets/images/icons/pointer.png');
+const DESTINATION_POINTER_IMG = require('../../assets/images/icons/destination-pointer.png');
+const PICKUP_POINTER_IMG = require('../../assets/images/icons/pickup-pointer.png');
+const CAR_INJECT_POINTER_IMG = require('../../assets/images/icons/car-inject.png');
 
 interface MapViewProps {
   style?: any;
@@ -40,6 +42,11 @@ interface MapViewProps {
   driverLocation?: [number, number];
   driverSpeed?: number; // km/h
   calculateETAs?: boolean;
+  enableCarAnimation?: boolean; // Whether MapView should handle its own car animation
+  showLocationTitles?: boolean; // Force show location titles instead of ETAs
+  showDriverCar?: boolean; // Whether to show the driver car image on the map
+  showDestinationMarker?: boolean; // Whether to show the destination marker
+  showPickupMarker?: boolean; // Whether to show the pickup marker
 }
 
 export default function MapViewComponent({
@@ -59,7 +66,12 @@ export default function MapViewComponent({
   destinationETA,
   driverLocation,
   driverSpeed,
-  calculateETAs = false
+  calculateETAs = false,
+  enableCarAnimation = true,
+  showLocationTitles = false,
+  showDriverCar = true,
+  showDestinationMarker = true,
+  showPickupMarker = true
 }: MapViewProps) {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [userHeading, setUserHeading] = useState<number>(0);
@@ -72,6 +84,11 @@ export default function MapViewComponent({
   const [calculatedDestinationETA, setCalculatedDestinationETA] = useState<string>('');
   const [driverToPickupDistance, setDriverToPickupDistance] = useState<number>(0);
   const [pickupToDestinationDistance, setPickupToDestinationDistance] = useState<number>(0);
+  
+  // Car movement animation states
+  const [animatedDriverLocation, setAnimatedDriverLocation] = useState<[number, number] | null>(null);
+  const [isCarMoving, setIsCarMoving] = useState(false);
+  const animationRef = useRef<number | null>(null);
 
   // Debug logging
   console.log('MapView received props:', {
@@ -93,12 +110,21 @@ export default function MapViewComponent({
     getCurrentLocation();
   }, []);
 
-  // Calculate route when pickup, destination, or waypoints change
+  // Calculate route when pickup, destination, waypoints, or driver location change
   useEffect(() => {
-    if (destination && pickup) {
-      calculateRoute();
+    if (pickup) {
+      // If destination marker is hidden and pickup marker is shown, only need pickup and driver location
+      if (!showDestinationMarker && showPickupMarker && driverLocation) {
+        calculateRoute();
+      } else if (showDestinationMarker && !showPickupMarker && driverLocation && destination) {
+        // If pickup marker is hidden and destination marker is shown, only need destination and driver location
+        calculateRoute();
+      } else if (destination) {
+        // Normal case: need both pickup and destination
+        calculateRoute();
+      }
     }
-  }, [destination, pickup, waypoints]);
+  }, [destination, pickup, waypoints, showDestinationMarker, showPickupMarker, driverLocation]);
 
   // Calculate bounds for pickup and destination
   const calculateBounds = () => {
@@ -267,6 +293,63 @@ export default function MapViewComponent({
     }
   }, [selectedLocation]);
 
+  // Car movement animation - animate car from driver location to pickup location
+  useEffect(() => {
+    if (!enableCarAnimation || !driverLocation || !pickup || isCarMoving) {
+      return;
+    }
+
+    console.log('🚗 Starting car movement animation from driver to pickup');
+    setIsCarMoving(true);
+    setAnimatedDriverLocation(driverLocation);
+
+    const startTime = Date.now();
+    const duration = 5000; // 5 seconds animation
+    const startCoord = driverLocation;
+    const endCoord = pickup.coordinate;
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Use easing function for smooth animation
+      const easeInOutCubic = (t: number) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      const easedProgress = easeInOutCubic(progress);
+
+      // Interpolate coordinates
+      const currentLng = startCoord[0] + (endCoord[0] - startCoord[0]) * easedProgress;
+      const currentLat = startCoord[1] + (endCoord[1] - startCoord[1]) * easedProgress;
+
+      setAnimatedDriverLocation([currentLng, currentLat]);
+
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      } else {
+        console.log('🚗 Car movement animation completed');
+        setIsCarMoving(false);
+        setAnimatedDriverLocation(endCoord);
+      }
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
+
+    // Cleanup function
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [enableCarAnimation, driverLocation, pickup]);
+
+  // Cleanup animation on unmount
+  useEffect(() => {
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, []);
+
   const getCurrentLocation = async () => {
     try {
       setIsLoadingLocation(true);
@@ -337,13 +420,24 @@ export default function MapViewComponent({
 
   // Calculate route using Mapbox Directions API
   const calculateRoute = async () => {
-    if (!destination || !pickup) return;
+    if (!pickup) return;
 
     setIsCalculatingRoute(true);
 
     try {
-      // Prepare waypoints for the route
-      const allWaypoints = [pickup.coordinate, ...waypoints, destination.coordinate];
+      let allWaypoints: [number, number][];
+      
+      // If destination marker is hidden and pickup marker is shown (e.g., DriverArrivingModal going to pickup), show route from car to pickup
+      if (!showDestinationMarker && showPickupMarker && driverLocation) {
+        allWaypoints = [driverLocation, pickup.coordinate];
+      } else if (showDestinationMarker && !showPickupMarker && driverLocation && destination) {
+        // If pickup marker is hidden and destination marker is shown (e.g., DriverArrivingModal going to destination), show route from car to destination
+        allWaypoints = [driverLocation, destination.coordinate];
+      } else {
+        // Normal route from pickup to destination
+        if (!destination) return;
+        allWaypoints = [pickup.coordinate, ...waypoints, destination.coordinate];
+      }
 
       const response = await directionsClient
         .getDirections({
@@ -369,9 +463,19 @@ export default function MapViewComponent({
     } catch (error) {
       console.error('Error calculating route:', error);
       // Fallback to straight line if API fails
-      const coordinates = [pickup.coordinate];
-      waypoints.forEach(waypoint => coordinates.push(waypoint));
-      coordinates.push(destination.coordinate);
+      let coordinates: [number, number][];
+      
+      if (!showDestinationMarker && showPickupMarker && driverLocation) {
+        coordinates = [driverLocation, pickup.coordinate];
+      } else if (showDestinationMarker && !showPickupMarker && driverLocation && destination) {
+        coordinates = [driverLocation, destination.coordinate];
+      } else {
+        coordinates = [pickup.coordinate];
+        waypoints.forEach(waypoint => coordinates.push(waypoint));
+        if (destination) {
+          coordinates.push(destination.coordinate);
+        }
+      }
       setRouteGeometry(coordinates);
     } finally {
       setIsCalculatingRoute(false);
@@ -382,7 +486,20 @@ export default function MapViewComponent({
   const getRouteCoordinates = () => {
     if (routeGeometry) return routeGeometry;
 
-    if (!destination || !pickup) return [];
+    if (!pickup) return [];
+
+    // If destination marker is hidden and pickup marker is shown (e.g., DriverArrivingModal going to pickup), show route from car to pickup
+    if (!showDestinationMarker && showPickupMarker && driverLocation) {
+      return [driverLocation, pickup.coordinate];
+    }
+
+    // If pickup marker is hidden and destination marker is shown (e.g., DriverArrivingModal going to destination), show route from car to destination
+    if (showDestinationMarker && !showPickupMarker && driverLocation && destination) {
+      return [driverLocation, destination.coordinate];
+    }
+
+    // Normal route from pickup to destination
+    if (!destination) return [];
 
     const coordinates = [pickup.coordinate];
     waypoints.forEach(waypoint => coordinates.push(waypoint));
@@ -414,14 +531,15 @@ export default function MapViewComponent({
         {/* Register marker images for SymbolLayers */}
         <Mapbox.Images
           images={{
-            userIcon: USER_POINTER_IMG,
+            userLocationIcon: USER_POINTER_IMG,
             destinationIcon: DESTINATION_POINTER_IMG,
             pickupIcon: PICKUP_POINTER_IMG,
+            carInjectIcon: CAR_INJECT_POINTER_IMG,
           }}
         />
         <Mapbox.UserLocation
-          visible={true}
-          showsUserHeadingIndicator={true}
+          visible={false}
+          showsUserHeadingIndicator={false}
         />
         <Mapbox.Camera
           {...(pickup && destination ? {
@@ -438,79 +556,95 @@ export default function MapViewComponent({
 
         {/* User Location Marker */}
         {userLocation && (
-          <Mapbox.PointAnnotation
-            id="userLocation"
-            coordinate={userLocation}
+          <Mapbox.ShapeSource
+            id="userLocationSource"
+            shape={{
+              type: 'FeatureCollection',
+              features: [
+                {
+                  type: 'Feature',
+                  properties: { 
+                    icon: 'userLocationIcon',
+                    heading: userHeading
+                  },
+                  geometry: {
+                    type: 'Point',
+                    coordinates: userLocation,
+                  },
+                },
+              ],
+            }}
           >
-            <View style={styles.userLocationContainer}>
-              <Image
-                source={USER_POINTER_IMG}
-                style={[
-                  styles.locationPointer,
-                  { transform: [{ rotate: `${userHeading}deg` }] }
-                ]}
-                resizeMode="contain"
-                onError={(e) => {
-                  console.log('User pointer image failed to load', e.nativeEvent);
-                }}
-                onLoad={() => {
-                  console.log('User pointer image loaded successfully');
-                }}
-              />
-            </View>
-          </Mapbox.PointAnnotation>
+            <Mapbox.SymbolLayer
+              id="userLocationLayer"
+              style={{
+                iconImage: ['get', 'icon'],
+                iconAnchor: 'bottom',
+                iconAllowOverlap: true,
+                iconIgnorePlacement: true,
+                iconSize: 0.3,
+                iconRotate: ['get', 'heading'],
+              }}
+            />
+          </Mapbox.ShapeSource>
         )}
 
         {/* Driver Location Marker */}
-        {driverLocation && (
-          <Mapbox.PointAnnotation
-            id="driverLocation"
-            coordinate={driverLocation}
+        {showDriverCar && (animatedDriverLocation || driverLocation) && (
+          <Mapbox.ShapeSource
+            id="driverLocationSource"
+            shape={{
+              type: 'FeatureCollection',
+              features: [
+                {
+                  type: 'Feature',
+                  properties: { icon: 'carInjectIcon' },
+                  geometry: {
+                    type: 'Point',
+                    coordinates: animatedDriverLocation || driverLocation!,
+                  },
+                },
+              ],
+            }}
           >
-            <View style={styles.driverLocationContainer}>
-              <Image
-                source={require('../../assets/images/icons/car-inject.png')}
-                style={styles.driverLocationCar}
-                resizeMode="contain"
-              />
-            </View>
-          </Mapbox.PointAnnotation>
+            <Mapbox.SymbolLayer
+              id="driverLocationLayer"
+              style={{
+                iconImage: ['get', 'icon'],
+                iconSize: 0.3,
+                iconOpacity: isCarMoving ? 0.8 : 1.0,
+              }}
+            />
+          </Mapbox.ShapeSource>
         )}
 
-        {/* Selected Location Marker */}
-        {selectedLocation && (
-          <Mapbox.PointAnnotation
-            id="selectedLocation"
-            coordinate={selectedLocation}
-          >
-            <View style={styles.selectedLocationContainer}>
-              <View style={styles.selectedLocationMarker}>
-                <Ionicons name="location" size={20} color="#FFFFFF" />
-              </View>
-            </View>
-          </Mapbox.PointAnnotation>
-        )}
+        {/* Selected Location Marker - Removed since we use custom destination/pickup PNGs */}
 
         {/* Destination Marker - ETA Label or Pin */}
-        {destination && (
-          (() => {
-            console.log('🏷️ Destination ETA Label Check:', {
-              showETALabels,
-              destinationETA,
-              calculatedDestinationETA,
-              willShowETA: showETALabels && (destinationETA || calculatedDestinationETA)
-            });
-            return showETALabels && (destinationETA || calculatedDestinationETA);
-          })() ? (
+        {showDestinationMarker && destination && (
+          showETALabels ? (
             <Mapbox.PointAnnotation
               id="destinationETA"
               coordinate={destination.coordinate}
               anchor={{ x: 0.5, y: 0.9 }}
             >
               <View style={styles.etaLabelContainer}>
-                <View style={[styles.etaLabel, styles.destinationETALabel]}>
-                  <Text style={styles.etaLabelText}>{calculatedDestinationETA || destinationETA}</Text>
-                </View>
+                {showLocationTitles ? (
+                  <View style={styles.locationTitleContainer}>
+                    <View style={styles.locationTitleTopSection}>
+                      <Text style={styles.locationTitleTopText}>Destination</Text>
+                    </View>
+                    <View style={styles.locationDestinationTitleBottomSection}>
+                      <Text style={styles.locationTitleBottomText}>{destination.title}</Text>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={[styles.etaLabel, styles.destinationETALabel]}>
+                    <Text style={styles.etaLabelText}>
+                      {calculatedDestinationETA || destinationETA || destination.title}
+                    </Text>
+                  </View>
+                )}
                 <View style={styles.destinationETaPointer}></View>
                 <View style={styles.destinationETaCircle}></View>
               </View>
@@ -547,25 +681,30 @@ export default function MapViewComponent({
         )}
 
         {/* Pickup Marker - ETA Label or Pin */}
-        {pickup && (
-          (() => {
-            console.log('🏷️ Pickup ETA Label Check:', {
-              showETALabels,
-              pickupETA,
-              calculatedPickupETA,
-              willShowETA: showETALabels && (pickupETA || calculatedPickupETA)
-            });
-            return showETALabels && (pickupETA || calculatedPickupETA);
-          })() ? (
+        {showPickupMarker && pickup && (
+          showETALabels ? (
             <Mapbox.PointAnnotation
               id="pickupETA"
               coordinate={pickup.coordinate}
               anchor={{ x: 0.5, y: 0.9 }}
             >
               <View style={styles.etaLabelContainer}>
-                <View style={[styles.etaLabel, styles.pickupETALabel]}>
-                  <Text style={styles.etaLabelText}>{calculatedPickupETA || pickupETA}</Text>
-                </View>
+                {showLocationTitles ? (
+                  <View style={styles.locationTitleContainer}>
+                    <View style={styles.locationTitleTopSection}>
+                      <Text style={styles.locationTitleTopText}>Pickup</Text>
+                    </View>
+                    <View style={styles.locationPickupTitleBottomSection}>
+                      <Text style={styles.locationTitleBottomText}>{pickup.title}</Text>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={[styles.etaLabel, styles.pickupETALabel]}>
+                    <Text style={styles.etaLabelText}>
+                      {calculatedPickupETA || pickupETA || pickup.title}
+                    </Text>
+                  </View>
+                )}
                 <View style={styles.pickupEtaPointer}></View>
                 <View style={styles.pickupEtaCircle}></View>
               </View>
@@ -602,7 +741,7 @@ export default function MapViewComponent({
         )}
 
         {/* Route Line */}
-        {destination && pickup && getRouteCoordinates().length > 1 && (
+        {pickup && getRouteCoordinates().length > 1 && (
           <Mapbox.ShapeSource
             id="routeSource"
             shape={{
@@ -692,38 +831,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   locationPointer: {
-    width: 60,
-    height: 60,
-  },
-  driverLocationContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  driverLocationCar: {
-    width: 48,
-    height: 48,
-  },
-  selectedLocationContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  selectedLocationMarker: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#007AFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    width: 34,
+    height: 34,
   },
   destinationContainer: {
     alignItems: 'center',
@@ -908,6 +1017,53 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  // Location Title Styles (Two-section design)
+  locationTitleContainer: {
+    borderRadius: 8,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  locationTitleTopSection: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: theme.spacing.xs,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+  },
+  locationDestinationTitleBottomSection: {
+    backgroundColor: theme.colors.green500, // Green background
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+  },
+  locationPickupTitleBottomSection: {
+    backgroundColor: '#FF9800', // Orange background
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+  },
+  locationTitleTopText: {
+    color: '#000000',
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'left',
+  },
+  locationTitleBottomText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+    textAlign: 'left',
+    lineHeight: 16,
   },
   etaPointer: {
     width: 3,

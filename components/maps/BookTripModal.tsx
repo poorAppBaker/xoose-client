@@ -17,9 +17,7 @@ import { DriverOption } from '../../types/driver';
 import MapView from './MapView';
 import WhereToWhereSection from './WhereToWhereSection';
 import ConnectingDriverModal from './ConnectingDriverModal';
-import DriverAcceptedModal from './DriverAcceptedModal';
 import DriverArrivingModal from './DriverArrivingModal';
-import DriverTimeoutModal from './DriverTimeoutModal';
 
 // Import icon images
 const subtractWhiteIcon = require('../../assets/images/icons/subtract-white.png');
@@ -62,6 +60,59 @@ export default function BookTripModal({
   const [isExtended, setIsExtended] = useState(false);
   const timeoutRef = useRef<number | null>(null);
 
+  // ETA calculation states
+  const [calculatedPickupETA, setCalculatedPickupETA] = useState<string>('');
+  const [calculatedDestinationETA, setCalculatedDestinationETA] = useState<string>('');
+
+  // Calculate distance between two coordinates using Haversine formula
+  const calculateHaversineDistance = (coord1: [number, number], coord2: [number, number]): number => {
+    const R = 6371; // Earth's radius in kilometers
+    const [lat1, lon1] = coord1;
+    const [lat2, lon2] = coord2;
+    
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in kilometers
+  };
+
+  // Calculate ETA based on distance and speed
+  const calculateETA = (distanceKm: number, speedKmH: number): string => {
+    const minSpeed = 10; // km/h
+    const maxSpeed = 110; // km/h
+    const clampedSpeed = Math.max(minSpeed, Math.min(maxSpeed, speedKmH));
+    
+    const timeHours = distanceKm / clampedSpeed;
+    const timeMinutes = Math.ceil(timeHours * 60);
+    
+    if (timeMinutes < 1) {
+      return '< 1 min';
+    } else if (timeMinutes < 60) {
+      return `${timeMinutes} min`;
+    } else {
+      const hours = Math.floor(timeMinutes / 60);
+      const minutes = timeMinutes % 60;
+      return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+    }
+  };
+
+  // Calculate arrival time
+  const calculateArrivalTime = (minutesFromNow: number): string => {
+    const now = new Date();
+    const arrivalTime = new Date(now.getTime() + minutesFromNow * 60000);
+    return arrivalTime.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
+
+
   // Cleanup timeout on unmount - MUST be before early return
   useEffect(() => {
     return () => {
@@ -70,6 +121,39 @@ export default function BookTripModal({
       }
     };
   }, []);
+
+  // Calculate ETAs when driver location or speed changes - MUST be before early return
+  useEffect(() => {
+    if (!visible || !selectedOption) {
+      return;
+    }
+
+    const { driver } = selectedOption;
+    if (!driver.currentLocation?.coordinate || !pickup || !destination) {
+      return;
+    }
+
+    const driverLocation = driver.currentLocation.coordinate;
+    const driverSpeed = 35; // Default city speed in km/h
+
+    // Calculate distances
+    const driverToPickupDist = calculateHaversineDistance(driverLocation, pickup.coordinate);
+    const pickupToDestDist = calculateHaversineDistance(pickup.coordinate, destination.coordinate);
+
+    // Calculate ETAs
+    const pickupETA = calculateETA(driverToPickupDist, driverSpeed);
+    const destinationETA = calculateETA(pickupToDestDist, driverSpeed);
+
+    setCalculatedPickupETA(pickupETA);
+    setCalculatedDestinationETA(`Arriving by ${calculateArrivalTime(Math.ceil((driverToPickupDist + pickupToDestDist) / driverSpeed * 60))}`);
+
+    console.log('⏰ BookTripModal calculated ETAs:', {
+      driverToPickupDist: `${driverToPickupDist.toFixed(2)} km`,
+      pickupToDestDist: `${pickupToDestDist.toFixed(2)} km`,
+      pickupETA,
+      destinationETA
+    });
+  }, [visible, selectedOption, pickup, destination]);
 
   if (!visible || !selectedOption) {
     return null;
@@ -161,6 +245,15 @@ export default function BookTripModal({
 
   return (
     <View style={styles.container}>
+      {/* Overlay - Only show when extended */}
+      {isExtended && (
+        <TouchableOpacity 
+          style={styles.overlay} 
+          activeOpacity={1}
+          onPress={() => setIsExtended(false)}
+        />
+      )}
+
       {/* Map Section - Only show when not extended */}
       {!isExtended && (
         <View style={styles.mapContainer}>
@@ -170,13 +263,13 @@ export default function BookTripModal({
             selectedLocation={undefined}
             showETALabels={true}
             calculateETAs={true}
+            showDriverCar={false}
             driverLocation={driver.currentLocation?.coordinate || [
               pickup.coordinate[0] - 0.01, // Mock location slightly west of pickup
               pickup.coordinate[1] + 0.01  // Mock location slightly north of pickup
             ]}
             driverSpeed={35} // Default city speed in km/h - could be enhanced with real driver speed
-            pickupETA="2 min" // Fallback values
-            destinationETA="Arriving by 9:20 AM"
+            // pickupETA and destinationETA will be calculated automatically by MapView
           />
 
           {/* From → To Section */}
@@ -301,7 +394,7 @@ export default function BookTripModal({
               <View style={styles.etatimeContainer}>
                 <View style={styles.timeContainer}>
                   <Image source={clockIcon} style={[styles.estimateTimeIcon, { tintColor: theme.colors.blue500 }]} />
-                  <Text style={styles.estimatedTime}>{fare.estimatedTime} min</Text>
+                  <Text style={styles.estimatedTime}>{calculatedPickupETA || `${fare.estimatedTime} min`}</Text>
                 </View>
                 <Text style={styles.companyName}>Company Name</Text>
               </View>
@@ -453,12 +546,6 @@ export default function BookTripModal({
         destination={destination}
         onCancel={handleCancelConnecting}
         onDriverAccepted={handleDriverAccepted}
-      />
-
-      {/* Driver Accepted Modal */}
-      <DriverAcceptedModal
-        visible={showDriverAccepted}
-        onContinue={handleDriverAcceptedContinue}
         onShowDriverArriving={handleDriverAcceptedContinue}
       />
 
@@ -470,12 +557,6 @@ export default function BookTripModal({
         destination={destination}
         onClose={handleDriverArrivingClose}
         onCancelRide={handleCancelRide}
-      />
-
-      {/* Driver Timeout Modal */}
-      <DriverTimeoutModal
-        visible={showDriverTimeout}
-        onContinue={handleDriverTimeoutContinue}
       />
     </View>
   );
@@ -490,6 +571,15 @@ const createStyles = (theme: any) => StyleSheet.create({
     bottom: 0,
     backgroundColor: '#FFFFFF',
   },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 1,
+  },
   modal: {
     position: 'absolute',
     bottom: 0,
@@ -499,40 +589,46 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.lg,
-    paddingBottom: 10, // Account for safe area
+    paddingTop: theme.spacing.sm + 4,
+    paddingBottom: theme.spacing.md, // Account for safe area
     maxHeight: screenHeight * 0.6,
     ...theme.shadows.lg,
   },
   extendedModal: {
-    flex: 1,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.lg,
-    paddingBottom: 40, // Account for safe area
+    paddingTop: theme.spacing.sm + 4,
+    paddingBottom: theme.spacing.md, // Account for safe area
+    maxHeight: screenHeight,
+    zIndex: 2,
+    ...theme.shadows.lg,
   },
   mapContainer: {
     flex: 1,
   },
   pullUpHandle: {
     alignItems: 'center',
-    paddingVertical: theme.spacing.sm,
-    marginBottom: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
   },
   pullUpIndicator: {
-    width: 40,
-    height: 4,
+    width: 100,
+    height: 5,
     backgroundColor: theme.colors.gray300,
     borderRadius: 2,
   },
   pullDownHandle: {
     alignItems: 'center',
-    paddingVertical: theme.spacing.sm,
-    marginBottom: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
   },
   pullDownIndicator: {
-    width: 40,
-    height: 4,
+    width: 100,
+    height: 5,
     backgroundColor: theme.colors.gray300,
     borderRadius: 2,
   },
@@ -561,10 +657,10 @@ const createStyles = (theme: any) => StyleSheet.create({
     gap: theme.spacing.xs,
   },
   popularityDot: {
-    width: 8,
-    height: 8,
+    width: 4,
+    height: 4,
     borderRadius: 4,
-    marginTop: theme.spacing.xs,
+    marginTop: 6,
     backgroundColor: '#B3261E',
   },
   popularityText: {
@@ -577,31 +673,27 @@ const createStyles = (theme: any) => StyleSheet.create({
   mainSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: theme.spacing.md,
+    paddingBottom: theme.spacing.md,
   },
   driverSection: {
     flex: 1,
     alignItems: 'center',
-    paddingRight: theme.spacing.sm,
   },
   profileImageContainer: {
     position: 'relative',
-    marginBottom: theme.spacing.sm,
-    paddingLeft: 10,
   },
   profileImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 70,
+    height: 70,
   },
   verificationBadge: {
     position: 'absolute',
     top: 0,
-    left: -15,
+    left: -10,
     backgroundColor: theme.colors.black,
     borderRadius: theme.borderRadius.full,
     paddingHorizontal: theme.spacing.xs,
-    paddingVertical: theme.spacing.xs,
+    paddingVertical: 2,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
@@ -609,14 +701,11 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   verificationText: {
     color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 12,
   },
   driverName: {
     fontSize: 16,
-    fontWeight: 'bold',
     color: theme.colors.black,
-    marginBottom: theme.spacing.sm,
   },
   ratingLanguagesContainer: {
     flexDirection: 'row',
@@ -631,7 +720,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   rating: {
     fontSize: 14,
-    fontWeight: '700',
     color: theme.colors.black,
   },
   languageTags: {
@@ -646,12 +734,11 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   languageText: {
     fontSize: 14,
-    fontWeight: '700',
     color: theme.colors.black,
   },
   filterChipIcon: {
-    width: 16,
-    height: 16,
+    width: 12,
+    height: 14,
     resizeMode: 'contain',
   },
   vehicleSection: {
@@ -660,20 +747,15 @@ const createStyles = (theme: any) => StyleSheet.create({
     paddingHorizontal: theme.spacing.sm,
   },
   vehicleImageContainer: {
-    paddingVertical: theme.spacing.sm,
-    marginBottom: theme.spacing.sm,
   },
   vehicleImage: {
-    width: 100,
-    height: 60,
-    borderRadius: theme.borderRadius.sm,
+    width: 133,
+    height: 70,
   },
   vehicleModel: {
     fontSize: 14,
-    fontWeight: 'bold',
+    marginBottom: theme.spacing.xs,
     color: theme.colors.black,
-    marginTop: 4,
-    marginBottom: 11,
   },
   vehicleRatingContainer: {
     flexDirection: 'row',
@@ -682,7 +764,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   vehicleRating: {
     fontSize: 14,
-    fontWeight: '700',
     color: theme.colors.black,
   },
   vehicleFeatures: {
@@ -692,7 +773,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   additionalFeatures: {
     flexDirection: 'row',
     gap: theme.spacing.sm,
-    marginTop: theme.spacing.sm,
   },
   feature: {
     flexDirection: 'row',
@@ -701,7 +781,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   featureText: {
     fontSize: 14,
-    fontWeight: '700',
     color: theme.colors.black,
   },
   pricingSection: {
@@ -730,12 +809,12 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginBottom: theme.spacing.md,
   },
   companyName: {
-    fontSize: 14,
+    fontSize: 16,
     color: theme.colors.black,
   },
   estimateTimeIcon: {
-    width: 24,
-    height: 24,
+    width: 16,
+    height: 16,
     resizeMode: 'contain',
   },
   estimatedTime: {

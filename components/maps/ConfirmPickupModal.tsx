@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import Input from '@/components/common/Input';
+import Modal from '@/components/common/Modal';
 
 interface LocationItem {
   id: string;
@@ -32,10 +33,17 @@ export default function ConfirmPickupModal({
   const { theme } = useTheme();
   const styles = createStyles(theme);
 
-  if (!visible || !pickup) return null;
+  if (!pickup) return null;
 
   return (
-    <View style={styles.container}>
+    <Modal
+      visible={visible}
+      onClose={onClose}
+      maxHeight="70%"
+      showTopBar={true}
+      backdropOpacity={0}
+      containerStyle={{ gap: theme.spacing.sm }}
+    >
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
@@ -75,28 +83,15 @@ export default function ConfirmPickupModal({
           <Text style={styles.continueButtonText}>Continue</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </Modal>
   );
 }
 
 const createStyles = (theme: any) => StyleSheet.create({
-  container: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.lg,
-    paddingBottom: 40, // Account for safe area
-    ...theme.shadows.lg,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.xs,
   },
   backButton: {
     padding: theme.spacing.sm,

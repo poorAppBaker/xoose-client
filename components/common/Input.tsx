@@ -1,6 +1,6 @@
 // components/common/Input.tsx
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, TextInputProps, Platform, ViewStyle, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, TextInputProps, Platform, ViewStyle, ActivityIndicator, TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { DatePicker } from 'react-native-wheel-pick';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -20,6 +20,7 @@ interface InputProps extends BaseInputProps {
   type?: 'text' | 'password' | 'date' | 'time' | 'datetime';
   value?: string | Date | null;
   placeholder?: string;
+  placeholderFontSize?: number;
   onChangeText?: (text: string) => void;
   onDateTimeChange?: (date: Date) => void;
   style?: ViewStyle;
@@ -27,6 +28,7 @@ interface InputProps extends BaseInputProps {
   maximumDate?: Date;
   loading?: boolean;
   height?: number;
+  placeholderStyle?: TextStyle;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -40,6 +42,9 @@ const Input: React.FC<InputProps> = ({
   height = 45,
   value,
   placeholder = "",
+  placeholderFontSize = 16,
+  placeholderTextColor = "#D1D5DB",
+  placeholderStyle,
   onDateTimeChange,
   style,
   onChangeText,
@@ -55,7 +60,7 @@ const Input: React.FC<InputProps> = ({
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState<Date>(new Date());
 
-  const styles = createStyles(theme, height, !!error);
+  const styles = createStyles(theme, height, !!error, placeholderFontSize);
 
   const togglePasswordVisibility = () => {
     setIsPasswordVisible(!isPasswordVisible);
@@ -270,8 +275,8 @@ const Input: React.FC<InputProps> = ({
             (rightIcon || secureTextEntry || type === 'password' || loading) && !props.multiline && styles.inputWithRightIcon,
           ]}
           secureTextEntry={(secureTextEntry || type === 'password') && !isPasswordVisible}
-          placeholderTextColor={theme.colors.gray300}
-          placeholder={getPlaceholderText()}
+          placeholderTextColor={placeholderFontSize !== 16 ? 'transparent' : (placeholderTextColor || theme.colors.gray300)}
+          placeholder={placeholderFontSize !== 16 ? '' : getPlaceholderText()}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           value={getDisplayValue()}
@@ -279,6 +284,13 @@ const Input: React.FC<InputProps> = ({
           editable={!loading}
           {...props}
         />
+
+        {/* Custom placeholder overlay when fontSize is different */}
+        {placeholderFontSize !== 16 && !getDisplayValue() && (
+          <Text style={[styles.customPlaceholder, { fontSize: placeholderFontSize }, placeholderStyle]}>
+            {getPlaceholderText()}
+          </Text>
+        )}
 
         {loading && renderLoadingIndicator()}
 
@@ -320,7 +332,7 @@ const Input: React.FC<InputProps> = ({
   );
 };
 
-const createStyles = (theme: any, height: number, hasError: boolean) => StyleSheet.create({
+const createStyles = (theme: any, height: number, hasError: boolean, placeholderFontSize: number) => StyleSheet.create({
   container: {
     position: 'relative',
     marginBottom: theme.spacing.md,
@@ -385,6 +397,17 @@ const createStyles = (theme: any, height: number, hasError: boolean) => StyleShe
     paddingLeft: 0,
     paddingRight: 0,
     minHeight: height,
+  },
+  customPlaceholder: {
+    position: 'absolute',
+    left: 47,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    textAlignVertical: 'center',
+    paddingLeft: 0,
+    paddingRight: 0,
+    pointerEvents: 'none',
   },
   inputMultiline: {
     textAlignVertical: 'top',

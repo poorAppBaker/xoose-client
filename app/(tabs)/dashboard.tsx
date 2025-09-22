@@ -1,6 +1,6 @@
 // app/(tabs)/dashboard.tsx
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, FlatList, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -309,7 +309,7 @@ export default function DashboardScreen() {
         <View style={styles.floatingHeader}>
           <View style={styles.headerContent}>
             <TouchableOpacity onPress={toggleSidebar} style={styles.menuButton} activeOpacity={0.8}>
-              <Ionicons name="menu" size={28} color={theme.colors.blue500} />
+              <Image source={require('@/assets/images/icons/menu-icon.png')} style={styles.menuIcon} />
             </TouchableOpacity>
           </View>
         </View>
@@ -347,7 +347,7 @@ export default function DashboardScreen() {
 
       {/* Confirm Destination Modal */}
       <ConfirmDestinationModal
-        visible={showConfirmDestination}
+        visible={showConfirmDestination && !showConfirmPickup}
         destination={destination}
         onBack={handleConfirmBack}
         onContinue={handleConfirmContinue}
@@ -466,6 +466,11 @@ const createStyles = (theme: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     ...theme.shadows.sm,
+  },
+  menuIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
   headerTitle: {
     ...theme.typography.h2,

@@ -70,7 +70,7 @@ const createStyles = (theme: any, maxHeight: any, backdropOpacity: number) =>
   StyleSheet.create({
     modalOverlay: {
       flex: 1,
-      justifyContent: 'flex-end',
+      justifyContent: maxHeight === '100%' ? 'flex-start' : 'flex-end',
       position: 'absolute',
       top: 0,
       left: 0,
@@ -87,10 +87,11 @@ const createStyles = (theme: any, maxHeight: any, backdropOpacity: number) =>
     },
     modalContainer: {
       backgroundColor: '#FFFFFF',
-      borderTopLeftRadius: theme.borderRadius.xl,
-      borderTopRightRadius: theme.borderRadius.xl,
+      borderTopLeftRadius: maxHeight === '100%' ? 0 : theme.borderRadius.xl,
+      borderTopRightRadius: maxHeight === '100%' ? 0 : theme.borderRadius.xl,
       paddingBottom: 34, // Safe area bottom padding
       maxHeight: maxHeight,
+      height: maxHeight === '100%' ? '100%' : undefined,
       paddingHorizontal: theme.spacing.md,
       paddingTop: theme.spacing.md,
     },

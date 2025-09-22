@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 // Using Mapbox Search Box API directly via fetch
 import Input from '../common/Input';
+import Modal from '../common/Modal';
 import recentLocationsService, { RecentLocation } from '../../services/recentLocationsService';
 import useAuthStore from '../../store/authStore';
 
@@ -299,10 +300,15 @@ export default function PickupModal({
     </TouchableOpacity>
   );
 
-  if (!visible) return null;
-
   return (
-    <View style={[styles.container, isFullScreen && styles.fullScreenContainer]}>
+    <Modal
+      visible={visible}
+      onClose={onClose || (() => {})}
+      maxHeight={isFullScreen ? '100%' : '70%'}
+      showTopBar={true}
+      backdropOpacity={0}
+      containerStyle={{ gap: theme.spacing.xs }}
+    >
       {/* Full Screen Header */}
       <View style={styles.fullScreenHeader}>
         <TouchableOpacity
@@ -335,6 +341,7 @@ export default function PickupModal({
           <View style={styles.searchInputWrapper}>
             <Input
               label='Pickup'
+              height={48}
               placeholder="Enter your pickup point"
               placeholderTextColor="#999999"
               value={searchQuery}
@@ -350,12 +357,7 @@ export default function PickupModal({
               }}
               autoFocus={isFullScreen}
               leftIcon={<Image source={require('@/assets/images/locationIcon.png')} />}
-              rightIcon={searchQuery.length > 0 ? (
-                <TouchableOpacity onPress={() => setSearchQuery('')}>
-                  <Ionicons name="close-circle" size={20} color="# 999999" />
-                </TouchableOpacity>
-              ) : undefined}
-              style={isFullScreen ? {...styles.searchInput, ...styles.searchInputFullScreen} : styles.searchInput}
+              style={styles.searchInput}
             />
             <View style={styles.headerRight}>
               <Image source={require('@/assets/images/map.png')} />
@@ -420,44 +422,21 @@ export default function PickupModal({
           }
         />
       </View>
-    </View>
+    </Modal>
   );
 }
 
 const createStyles = (theme: any) => StyleSheet.create({
-  container: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: theme.spacing.lg,
-    paddingBottom: 40, // Account for safe area
-    maxHeight: '70%',
-    zIndex: 1000,
-    ...theme.shadows.lg,
-  },
-  fullScreenContainer: {
-    top: 0,
-    bottom: 0,
-    maxHeight: '100%',
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
-    paddingTop: 50, // Account for status bar
-  },
   fullScreenHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.md,
+    paddingBottom: theme.spacing.md,
   },
   backButton: {
     padding: theme.spacing.sm,
   },
   fullScreenTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
     color: theme.colors.black,
   },
@@ -465,7 +444,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     width: 40, // Same width as back button for centering
   },
   searchSection: {
-    paddingHorizontal: theme.spacing.md,
   },
   destinationLabel: {
     fontSize: 14,
@@ -494,7 +472,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     alignItems: 'center',
     position: 'absolute',
     right: 30,
-    top: 22,
+    top: 14,
   },
   headerMapText: {
     fontSize: 16,
@@ -504,12 +482,13 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   tabsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: theme.spacing.lg,
   },
   tab: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
     borderRadius: 20,
+    borderColor: theme.colors.gray200,
+    borderWidth: 1,
     marginRight: theme.spacing.sm,
   },
   activeTab: {
@@ -524,8 +503,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.white,
   },
   listContainer: {
-    flex: 1,
-    paddingHorizontal: theme.spacing.lg,
   },
   loadingContainer: {
     flexDirection: 'row',
@@ -554,12 +531,12 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginTop: theme.spacing.xs,
   },
   list: {
-    flex: 1,
   },
   locationItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.gray200,
   },
@@ -578,7 +555,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginRight: theme.spacing.md,
   },
   locationText: {
-    flex: 1,
   },
   locationTitle: {
     fontSize: 16,

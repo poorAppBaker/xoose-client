@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 // Using Mapbox Search Box API directly via fetch
 import Input from '../common/Input';
+import Modal from '../common/Modal';
 import recentLocationsService, { RecentLocation } from '../../services/recentLocationsService';
 import useAuthStore from '../../store/authStore';
 
@@ -327,10 +328,15 @@ export default function WhereToGoModal({
   );
 
 
-  if (!visible) return null;
-
   return (
-    <View style={[styles.container, isFullScreen && styles.fullScreenContainer]}>
+    <Modal
+      visible={visible}
+      onClose={onClose || (() => {})}
+      maxHeight={isFullScreen ? '100%' : '70%'}
+      showTopBar={true}
+      containerStyle={{ gap: theme.spacing.md }}
+      backdropOpacity={0}
+    >
        {/* Full Screen Header */}
        {isFullScreen && (
          <View style={styles.fullScreenHeader}>
@@ -357,12 +363,14 @@ export default function WhereToGoModal({
            <View style={styles.searchInputWrapper}>
              <Input
                label={isFullScreen ? 'Destination' : undefined}
-               placeholder="Search places, addresses, or landmarks..."
-               placeholderTextColor="#121212"
+               height={48}
+               placeholder="Where to Go?"
+               placeholderFontSize={!isFullScreen ? 22 : 16}
+               placeholderStyle={!isFullScreen ? { color: theme.colors.black, fontWeight: '700' } : { }}
                value={searchQuery}
                onChangeText={(text) => {
                  setSearchQuery(text);
-                 setActiveTab('search');
+                 setActiveTab('search')
                }}
                onFocus={() => {
                  setActiveTab('search');
@@ -372,11 +380,6 @@ export default function WhereToGoModal({
                }}
                autoFocus={isFullScreen}
                leftIcon={<Image source={require('@/assets/images/paperPlane.png')}  />}
-               rightIcon={searchQuery.length > 0 ? (
-                 <TouchableOpacity onPress={() => setSearchQuery('')}>
-                   <Ionicons name="close-circle" size={20} color="#999999" />
-                 </TouchableOpacity>
-               ) : undefined}
                style={isFullScreen ? {...styles.searchInput, ...styles.searchInputFullScreen} : styles.searchInput}
              />
              <View style={styles.headerRight}>
@@ -447,34 +450,11 @@ export default function WhereToGoModal({
           }
         />
       </View>
-    </View>
+    </Modal>
   );
 }
 
 const createStyles = (theme: any) => StyleSheet.create({
-  container: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.lg,
-    paddingBottom: 40, // Account for safe area
-    maxHeight: '70%',
-    zIndex: 1000,
-    ...theme.shadows.lg,
-  },
-  fullScreenContainer: {
-    top: 0,
-    bottom: 0,
-    maxHeight: '100%',
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
-    paddingTop: 50, // Account for status bar
-  },
   fullScreenHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -496,14 +476,11 @@ const createStyles = (theme: any) => StyleSheet.create({
   destinationLabel: {
     fontSize: 14,
     color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.sm,
     fontWeight: '500',
   },
   searchContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing.md,
   },
   searchInputWrapper: {
     flex: 1,
@@ -511,10 +488,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
   },
   searchInput: {
-    marginBottom: 0,
-    backgroundColor: '#FFFFFF',
     flex: 1,
-    height: 48,
+    backgroundColor: '#FFFFFF',
   },
   searchInputFullScreen: {
     backgroundColor: '#FFFFFF',
@@ -523,9 +498,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     position: 'absolute',
-    right: 22,
-    top: 0,
-    bottom: 0,
+    right: 30,
+    top: 14,
   },
   headerMapText: {
     fontSize: 16,
@@ -537,8 +511,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
   },
   tab: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
     borderRadius: 20,
     borderColor: theme.colors.gray200,
     borderWidth: 1,
@@ -556,7 +530,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.white,
   },
   list: {
-    flex: 1,
   },
   locationItem: {
     flexDirection: 'row',
@@ -581,20 +554,18 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginRight: theme.spacing.md,
   },
   locationText: {
-    flex: 1,
   },
   locationTitle: {
     ...theme.typography.body,
-    color: theme.colors.black,
+    color: theme.colors.gray800,
     fontWeight: '600',
     marginBottom: 2,
   },
   locationSubtitle: {
     ...theme.typography.caption,
-    color: theme.colors.textSecondary,
+    color: theme.colors.gray500,
   },
   listContainer: {
-    flex: 1,
   },
   loadingContainer: {
     flexDirection: 'row',
