@@ -49,6 +49,24 @@ export interface BookingData {
     discount: number;
   };
   
+  // Driver data
+  driver?: {
+    id: string;
+    name: string;
+    phone?: string;
+    rating?: number;
+    vehicle?: {
+      model: string;
+      plate: string;
+      color: string;
+    };
+  };
+  
+  // Driver acceptance
+  isAccepted?: boolean;
+  acceptedAt?: Date;
+  isDeclined?: boolean;
+  
   // Booking metadata
   status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
   createdAt: Date;
@@ -95,6 +113,7 @@ class BookingService {
 
       const docRef = await this.collection.add(bookingData);
       console.log('Booking created with ID:', docRef.id);
+      console.log('Booking data saved:', JSON.stringify(bookingData, null, 2));
       
       return docRef.id;
     } catch (error) {
@@ -183,6 +202,7 @@ class BookingService {
       }));
     }
     
+    
     return cleanData;
   }
 
@@ -250,6 +270,37 @@ class BookingService {
   }
 
   /**
+   * Update driver acceptance
+   */
+  async updateDriverAcceptance(bookingId: string, isAccepted: boolean, driver?: BookingData['driver']): Promise<void> {
+    try {
+      const updateData: any = {
+        isAccepted,
+        isDeclined: false, // Always set isDeclined to false when updating acceptance
+        updatedAt: new Date(),
+      };
+      
+      // Always save driver data if provided, regardless of acceptance status
+      if (driver) {
+        updateData.driver = driver;
+      }
+      
+      // Only set acceptedAt when driver actually accepts
+      if (isAccepted) {
+        updateData.acceptedAt = new Date();
+      }
+      
+      await this.collection.doc(bookingId).update(updateData);
+      console.log('Driver acceptance updated:', isAccepted);
+      console.log('Driver data saved:', driver);
+      console.log('isDeclined set to false');
+    } catch (error) {
+      console.error('Error updating driver acceptance:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Cancel a booking
    */
   async cancelBooking(bookingId: string): Promise<void> {
@@ -304,21 +355,33 @@ class BookingService {
    * Listen to real-time updates for a specific booking
    */
   subscribeToBooking(bookingId: string, callback: (booking: BookingData | null) => void): () => void {
+    console.log('🔍 Setting up Firebase listener for booking:', bookingId);
+    
     return this.collection.doc(bookingId).onSnapshot(
       (doc: any) => {
+        console.log('🔥 Firebase snapshot received for booking:', bookingId);
+        console.log('🔥 Document exists:', doc.exists);
+        
         if (doc.exists) {
           const data = doc.data() as any;
-          callback({
+          console.log('🔥 Raw Firebase data:', data);
+          console.log('🔥 isAccepted value:', data.isAccepted);
+          
+          const processedBooking = {
             ...data,
             createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt),
             updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(data.updatedAt),
-          });
+          };
+          
+          console.log('🔥 Processed booking data:', processedBooking);
+          callback(processedBooking);
         } else {
+          console.log('❌ Document does not exist');
           callback(null);
         }
       },
       (error: any) => {
-        console.error('Error listening to booking updates:', error);
+        console.error('❌ Error listening to booking updates:', error);
         callback(null);
       }
     );

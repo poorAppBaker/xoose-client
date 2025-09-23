@@ -45,6 +45,10 @@ export default function ChooseYourOptionScreen() {
     params.destination ? JSON.parse(params.destination as string) : null,
     [params.destination]
   );
+  const bookingId: string | null = useMemo(() =>
+    params.bookingId ? params.bookingId as string : null,
+    [params.bookingId]
+  );
 
   const [driverOptions, setDriverOptions] = useState<DriverOption[]>([]);
   const [loading, setLoading] = useState(false);
@@ -329,6 +333,7 @@ export default function ChooseYourOptionScreen() {
         selectedOption={selectedOption}
         pickup={pickup}
         destination={destination}
+        bookingId={bookingId}
         onClose={handleCloseBookTripModal}
         onBookNow={handleBookNow}
       />

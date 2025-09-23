@@ -8,6 +8,7 @@ import {
   ScrollView,
   Switch,
   Image,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Rating } from 'react-native-elements';
@@ -15,13 +16,19 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { theme } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import Input from '@/components/common/Input';
+import reviewService from '../../services/reviewService';
+import auth from '@react-native-firebase/auth';
 
 interface TripEndedScreenProps {
   tripFare?: number;
+  driverId?: string;
+  bookingId?: string;
 }
 
 export default function TripEndedScreen({
   tripFare = 6.70, // Default fare amount
+  driverId,
+  bookingId,
 }: TripEndedScreenProps) {
   const { theme } = useTheme();
   const router = useRouter();
@@ -78,20 +85,50 @@ export default function TripEndedScreen({
     }
   };
 
-  const handleContinue = () => {
-    const tripData = {
-      tip: selectedTip,
-      driverRating,
-      carRating,
-      portuguese: { enabled: portugueseEnabled, rating: portugueseRating },
-      english: { enabled: englishEnabled, rating: englishRating },
-      comment,
-      isTrustedDriver,
-    };
+  const handleContinue = async () => {
+    try {
+      // Get current user
+      const currentUser = auth().currentUser;
+      if (!currentUser) {
+        Alert.alert('Error', 'User not authenticated');
+        return;
+      }
 
-    console.log('Trip ended data:', tripData);
-    // Navigate to trip history screen
-    router.push('/trip-history');
+      // Get client ID from user
+      const clientId = currentUser.uid;
+
+      // Validate required data
+      if (!driverId) {
+        Alert.alert('Error', 'Driver ID is required');
+        return;
+      }
+
+      const reviewData = {
+        driverId,
+        clientId,
+        bookingId: bookingId || null,
+        tip: selectedTip,
+        driverRating,
+        carRating,
+        portuguese: { enabled: portugueseEnabled, rating: portugueseRating },
+        english: { enabled: englishEnabled, rating: englishRating },
+        comment,
+        isTrustedDriver,
+      };
+
+      console.log('Saving review data:', reviewData);
+
+      // Save review to Firebase
+      await reviewService.createReview(reviewData);
+      
+      console.log('Review saved successfully');
+      
+      // Navigate to trip history screen
+      router.push('/trip-history');
+    } catch (error) {
+      console.error('Error saving review:', error);
+      Alert.alert('Error', 'Failed to save review. Please try again.');
+    }
   };
 
   const renderStars = (rating: number, onPress: (rating: number) => void, size: number = 24) => {

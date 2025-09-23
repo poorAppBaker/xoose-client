@@ -40,6 +40,7 @@ interface DriverArrivingModalProps {
   selectedOption: DriverOption | null;
   pickup: any;
   destination: any;
+  bookingId?: string;
   onClose: () => void;
   onCancelRide: () => void;
 }
@@ -49,6 +50,7 @@ export default function DriverArrivingModal({
   selectedOption,
   pickup,
   destination,
+  bookingId,
   onClose,
   onCancelRide,
 }: DriverArrivingModalProps) {
@@ -61,6 +63,11 @@ export default function DriverArrivingModal({
   const [waitingTime, setWaitingTime] = useState(0); // in seconds
   const [driverMovingToDestination, setDriverMovingToDestination] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  
+  // Progress bar states
+  const [pickupETAInSeconds, setPickupETAInSeconds] = useState(0); // pickupETA converted to seconds
+  const [elapsedTime, setElapsedTime] = useState(0); // elapsed time since modal opened
+  const [isDriverLate, setIsDriverLate] = useState(false);
   
   // ETA calculation states
   const [calculatedPickupETA, setCalculatedPickupETA] = useState<string>('');
@@ -112,6 +119,21 @@ export default function DriverArrivingModal({
       minute: '2-digit',
       hour12: true 
     });
+  };
+
+  // Convert ETA string to seconds
+  const convertETAToSeconds = (etaString: string): number => {
+    if (etaString.includes('< 1 min')) {
+      return 30; // Less than 1 minute = 30 seconds
+    } else if (etaString.includes('min')) {
+      const minutes = parseInt(etaString.match(/(\d+)\s*min/)?.[1] || '0');
+      return minutes * 60;
+    } else if (etaString.includes('h')) {
+      const hours = parseInt(etaString.match(/(\d+)h/)?.[1] || '0');
+      const minutes = parseInt(etaString.match(/(\d+)m/)?.[1] || '0');
+      return (hours * 60 + minutes) * 60;
+    }
+    return 300; // Default 5 minutes if parsing fails
   };
 
   // Helper function to calculate distance between two coordinates (in km)
@@ -189,6 +211,30 @@ export default function DriverArrivingModal({
     };
   }, [visible, selectedOption, pickup]);
 
+  // Elapsed time timer effect - tracks time since modal opened
+  useEffect(() => {
+    if (!visible) {
+      setElapsedTime(0);
+      setIsDriverLate(false);
+      return;
+    }
+
+    const elapsedTimer = setInterval(() => {
+      setElapsedTime(prev => {
+        const newTime = prev + 1;
+        
+        // Check if driver is late (elapsed time > pickupETA)
+        if (newTime > pickupETAInSeconds && !driverHasArrived) {
+          setIsDriverLate(true);
+        }
+        
+        return newTime;
+      });
+    }, 1000);
+
+    return () => clearInterval(elapsedTimer);
+  }, [visible, pickupETAInSeconds, driverHasArrived]);
+
   // Waiting time timer effect
   useEffect(() => {
     if (!driverHasArrived) {
@@ -241,7 +287,14 @@ export default function DriverArrivingModal({
            }
            // Navigate to trip ended screen after a short delay
            setTimeout(() => {
-             router.push('/trip-ended');
+             router.push({
+               pathname: '/trip-ended',
+               params: {
+                 driverId: selectedOption?.driver.id,
+                 tripFare: selectedOption?.fare.finalPrice,
+                 bookingId: bookingId || null,
+               }
+             });
            }, 1000);
            return;
          }
@@ -281,12 +334,17 @@ export default function DriverArrivingModal({
 
     setCalculatedPickupETA(pickupETA);
     setCalculatedDestinationETA(`Arriving by ${calculateArrivalTime(Math.ceil((driverToPickupDist + pickupToDestDist) / driverSpeed * 60))}`);
+    
+    // Convert pickupETA to seconds for progress bar
+    const etaInSeconds = convertETAToSeconds(pickupETA);
+    setPickupETAInSeconds(etaInSeconds);
 
     console.log('⏰ DriverArrivingModal calculated ETAs:', {
       driverToPickupDist: `${driverToPickupDist.toFixed(2)} km`,
       pickupToDestDist: `${pickupToDestDist.toFixed(2)} km`,
       pickupETA,
-      destinationETA
+      destinationETA,
+      pickupETAInSeconds: etaInSeconds
     });
   }, [visible, selectedOption, animatedDriverLocation, pickup, destination]);
 
@@ -370,11 +428,14 @@ export default function DriverArrivingModal({
       )}
 
 
-      {/* Waiting Time Progress Bar - Only show when driver has arrived, not extended, and not moving to destination */}
-      {driverHasArrived && !isExtended && !driverMovingToDestination && (
+      {/* Driver Arrival Progress Bar - Show progress from driver location to pickup and waiting time */}
+      {!driverMovingToDestination && (
         <View style={styles.waitingTimeCard}>
           <Text style={styles.waitingTimeText}>
-            {waitingTime > 10 ? "Extra-waiting fee: $5" : "Free waiting time: 10s"}
+            {elapsedTime >= pickupETAInSeconds 
+              ? "Extra-waiting fee: $5" 
+              : `Expected arrival: ${calculatedPickupETA}`
+            }
           </Text>
           <View style={styles.progressBarContainer}>
             <View style={styles.progressBar}>
@@ -382,19 +443,19 @@ export default function DriverArrivingModal({
                 style={[
                   styles.progressBarFill,
                   {
-                    width: `${Math.min((waitingTime / 10) * 100, 100)}%`,
-                    backgroundColor: waitingTime > 10 ? '#FF4444' : theme.colors.blue500
+                    width: `${Math.min((elapsedTime / pickupETAInSeconds) * 100, 100)}%`,
+                    backgroundColor: elapsedTime >= pickupETAInSeconds ? '#FF4444' : theme.colors.blue500
                   }
                 ]}
               />
             </View>
             <Text style={styles.waitingTimer}>
-              {Math.floor(waitingTime / 60).toString().padStart(2, '0')}:
-              {(waitingTime % 60).toString().padStart(2, '0')}
+              {`${Math.floor(elapsedTime / 60).toString().padStart(2, '0')}:${(elapsedTime % 60).toString().padStart(2, '0')}`}
             </Text>
           </View>
         </View>
       )}
+
 
       {/* Modal Content */}
       <View style={isExtended ? styles.extendedModal : styles.modal}>
@@ -425,7 +486,7 @@ export default function DriverArrivingModal({
             </TouchableOpacity>
             <Text style={styles.title}>
               {driverMovingToDestination ? "Driving to Destination" :
-                driverHasArrived ? "Driver has Arrived" : "Arriving in 4 min"}
+                driverHasArrived ? "Driver has Arrived" : `Arriving in ${calculatedPickupETA}`}
             </Text>
           </View>
           <View style={styles.licensePlate}>
@@ -435,11 +496,14 @@ export default function DriverArrivingModal({
 
         {isExtended ? (
           <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            {/* Waiting Time Progress Bar - Only show when driver has arrived and not moving to destination */}
-            {driverHasArrived && !driverMovingToDestination && (
+            {/* Driver Arrival Progress Bar - Show progress from driver location to pickup and waiting time */}
+            {!driverMovingToDestination && (
               <View>
                 <Text style={styles.waitingTimeText}>
-                  {waitingTime > 10 ? "Extra-waiting fee: $5" : "Free waiting time: 10s"}
+                  {elapsedTime >= pickupETAInSeconds 
+                    ? "Extra-waiting fee: $5" 
+                    : `Expected arrival: ${calculatedPickupETA}`
+                  }
                 </Text>
                 <View style={styles.progressBarContainer}>
                   <View style={styles.progressBar}>
@@ -447,19 +511,19 @@ export default function DriverArrivingModal({
                       style={[
                         styles.progressBarFill,
                         {
-                          width: `${Math.min((waitingTime / 10) * 100, 100)}%`,
-                          backgroundColor: waitingTime > 10 ? '#FF4444' : theme.colors.blue500
+                          width: `${Math.min((elapsedTime / pickupETAInSeconds) * 100, 100)}%`,
+                          backgroundColor: elapsedTime >= pickupETAInSeconds ? '#FF4444' : theme.colors.blue500
                         }
                       ]}
                     />
                   </View>
                   <Text style={styles.waitingTimer}>
-                    {Math.floor(waitingTime / 60).toString().padStart(2, '0')}:
-                    {(waitingTime % 60).toString().padStart(2, '0')}
+                    {`${Math.floor(elapsedTime / 60).toString().padStart(2, '0')}:${(elapsedTime % 60).toString().padStart(2, '0')}`}
                   </Text>
                 </View>
               </View>
             )}
+
             {/* Driver and Vehicle Section - Side by Side */}
             <View style={styles.mainSection}>
 
@@ -538,7 +602,7 @@ export default function DriverArrivingModal({
               <View style={styles.etatimeContainer}>
                 <View style={styles.timeContainer}>
                   <Image source={clockIcon} style={[styles.estimateTimeIcon, { tintColor: theme.colors.blue500 }]} />
-                  <Text style={styles.estimatedTime}>{calculatedPickupETA || `${fare.estimatedTime} min`}</Text>
+                  <Text style={styles.estimatedTime}>{calculatedDestinationETA}</Text>
                 </View>
                 <Text style={styles.companyName}>Company Name</Text>
               </View>
