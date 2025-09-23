@@ -130,6 +130,10 @@ export default function TripHistoryScreen() {
         <View style={styles.tripDetailsSection}>
           <View style={styles.tripDetailsHeader}>
             <Text style={styles.tripDetailsTitle}>Trip Details</Text>
+            <TouchableOpacity style={styles.editDestinationsButton}>
+              <Image source={editIcon} style={styles.filterChipIcon} />
+              <Text style={styles.editDestinationsText}>Edit Destinations</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.locationPoints}>
@@ -137,10 +141,6 @@ export default function TripHistoryScreen() {
               <Image source={pickupIcon} style={styles.filterChipIcon} />
               <View style={styles.locationInfo}>
                 <Text style={styles.locationText}>{tripData.pickup.address}</Text>
-                <TouchableOpacity style={styles.saveButton}>
-                  <Ionicons name="location" size={14} color={theme.colors.blue500} />
-                  <Text style={styles.saveButtonText}>Save</Text>
-                </TouchableOpacity>
               </View>
             </View>
 
@@ -148,10 +148,6 @@ export default function TripHistoryScreen() {
               <Image source={destinationIcon} style={styles.filterChipIcon} />
               <View style={styles.locationInfo}>
                 <Text style={styles.locationText}>{tripData.destination.address}</Text>
-                <TouchableOpacity style={styles.saveButton}>
-                  <Ionicons name="location" size={14} color={theme.colors.blue500} />
-                  <Text style={styles.saveButtonText}>Save</Text>
-                </TouchableOpacity>
               </View>
             </View>
           </View>
@@ -268,7 +264,7 @@ export default function TripHistoryScreen() {
           <View style={styles.detailFieldContainer}>
             <Text style={styles.detailsTitle}>Profile & Payment</Text>
             <View style={styles.detailField}>
-              <Text style={styles.fieldText}>{tripData.paymentMethod.type} | </Text>
+              <Text style={styles.fieldText}>{tripData.paymentMethod.type} |</Text>
               <Image source={require('../../assets/images/mastercard.png')} style={styles.cardIcon} />
               <Text style={styles.fieldText}>**** {tripData.paymentMethod.last4}</Text>
             </View>
@@ -351,6 +347,9 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.blue500,
   },
   summarySection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 10,
   },
@@ -360,7 +359,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginBottom: 4,
   },
   mapSection: {
-    height: 300,
+    height: 150,
     marginHorizontal: 20,
     marginVertical: 10,
     borderRadius: 12,
@@ -372,17 +371,29 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   tripDetailsSection: {
     paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.gray200,
+    borderColor: theme.colors.gray200,
+    paddingBottom: theme.spacing.md,
   },
   tripDetailsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: theme.spacing.md,
   },
   tripDetailsTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000000',
+    color: theme.colors.black,
+  },
+  editDestinationsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+  },
+  editDestinationsText: {
+    fontSize: 14,
+    color: theme.colors.primary,
   },
   locationPoints: {
     gap: theme.spacing.xs,
@@ -421,43 +432,39 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   driverSection: {
     flex: 1,
-    paddingRight: theme.spacing.sm,
+    alignItems: 'center',
   },
   profileImageContainer: {
     position: 'relative',
-    paddingLeft: 10,
   },
   verificationBadge: {
     position: 'absolute',
     top: 0,
-    left: 40,
+    left: -10,
     backgroundColor: theme.colors.black,
+    borderRadius: theme.borderRadius.full,
     paddingHorizontal: theme.spacing.xs,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.borderRadius.sm,
+    paddingVertical: 2,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
     zIndex: 1,
   },
   verificationText: {
-    fontSize: 14,
-    color: theme.colors.white,
-    fontWeight: '600',
+    color: 'white',
+    fontSize: 12,
   },
   profileImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 70,
+    height: 70,
   },
   driverName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000000',
-    marginBottom: theme.spacing.sm,
+    fontSize: 16,
+    color: theme.colors.black,
   },
   ratingLanguagesContainer: {
     flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
     gap: theme.spacing.sm,
   },
@@ -468,8 +475,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   rating: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#000000',
+    color: theme.colors.black,
   },
   languageTags: {
     flexDirection: 'row',
@@ -478,50 +484,41 @@ const createStyles = (theme: any) => StyleSheet.create({
   languageTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    paddingVertical: 2,
+    borderRadius: theme.borderRadius.sm,
   },
   languageText: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#000000',
+    color: theme.colors.black,
   },
   vehicleSection: {
     flex: 1,
-    paddingLeft: theme.spacing.sm,
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.sm,
   },
   vehicleImageContainer: {
-    alignItems: 'center',
-    paddingVertical: theme.spacing.sm,
   },
   vehicleImage: {
-    width: 100,
-    height: 60,
+    width: 133,
+    height: 70,
   },
   vehicleModel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
-    textAlign: 'center',
-    marginTop: 4,
-    marginBottom: 11,
+    fontSize: 14,
+    marginBottom: theme.spacing.xs,
+    color: theme.colors.black,
   },
   vehicleRatingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: theme.spacing.xs,
   },
   vehicleRating: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#000000',
+    color: theme.colors.black,
   },
   vehicleFeatures: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     gap: theme.spacing.sm,
-    marginTop: theme.spacing.sm,
   },
   feature: {
     flexDirection: 'row',
@@ -529,19 +526,16 @@ const createStyles = (theme: any) => StyleSheet.create({
     gap: theme.spacing.xs,
   },
   featureText: {
-    fontSize: 12,
-    color: '#000000',
+    fontSize: 14,
+    color: theme.colors.black,
   },
   additionalFeatures: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     gap: theme.spacing.sm,
-    marginTop: theme.spacing.sm,
   },
   filterChipIcon: {
-    width: 16,
-    height: 16,
+    width: 12,
+    height: 14,
     resizeMode: 'contain',
   },
   pricingContainer: {
@@ -613,35 +607,38 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: '#000000',
   },
   detailsSection: {
-    paddingVertical: theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.gray200,
+    marginBottom: theme.spacing.lg,
   },
   detailFieldContainer: {
-    marginBottom: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderColor: theme.colors.gray200,
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.sm,
   },
   detailsTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#000000',
-    marginBottom: theme.spacing.xs,
+    color: theme.colors.black,
   },
   detailField: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: theme.spacing.sm,
+    gap: theme.spacing.sm,
   },
   fieldText: {
-    fontSize: 16,
-    color: '#000000',
+    fontSize: 14,
+    color: theme.colors.black,
   },
   cardIcon: {
-    width: 20,
-    height: 12,
+    width: 24,
+    height: 16,
     resizeMode: 'contain',
   },
   invoiceSection: {
-    paddingVertical: theme.spacing.md,
+    paddingBottom: theme.spacing.md,
   },
   invoiceTitle: {
     fontSize: 18,
