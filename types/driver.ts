@@ -46,6 +46,7 @@ export interface Fare {
     };
   };
   basePrice: number;
+  pricePerKm: number; // Price per kilometer
   estimatedTime: number; // in minutes
   discount?: {
     percentage: number;

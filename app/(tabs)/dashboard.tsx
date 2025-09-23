@@ -254,7 +254,8 @@ export default function DashboardScreen() {
         pathname: '/choose-your-option',
         params: {
           pickup: JSON.stringify(pickup),
-          destination: JSON.stringify(destination)
+          destination: JSON.stringify(destination),
+          bookingId: bookingId
         }
       });
       

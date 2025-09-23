@@ -116,17 +116,9 @@ export default function ConnectingDriverModal({
   const styles = createStyles(theme);
 
   // Simulate driver acceptance after 30 seconds - MUST be before early return
-  useEffect(() => {
-    if (visible) {
-      console.log('🔄 ConnectingDriverModal visible - starting 30-second timer');
-      const timer = setTimeout(() => {
-        console.log('⏰ 30 seconds passed - showing DriverAcceptedModal');
-        setShowDriverAccepted(true);
-      }, 30000); // 30 seconds
-
-      return () => clearTimeout(timer);
-    }
-  }, [visible]);
+  // Note: Driver acceptance is now handled by Firebase real-time updates
+  // No automatic timer needed - the parent component will call onDriverAccepted
+  // when the driver actually accepts the booking in Firebase
 
   // Simulate driver timeout after 60 seconds if not accepted
   useEffect(() => {

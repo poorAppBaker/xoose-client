@@ -200,6 +200,7 @@ class DriverService {
           pickupAreaCoordinates: fareData.pickupAreaCoordinates,
           destinationAreaCoordinates: fareData.destinationAreaCoordinates,
           basePrice: parseFloat(fareData.minimumFare) || 14.12,
+          pricePerKm: 2.5, // Default price per kilometer
           estimatedTime: 4, // Default estimated time
           discount: fareData.percentageAdjustment ? { 
             percentage: parseInt(fareData.percentageValue) || 0 
@@ -317,16 +318,47 @@ class DriverService {
           }
         }
 
-        // Calculate estimated arrival time (simplified - in real app, this would consider traffic, distance, etc.)
-        const estimatedArrival = (fare.estimatedTime || 0) + Math.floor(Math.random() * 10); // Add some randomness
+        // Calculate distance from pickup to destination using Haversine formula
+        const calculateDistance = (coord1: [number, number], coord2: [number, number]): number => {
+          const R = 6371; // Earth's radius in kilometers
+          const [lat1, lon1] = coord1;
+          const [lat2, lon2] = coord2;
+          
+          const dLat = (lat2 - lat1) * Math.PI / 180;
+          const dLon = (lon2 - lon1) * Math.PI / 180;
+          
+          const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                   Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                   Math.sin(dLon/2) * Math.sin(dLon/2);
+          
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+          return R * c;
+        };
+
+        const pickupToDestinationDistance = calculateDistance(pickupCoordinate, destinationCoordinate);
+        
+        // Calculate estimated arrival time based on pickup to destination distance
+        const speedKmh = 35; // Average city speed
+        const estimatedArrival = Math.ceil((pickupToDestinationDistance / speedKmh) * 60); // Convert to minutes
+        
+        // Calculate final price based on pricePerKm * distance
+        const calculatedPrice = fare.pricePerKm * pickupToDestinationDistance;
+        const finalPrice = Math.max(calculatedPrice, fare.basePrice); // Use base price as minimum
+        
+        // Update fare with calculated values
+        const updatedFare = {
+          ...fare,
+          finalPrice: finalPrice
+        };
 
         driverOptions.push({
           driver,
-          fare,
+          fare: updatedFare,
           estimatedArrival
         });
         
         console.log(`Created driver option: ${driver.name} with fare ${fare.id}`);
+        console.log(`Distance: ${pickupToDestinationDistance.toFixed(2)}km, ETA: ${estimatedArrival}min, Price: €${finalPrice.toFixed(2)}`);
       }
     }
 

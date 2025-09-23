@@ -17,7 +17,10 @@ import { DriverOption } from '../../types/driver';
 import MapView from './MapView';
 import WhereToWhereSection from './WhereToWhereSection';
 import ConnectingDriverModal from './ConnectingDriverModal';
+import DriverAcceptedModal from './DriverAcceptedModal';
 import DriverArrivingModal from './DriverArrivingModal';
+import DriverDeclinedModal from './DriverDeclinedModal';
+import bookingService, { BookingData } from '../../services/bookingService';
 
 // Import icon images
 const subtractWhiteIcon = require('../../assets/images/icons/subtract-white.png');
@@ -40,6 +43,7 @@ interface BookTripModalProps {
   selectedOption: DriverOption | null;
   pickup: any;
   destination: any;
+  bookingId?: string | null;
   onClose: () => void;
   onBookNow: () => void;
 }
@@ -49,6 +53,7 @@ export default function BookTripModal({
   selectedOption,
   pickup,
   destination,
+  bookingId,
   onClose,
   onBookNow,
 }: BookTripModalProps) {
@@ -57,12 +62,19 @@ export default function BookTripModal({
   const [showDriverAccepted, setShowDriverAccepted] = useState(false);
   const [showDriverArriving, setShowDriverArriving] = useState(false);
   const [showDriverTimeout, setShowDriverTimeout] = useState(false);
+  const [showDriverDeclined, setShowDriverDeclined] = useState(false);
   const [isExtended, setIsExtended] = useState(false);
   const timeoutRef = useRef<number | null>(null);
+  
+  // Booking management states
+  const [currentBookingId, setCurrentBookingId] = useState<string | null>(null);
+  const [isBookingActive, setIsBookingActive] = useState(false);
+  const [bookingTimeout, setBookingTimeout] = useState<number | null>(null);
 
   // ETA calculation states
   const [calculatedPickupETA, setCalculatedPickupETA] = useState<string>('');
   const [calculatedDestinationETA, setCalculatedDestinationETA] = useState<string>('');
+  const [calculatedDestinationETAText, setCalculatedDestinationETAText] = useState<string>('');
 
   // Calculate distance between two coordinates using Haversine formula
   const calculateHaversineDistance = (coord1: [number, number], coord2: [number, number]): number => {
@@ -129,11 +141,14 @@ export default function BookTripModal({
     }
 
     const { driver } = selectedOption;
-    if (!driver.currentLocation?.coordinate || !pickup || !destination) {
+    if (!pickup || !destination) {
       return;
     }
 
-    const driverLocation = driver.currentLocation.coordinate;
+    const driverLocation = driver.currentLocation?.coordinate || [
+      pickup.coordinate[0] - 0.01, // Mock location slightly west of pickup
+      pickup.coordinate[1] + 0.01  // Mock location slightly north of pickup
+    ];
     const driverSpeed = 35; // Default city speed in km/h
 
     // Calculate distances
@@ -145,7 +160,8 @@ export default function BookTripModal({
     const destinationETA = calculateETA(pickupToDestDist, driverSpeed);
 
     setCalculatedPickupETA(pickupETA);
-    setCalculatedDestinationETA(`Arriving by ${calculateArrivalTime(Math.ceil((driverToPickupDist + pickupToDestDist) / driverSpeed * 60))}`);
+    setCalculatedDestinationETA(destinationETA);
+    setCalculatedDestinationETAText(`Arriving by ${calculateArrivalTime(Math.ceil((driverToPickupDist + pickupToDestDist) / driverSpeed * 60))}`);
 
     console.log('⏰ BookTripModal calculated ETAs:', {
       driverToPickupDist: `${driverToPickupDist.toFixed(2)} km`,
@@ -155,15 +171,132 @@ export default function BookTripModal({
     });
   }, [visible, selectedOption, pickup, destination]);
 
+  // Cleanup booking timeout when component unmounts
+  useEffect(() => {
+    return () => {
+      if (bookingTimeout) {
+        clearTimeout(bookingTimeout);
+      }
+    };
+  }, [bookingTimeout]);
+
+  // Reset states when modal closes
+  useEffect(() => {
+    if (!visible) {
+      setShowConnecting(false);
+      setShowDriverAccepted(false);
+      setShowDriverArriving(false);
+      setShowDriverTimeout(false);
+      setIsBookingActive(false);
+      setCurrentBookingId(null);
+      
+      if (bookingTimeout) {
+        clearTimeout(bookingTimeout);
+        setBookingTimeout(null);
+      }
+    }
+  }, [visible]);
+
   if (!visible || !selectedOption) {
     return null;
   }
 
-  const handleBookNow = () => {
-    console.log('🚀 Book Now clicked - showing ConnectingDriverModal');
-    setShowConnecting(true);
-    // Call the original onBookNow callback
-    // onBookNow();
+  // Set up real-time listener for booking updates
+  const setupBookingListener = (bookingId: string) => {
+    console.log('👂 Setting up booking listener for:', bookingId);
+    
+    const unsubscribe = bookingService.subscribeToBooking(bookingId, (booking: BookingData | null) => {
+      console.log('📡 Booking listener triggered with booking:', booking);
+      
+      if (booking) {
+        console.log('📡 Booking update received - isAccepted:', booking.isAccepted, 'isDeclined:', booking.isDeclined);
+        console.log('📡 Current modal states - showConnecting:', showConnecting, 'showDriverAccepted:', showDriverAccepted, 'showDriverDeclined:', showDriverDeclined);
+        
+        if (booking.isAccepted === true) {
+          console.log('✅ Driver accepted the booking! Updating modal states...');
+          setShowConnecting(false);
+          setShowDriverAccepted(true);
+          setShowDriverDeclined(false);
+          setIsBookingActive(false);
+          
+          // Clear timeout
+          if (bookingTimeout) {
+            console.log('🧹 Clearing booking timeout');
+            clearTimeout(bookingTimeout);
+            setBookingTimeout(null);
+          }
+        } else if (booking.isDeclined === true) {
+          console.log('❌ Driver declined the booking! Updating modal states...');
+          setShowConnecting(false);
+          setShowDriverAccepted(false);
+          setShowDriverDeclined(true);
+          setIsBookingActive(false);
+          
+          // Clear timeout
+          if (bookingTimeout) {
+            console.log('🧹 Clearing booking timeout');
+            clearTimeout(bookingTimeout);
+            setBookingTimeout(null);
+          }
+        } else {
+          console.log('⏳ Driver has not responded yet - isAccepted:', booking.isAccepted, 'isDeclined:', booking.isDeclined);
+        }
+      } else {
+        console.log('❌ No booking data received');
+      }
+    });
+    
+    // Store unsubscribe function for cleanup
+    return unsubscribe;
+  };
+
+  const handleBookNow = async () => {
+    console.log('🚀 Book Now clicked - updating existing booking with driver');
+    
+    if (!bookingId) {
+      console.error('❌ No bookingId provided - cannot update booking');
+      return;
+    }
+    
+    try {
+      // Update existing booking with driver info and isAccepted: false
+      const driverData = {
+        id: selectedOption.driver.id,
+        name: selectedOption.driver.name,
+        phone: '555-0123', // Mock phone number
+        rating: selectedOption.driver.rating,
+        vehicle: {
+          model: selectedOption.fare.vehicle.model,
+          plate: 'ABC-123', // Mock plate number
+          color: 'White', // Mock color
+        },
+      };
+
+      await bookingService.updateDriverAcceptance(bookingId, false, driverData);
+      console.log('📝 Booking updated with driver data and isAccepted: false');
+      
+      setCurrentBookingId(bookingId);
+      setIsBookingActive(true);
+      setShowConnecting(true);
+      
+      // Set up real-time listener for booking updates
+      setupBookingListener(bookingId);
+      
+      // Set timeout for driver acceptance (1 minute)
+      const timeout = setTimeout(() => {
+        if (isBookingActive) {
+          console.log('⏰ Driver timeout - showing timeout modal');
+          setShowDriverTimeout(true);
+          setShowConnecting(false);
+        }
+      }, 60000); // 1 minute
+      
+      setBookingTimeout(timeout);
+      
+    } catch (error) {
+      console.error('❌ Error updating booking:', error);
+      // Handle error - maybe show an alert
+    }
   };
 
   const handlePullUp = () => {
@@ -194,18 +327,8 @@ export default function BookTripModal({
     setShowConnecting(false);
   };
 
-  const handleDriverAccepted = () => {
-    console.log('✅ Driver accepted - showing DriverAcceptedModal');
-    setShowConnecting(false);
-    setShowDriverAccepted(true);
-
-    // Set 30-second timeout to show timeout modal
-    timeoutRef.current = setTimeout(() => {
-      console.log('⏰ 30 seconds passed - showing DriverTimeoutModal');
-      setShowDriverAccepted(false);
-      setShowDriverTimeout(true);
-    }, 30000); // 30 seconds
-  };
+  // Note: Driver acceptance is now handled by Firebase real-time updates
+  // The setupBookingListener function handles showing the driver accepted modal
 
   const handleDriverAcceptedContinue = () => {
     setShowDriverAccepted(false);
@@ -230,6 +353,21 @@ export default function BookTripModal({
   const handleDriverTimeoutContinue = () => {
     setShowDriverTimeout(false);
     // Return to driver selection
+    onClose();
+  };
+
+  const handleDriverDeclinedClose = () => {
+    setShowDriverDeclined(false);
+    onClose();
+  };
+
+  const handleBookAgain = () => {
+    setShowDriverDeclined(false);
+    // Reset all modal states and return to driver selection
+    setShowConnecting(false);
+    setShowDriverAccepted(false);
+    setShowDriverArriving(false);
+    setShowDriverTimeout(false);
     onClose();
   };
 
@@ -394,7 +532,7 @@ export default function BookTripModal({
               <View style={styles.etatimeContainer}>
                 <View style={styles.timeContainer}>
                   <Image source={clockIcon} style={[styles.estimateTimeIcon, { tintColor: theme.colors.blue500 }]} />
-                  <Text style={styles.estimatedTime}>{calculatedPickupETA || `${fare.estimatedTime} min`}</Text>
+                  <Text style={styles.estimatedTime}>{calculatedDestinationETA}</Text>
                 </View>
                 <Text style={styles.companyName}>Company Name</Text>
               </View>
@@ -539,13 +677,20 @@ export default function BookTripModal({
       )}
 
       {/* Connecting Driver Modal */}
-      <ConnectingDriverModal
-        visible={showConnecting}
-        selectedOption={selectedOption}
-        pickup={pickup}
-        destination={destination}
-        onCancel={handleCancelConnecting}
-        onDriverAccepted={handleDriverAccepted}
+        <ConnectingDriverModal
+          visible={showConnecting}
+          selectedOption={selectedOption}
+          pickup={pickup}
+          destination={destination}
+          onCancel={handleCancelConnecting}
+          onDriverAccepted={() => {}} // No longer needed - handled by Firebase
+          onShowDriverArriving={handleDriverAcceptedContinue}
+        />
+
+      {/* Driver Accepted Modal */}
+      <DriverAcceptedModal
+        visible={showDriverAccepted}
+        onContinue={handleDriverAcceptedContinue}
         onShowDriverArriving={handleDriverAcceptedContinue}
       />
 
@@ -555,8 +700,15 @@ export default function BookTripModal({
         selectedOption={selectedOption}
         pickup={pickup}
         destination={destination}
+        bookingId={bookingId || undefined}
         onClose={handleDriverArrivingClose}
         onCancelRide={handleCancelRide}
+      />
+
+      {/* Driver Declined Modal */}
+      <DriverDeclinedModal
+        visible={showDriverDeclined}
+        onContinue={handleBookAgain}
       />
     </View>
   );
